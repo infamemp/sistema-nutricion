@@ -1,6 +1,6 @@
 # Sistema Integral de Nutrición, Documento Maestro del Proyecto
 
-**Versión:** 1.5
+**Versión:** 1.6
 **Fecha:** 27 de agosto de 2026
 **Estado:** Fase 0 completa. Infraestructura lista. Guía de estilo cerrada. Recolección de material en curso.
 
@@ -84,6 +84,12 @@ Stack, servidor, IA, base de alimentos, alcance, identidad visual y guía de est
 - **Motor de maquetación de flujo.** La caja se dibuja alrededor del texto, no al revés. El motor mide el contenido, dibuja la tarjeta del tamaño exacto, y si no cabe corta limpio y continúa en la siguiente lámina con su encabezado. El desbordamiento deja de ser posible por construcción
 - **Dos tipos de documento:** plan personalizado (con nombre y fecha) y guía de padecimiento (reutilizable, se adjunta según diagnóstico)
 - **Pie de página** en toda lámina: fecha exacta, próxima cita, número de lámina y datos de contacto
+- **Módulo de acciones de salida**, común a los 4 tipos de documento (dieta, guía, recomendación, carta al médico), disponible al finalizar cualquiera de ellos:
+  - **Enviar por correo:** casilla de sí o no antes de confirmar, si está marcada se envía automático al aprobar
+  - **Descargar localmente:** botón que guarda el PDF en su computadora o tablet
+  - **Enviar por WhatsApp (camino simple):** genera un enlace que abre WhatsApp con el PDF ya adjunto, ella solo confirma el envío dentro de WhatsApp. Sin costo, sin cuentas nuevas, funciona desde el día uno
+  - Descartada la opción de imprimir directo desde el sistema: es redundante una vez que el archivo ya se puede descargar
+  - **Mejora futura, no bloqueante:** API oficial de WhatsApp Business para envío automático sin confirmación manual. Requiere cuenta de negocio verificada en Meta, un proveedor intermediario (Twilio o similar), costo por mensaje, y plantillas pre-aprobadas por Meta para los primeros contactos. Se evalúa solo si el volumen de pacientes lo justifica
 - **Gráficas de progreso** (peso, porcentaje de grasa, masa muscular en el tiempo, con o sin InBody)
 - **Carta al médico referente** (informe breve de evolución para el doctor que refirió, la redacta Claude)
 
@@ -176,3 +182,4 @@ Las API keys nunca van al repo. Viven en un archivo `.env` local, ya cubierto po
 | 2026-08-26 | v1.3, ingeniería detallada de las tres adopciones anteriores |
 | 2026-08-26 | v1.4, checklist "De Michel" completo salvo el correo de envío |
 | 2026-08-27 | v1.5, análisis de 22 documentos reales de la nutrióloga. Se identifica la marca (Marifer Utrilla, Nutrición y Salud Hormonal) y se crean `GUIA_DE_ESTILO.md` y `STYLE_SPEC.md`. Nuevas decisiones: dos tipos de documento, biblioteca de bloques paramétrica que guarda el qué y no el cómo, motor de maquetación de flujo que hace imposible el desbordamiento, reglas anti IA, mayúsculas solo donde sirven, y pie de página con fecha, próxima cita y número de lámina. Se corrige el principio de tono: sin frases motivacionales genéricas. Se define la estructura del repo |
+| 2026-08-27 | v1.6, se agrega el módulo de acciones de salida al finalizar cualquier documento: correo (casilla sí o no), descarga local, y WhatsApp por enlace directo (camino simple, sin costo). Se descarta imprimir por redundante con la descarga. Queda anotada la API oficial de WhatsApp Business como mejora futura no bloqueante |
