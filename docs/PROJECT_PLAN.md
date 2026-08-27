@@ -1,6 +1,6 @@
 # Sistema Integral de Nutrición, Documento Maestro del Proyecto
 
-**Versión:** 1.6
+**Versión:** 1.7
 **Fecha:** 27 de agosto de 2026
 **Estado:** Fase 0 completa. Infraestructura lista. Guía de estilo cerrada. Recolección de material en curso.
 
@@ -60,7 +60,14 @@ Stack, servidor, IA, base de alimentos, alcance, identidad visual y guía de est
 - **Historial de versiones de dietas** (ninguna dieta se sobreescribe jamás)
 - Datos estructurados de medicación y padecimientos (base para las banderas clínicas)
 - **Registro de opciones ya prescritas por paciente**, para no repetir el mismo desayuno tres consultas seguidas
-- **Lectura del InBody:** el PDF crudo se envía como adjunto a la variante económica y rápida de Gemini (revisar cuál es la vigente al construir) con prompt restrictivo pidiendo exclusivamente peso, porcentaje de grasa y masa músculo esquelética, en JSON estricto. Sin parsear línea por línea con código. Manejo de errores: `json.loads()` en Python, si falla **un reintento automático**, y si el segundo intento también falla, campo en blanco para que ella lo teclee en 5 segundos. Chequeo de sensatez posterior (peso entre 20 y 300 kg) por si la IA malinterpreta una celda
+- **Lectura del InBody**, basada en 3 reportes reales de InBody370S (clínica UNIDO): el PDF crudo se envía como adjunto a la variante económica y rápida de Gemini (revisar cuál es la vigente al construir) con prompt restrictivo, en JSON estricto. Sin parsear línea por línea con código.
+  - **Campos a extraer** (set ampliado tras ver los reportes reales): peso, porcentaje de grasa corporal, masa grasa corporal, masa de músculo esquelético (MME), nivel de grasa visceral, tasa metabólica basal, IMC. Estos son insumo interno para el motor de IA, nunca se muestran al paciente en el documento final (sigue vigente la regla de cero calorías y macros visibles)
+  - **Historial dentro del propio PDF:** el reporte trae su propia tabla de mediciones anteriores (de 1 hasta 9 o más puntos, la cantidad varía por paciente). La instrucción a Gemini debe pedir leer cuantos puntos existan, sin asumir una cantidad fija, y regresar cada uno con su fecha. Una sola foto de un paciente con historial largo puede alimentar varios puntos de seguimiento de una sola vez
+  - Manejo de errores: `json.loads()` en Python, si falla **un reintento automático**, y si el segundo intento también falla, campo en blanco para que ella lo teclee en 5 segundos. Chequeo de sensatez posterior (peso entre 20 y 300 kg) por si la IA malinterpreta una celda
+  - **Identificación del paciente, nunca automática.** El reporte trae un ID de la clínica (ej. `040225-1`) y un nombre que puede venir truncado (ej. "juan carlos be..."), así que ninguno de los dos se usa para vincular solo. Mecanismo de 3 capas:
+    1. **Búsqueda y selección de una lista real de pacientes**, nunca texto libre. El nombre del PDF sirve solo de referencia visual para que ella confirme
+    2. **Pantalla de comparación antes de guardar:** edad, sexo y estatura del PDF contra lo ya registrado en el expediente. Si no coinciden, se bloquea la confirmación automática y se muestra alerta, obligando a revisar
+    3. **Lista de IDs conocidos por paciente** (no un ID único): un mismo paciente puede tener varios IDs a lo largo del tiempo si cambia de clínica o dispositivo. El primer uso de un ID nuevo pide búsqueda completa y confirmación; los siguientes usos del mismo ID ya sugieren el paciente para un solo toque. La confirmación humana nunca se salta, solo se acelera
 - Entregable: captura digital de pacientes funcionando, aun sin IA
 
 ### Fase 2, Knowledgebase y base de alimentos
@@ -130,7 +137,7 @@ Puntos clave:
 - [ ] Datos de contacto para el pie de página: teléfono, WhatsApp, redes
 - [ ] Validar el cambio de mayúsculas, único punto donde se toca su identidad visual
 - [ ] Su formato actual de intake (papel, Word, lo que sea)
-- [ ] 2 o 3 PDFs de InBody anonimizados, para programar la extracción
+- [x] PDFs de InBody de ejemplo. Recibidos 3 reportes reales de InBody370S (clínica UNIDO), base del diseño de extracción y del mecanismo de identificación de paciente
 - [ ] Confirmar si trabaja con SMAE y qué guías clínicas respeta
 - [ ] Aviso de privacidad para datos de salud (obligatorio, LFPDPPP)
 
@@ -183,3 +190,4 @@ Las API keys nunca van al repo. Viven en un archivo `.env` local, ya cubierto po
 | 2026-08-26 | v1.4, checklist "De Michel" completo salvo el correo de envío |
 | 2026-08-27 | v1.5, análisis de 22 documentos reales de la nutrióloga. Se identifica la marca (Marifer Utrilla, Nutrición y Salud Hormonal) y se crean `GUIA_DE_ESTILO.md` y `STYLE_SPEC.md`. Nuevas decisiones: dos tipos de documento, biblioteca de bloques paramétrica que guarda el qué y no el cómo, motor de maquetación de flujo que hace imposible el desbordamiento, reglas anti IA, mayúsculas solo donde sirven, y pie de página con fecha, próxima cita y número de lámina. Se corrige el principio de tono: sin frases motivacionales genéricas. Se define la estructura del repo |
 | 2026-08-27 | v1.6, se agrega el módulo de acciones de salida al finalizar cualquier documento: correo (casilla sí o no), descarga local, y WhatsApp por enlace directo (camino simple, sin costo). Se descarta imprimir por redundante con la descarga. Queda anotada la API oficial de WhatsApp Business como mejora futura no bloqueante |
+| 2026-08-27 | v1.7, análisis de 3 reportes reales de InBody370S (clínica UNIDO). Se amplía el set de campos a extraer, se agrega lectura del historial interno del PDF (número de puntos variable), y se define el mecanismo de identificación de paciente en 3 capas: búsqueda por lista (nunca texto libre), pantalla de comparación que bloquea ante datos que no cuadran, y lista de IDs conocidos por paciente para admitir cambios de clínica o dispositivo sin perder la confirmación humana obligatoria |
