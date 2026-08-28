@@ -1,6 +1,6 @@
 # Sistema Integral de Nutrición, Documento Maestro del Proyecto
 
-**Versión:** 2.3
+**Versión:** 2.4
 **Fecha:** 27 de agosto de 2026
 **Estado:** Fase 0 completa. Infraestructura lista. Guía de estilo cerrada. Recolección de material en curso.
 
@@ -73,7 +73,8 @@ Stack, servidor, IA, base de alimentos, alcance, identidad visual y guía de est
 - Entregable: captura digital de pacientes funcionando, aun sin IA
 
 ### Fase 2, Knowledgebase y base de alimentos
-- Guías clínicas por padecimiento: obesidad, diabetes, RI, SOP, endometriosis, fertilidad, embarazo, pacientes con GLP-1
+- **Guías clínicas por padecimiento, APROBADAS.** 17 fuentes (19 recibidas, 1 excluida) cubriendo obesidad, diabetes tipo 2, RI, SOP, endometriosis, fertilidad, embarazo, salud hormonal general, menopausia (área de expansión futura) y recetario para pacientes con GLP-1. Inventario completo, nivel de autoridad de cada fuente y criterio de evaluación en `docs/KNOWLEDGEBASE.md`
+- **Procedimiento de evaluación de fuentes nuevas para búsquedas web del motor de IA**, documentado a partir de un caso real: se investigó y comparó a dos autoras de perfil similar (ambas sin título médico, ambas con libros exitosos): una se excluyó (evidencia de errores señalados por dietistas registrados, conflicto de interés comercial activo con un suplemento propio) y otra se incluyó con nivel ajustado (respaldo de una reseña académica publicada por una ginecobstetra en una revista revisada por pares). El criterio de 4 preguntas queda documentado en `docs/KNOWLEDGEBASE.md` sección 5, y debe aplicarse cada vez que el motor evalúe una fuente nueva encontrada en la web
 - **SMAE** (Sistema Mexicano de Alimentos Equivalentes) como pilar de cálculo interno. Un solo archivo `smae.json` plano, organizado por categorías, que se lee completo desde Python y se inyecta en el prompt de Gemini. Nada de tablas relacionales complejas, así la IA no inventa porciones inexistentes. **Regla crítica confirmada:** el SMAE es una herramienta de cálculo para que la nutrióloga decida cuántos equivalentes prescribir, nunca se expone al paciente en su forma cruda. El sistema de equivalencias, tomado literal, permitiría sustituir un carbohidrato por una dona de chocolate del mismo peso en gramos, y eso jamás debe llegar como sugerencia visible. El SMAE informa el cálculo, la IA redacta solo alimentos reales y apropiados
 - **Guía clínica de referencia:** EASO (European Association for the Study of Obesity) para obesidad, usada como marco de referencia, no como protocolo estricto de seguir al pie de la letra. Otras guías por padecimiento (diabetes, RI, SOP, endometriosis, fertilidad, GLP-1) pendientes de definir con la nutrióloga
 - **Biblioteca de bloques de contenido** (15 bloques identificados, ver `GUIA_DE_ESTILO.md` sección 6)
@@ -178,7 +179,8 @@ sistema-nutricion/
     ├── PROJECT_PLAN.md
     ├── GUIA_DE_ESTILO.md
     ├── STYLE_SPEC.md
-    └── Historia_Clinica_v2.docx
+    ├── Historia_Clinica_v2.docx
+    └── KNOWLEDGEBASE.md
 ```
 
 **Nota de nomenclatura:** nombres de archivo sin espacios (guion bajo en su lugar), para evitar errores al referenciarlos desde código.
@@ -215,3 +217,4 @@ Las API keys nunca van al repo. Viven en un archivo `.env` local, ya cubierto po
 | 2026-08-27 | v2.1, logo recibido y confirmado (6 archivos PNG con transparencia, sin vector real pero de calidad suficiente). Se detectó y resolvió una discrepancia de tagline entre archivos ("Nutrición y Salud Hormonal" vs "Nutrición y Vida en Equilibrio"); queda vigente la primera. Se asigna cada archivo a su uso (encabezados, ícono cuadrado, elemento decorativo). Checklist de Michel completo salvo el correo de envío |
 | 2026-08-27 | v2.2, se documenta la estructura real del repo con la carpeta `assets/logo/` ya creada, y se anota la recomendación de quitar espacios de los nombres de archivo |
 | 2026-08-27 | v2.3, Historia Clínica aprobada: se genera `Historia_Clinica_v2.docx` con las 11 secciones (incluye antecedentes heredofamiliares, gineco-obstétricos, historia de peso y objetivos, antes ausentes). Se aclara que este Word es la especificación de contenido, no el formulario final, el cual se construirá interactivo dentro de la app en la Fase 1. Se deja explícito que los campos seguirán ajustándose con el uso real |
+| 2026-08-27 | v2.4, Knowledgebase clínica aprobada: 17 fuentes analizadas y clasificadas por nivel de autoridad en `docs/KNOWLEDGEBASE.md`. Se investigó a fondo un caso de dos autoras de perfil similar sin título médico; una se excluyó por conflicto de interés comercial y errores señalados por dietistas registrados, otra se incluyó con nivel ajustado por tener respaldo académico verificable. Se documenta el procedimiento de 4 preguntas para que el motor de IA evalúe cualquier fuente nueva que encuentre en la web. Se confirma la menopausia como área de expansión futura de la práctica |
