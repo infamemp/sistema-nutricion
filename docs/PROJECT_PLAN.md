@@ -1,6 +1,6 @@
 # Sistema Integral de Nutrición, Documento Maestro del Proyecto
 
-**Versión:** 2.0
+**Versión:** 2.1
 **Fecha:** 27 de agosto de 2026
 **Estado:** Fase 0 completa. Infraestructura lista. Guía de estilo cerrada. Recolección de material en curso.
 
@@ -140,6 +140,7 @@ Puntos clave:
 - **Vocabulario poblano y mexicano** conviviendo con anglicismos ya asimilados (smoothie, avotoast, lunch). Ambos son suyos
 - **Reglas anti IA:** solo caracteres de teclado normal (nada de guiones largos, comillas curvas ni líneas de `====`), frases prohibidas, y variación natural obligatoria contra la simetría artificial. La flecha `→` sí se autoriza porque es suya
 - **Mayúsculas** solo en títulos, encabezados y etiquetas cortas. Los párrafos largos centrados en mayúsculas se eliminan
+- **Logo confirmado**, leyenda oficial "Nutrición y Salud Hormonal". `Mafer_Logo_Grande.png` para encabezados de documento y web (alta resolución, transparente), versión 360×360 para usos cuadrados (ícono, perfil), `Limon.png` como elemento decorativo suelto sin texto
 
 ---
 
@@ -148,7 +149,7 @@ Puntos clave:
 ### De la nutrióloga
 - [x] Dietas reales anonimizadas. Recibidos 22 documentos, base de la guía de estilo
 - [x] Colores e identidad visual, extraídos del material
-- [ ] Logo vectorizado (SVG o PNG con transparencia). Michel confirmó que puede conseguirlo
+- [x] Logo, en PNG con transparencia (no vector real, pero suficiente calidad). Leyenda oficial confirmada: "Nutrición y Salud Hormonal" (se descartan las variantes con "Nutrición y Vida en Equilibrio", tagline anterior). Archivo principal para encabezados: `Mafer_Logo_Grande.png` (2413×1546 px, transparente); archivos cuadrados para ícono o foto de perfil: `Logo_Marifer_360x360.png` y equivalente; elemento decorativo suelto disponible: `Limon.png` (el círculo sin texto, alta resolución)
 - [x] Datos de contacto para el pie de página. Marifer Utrilla Lack, Nutrióloga y Especialista en Salud Hormonal, Educadora en Diabetes, +52 238 136 7151 (mismo número para WhatsApp). Sin redes pendientes de agregar
 - [x] Validar el cambio de mayúsculas. Validado
 - [x] Su formato actual de intake. Compartido y analizado (Historia_Clínica.docx), rediseño en discusión, ver Fase 1
@@ -161,7 +162,7 @@ Puntos clave:
 - [x] Obtener API key de Gemini (Google AI Studio, análisis)
 - [x] Obtener API key de Anthropic (solo redacción)
 - [x] Crear repo de GitHub del proyecto (privado, con .gitignore de Python)
-- [ ] Subir la documentación al repo en `docs/`
+- [x] Subir la documentación al repo en `docs/`
 - [ ] Definir correo de envío. **Pendiente de confirmar con la nutrióloga:** opción A, crear correo con su dominio en Hostinger (más profesional, requiere configurar SMTP), opción B, usar su Gmail actual ya configurado como nutrióloga (más simple, remitente genérico)
 
 ---
@@ -207,3 +208,4 @@ Las API keys nunca van al repo. Viven en un archivo `.env` local, ya cubierto po
 | 2026-08-27 | v1.6, se agrega el módulo de acciones de salida al finalizar cualquier documento: correo (casilla sí o no), descarga local, y WhatsApp por enlace directo (camino simple, sin costo). Se descarta imprimir por redundante con la descarga. Queda anotada la API oficial de WhatsApp Business como mejora futura no bloqueante |
 | 2026-08-27 | v1.7, análisis de 3 reportes reales de InBody370S (clínica UNIDO). Se amplía el set de campos a extraer, se agrega lectura del historial interno del PDF (número de puntos variable), y se define el mecanismo de identificación de paciente en 3 capas: búsqueda por lista (nunca texto libre), pantalla de comparación que bloquea ante datos que no cuadran, y lista de IDs conocidos por paciente para admitir cambios de clínica o dispositivo sin perder la confirmación humana obligatoria |
 | 2026-08-27 | v2.0, se confirman datos de contacto y validación de mayúsculas. Se analiza la Historia Clínica actual (33 campos) contra un intake nutricional estándar, se identifican 6 vacíos (destaca antecedentes gineco-obstétricos, dada la especialidad) y una reorganización en 11 secciones, pendiente de aprobación para generar la versión nueva. Se diseña el follow-up de captura libre-guiada, ligado entre consultas. Se agrega el análisis de estudios de laboratorio: mismo mecanismo que InBody, cruza resultados contra alimentación, suplementos y medicamentos, solo advertencias accionables para la nutrióloga, nunca diagnóstico. Se aclara la regla crítica del SMAE (cálculo interno, nunca expuesto en crudo) y se confirma EASO como guía de referencia para obesidad |
+| 2026-08-27 | v2.1, logo recibido y confirmado (6 archivos PNG con transparencia, sin vector real pero de calidad suficiente). Se detectó y resolvió una discrepancia de tagline entre archivos ("Nutrición y Salud Hormonal" vs "Nutrición y Vida en Equilibrio"); queda vigente la primera. Se asigna cada archivo a su uso (encabezados, ícono cuadrado, elemento decorativo). Checklist de Michel completo salvo el correo de envío |
