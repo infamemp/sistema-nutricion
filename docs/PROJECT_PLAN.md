@@ -1,6 +1,6 @@
 # Sistema Integral de Nutrición, Documento Maestro del Proyecto
 
-**Versión:** 1.7
+**Versión:** 2.0
 **Fecha:** 27 de agosto de 2026
 **Estado:** Fase 0 completa. Infraestructura lista. Guía de estilo cerrada. Recolección de material en curso.
 
@@ -56,6 +56,15 @@ Stack, servidor, IA, base de alimentos, alcance, identidad visual y guía de est
 
 ### Fase 1, Base de datos y plantillas
 - Estructura de pacientes y expedientes
+- **Historia Clínica (intake inicial), rediseño en curso.** Se recibió y analizó el documento Word que usa actualmente (33 campos en tabla simple). Fortalezas identificadas: antecedentes patológicos completos, revisión de síntomas metabólicos/hormonales sólida (Acantosis Nigricans, hormigueo, caída de pelo, etc.), recordatorio de 24 horas. Vacíos detectados frente a un intake nutricional estándar, pendientes de aprobación antes de generar la versión nueva:
+  - Antecedentes heredofamiliares (diabetes, obesidad, tiroides, cardiovascular en la familia)
+  - Antecedentes gineco-obstétricos (menarca, ciclo menstrual, anticonceptivos, embarazos, menopausia), vacío notable dada la especialidad hormonal y de fertilidad
+  - Historia de peso (máximo y mínimo en la vida adulta, dietas previas intentadas y qué funcionó o no)
+  - Objetivos y expectativas del paciente
+  - Separar alergias reales de preferencias alimentarias (hoy están mezcladas en un solo campo)
+  - Campos menores: correo electrónico, hidratación diaria, quién cocina en casa o frecuencia de comer fuera
+  - Reorganización propuesta en 11 secciones con encabezado, en vez de lista plana de 33 renglones
+- **Follow-up, sin plantilla fija por diseño**, pero con captura ordenada. Campos de texto libre guiado: qué le gustó del plan anterior, qué no le gustó o le costó trabajo, principales cambios que hizo, en qué puede mejorar, estatus del tratamiento médico, datos del InBody del día (si aplica), notas libres de la nutrióloga. Cada follow-up queda ligado al anterior en el expediente, para que el sistema pueda mostrar un resumen de la consulta previa antes de la siguiente cita
 - Plantillas de intake y follow-up usables desde tablet
 - **Historial de versiones de dietas** (ninguna dieta se sobreescribe jamás)
 - Datos estructurados de medicación y padecimientos (base para las banderas clínicas)
@@ -72,7 +81,8 @@ Stack, servidor, IA, base de alimentos, alcance, identidad visual y guía de est
 
 ### Fase 2, Knowledgebase y base de alimentos
 - Guías clínicas por padecimiento: obesidad, diabetes, RI, SOP, endometriosis, fertilidad, embarazo, pacientes con GLP-1
-- **SMAE** (Sistema Mexicano de Alimentos Equivalentes) como pilar. Un solo archivo `smae.json` plano, organizado por categorías, que se lee completo desde Python y se inyecta en el prompt de Gemini. Nada de tablas relacionales complejas, así la IA no inventa porciones inexistentes
+- **SMAE** (Sistema Mexicano de Alimentos Equivalentes) como pilar de cálculo interno. Un solo archivo `smae.json` plano, organizado por categorías, que se lee completo desde Python y se inyecta en el prompt de Gemini. Nada de tablas relacionales complejas, así la IA no inventa porciones inexistentes. **Regla crítica confirmada:** el SMAE es una herramienta de cálculo para que la nutrióloga decida cuántos equivalentes prescribir, nunca se expone al paciente en su forma cruda. El sistema de equivalencias, tomado literal, permitiría sustituir un carbohidrato por una dona de chocolate del mismo peso en gramos, y eso jamás debe llegar como sugerencia visible. El SMAE informa el cálculo, la IA redacta solo alimentos reales y apropiados
+- **Guía clínica de referencia:** EASO (European Association for the Study of Obesity) para obesidad, usada como marco de referencia, no como protocolo estricto de seguir al pie de la letra. Otras guías por padecimiento (diabetes, RI, SOP, endometriosis, fertilidad, GLP-1) pendientes de definir con la nutrióloga
 - **Biblioteca de bloques de contenido** (15 bloques identificados, ver `GUIA_DE_ESTILO.md` sección 6)
 - **Valores clínicos de referencia** ya recuperados de su material: rangos de glucosa en ayunas, preprandial, posprandial 1h y 2h, nocturna, y HbA1c
 - Conexión a OpenFoodFacts
@@ -84,13 +94,18 @@ Stack, servidor, IA, base de alimentos, alcance, identidad visual y guía de est
 - **Regla de individualización:** la biblioteca guarda el qué, la IA decide el cómo y el cuánto. Dos pacientes con la misma condición reciben el mismo criterio clínico y distinta redacción
 - **Resumen pre-consulta automático** (media página antes de cada cita, lo genera Gemini porque es análisis, no redacción para el paciente)
 - **Lógica de banderas clínicas.** GLP-1 implica proteger masa muscular y proteína, SOP con RI tiene sus consideraciones propias. Nunca opina sobre medicamentos, solo alerta y refiere al médico
+- **Análisis de estudios de laboratorio (subidos por la nutrióloga, enviados por el médico tratante).** Mismo mecanismo que el InBody: el PDF se envía crudo a Gemini, que lee de forma nativa. **Regla no negociable: nunca diagnostica, eso es trabajo exclusivo del médico.** Lo que sí hace es un análisis completo cruzando el resultado contra tres fuentes ya presentes en el expediente, y levanta advertencias con su justificación, nunca una conclusión clínica:
+  - **Contra alimentación:** por ejemplo, ferritina baja en alguien con dieta pobre en hierro registrada en su recordatorio de 24 horas
+  - **Contra suplementos:** interferencias de laboratorio conocidas, como biotina en dosis alta alterando pruebas de tiroides, o exceso de calcio/vitamina D elevando calcio sérico
+  - **Contra medicamentos:** GLP-1 asociado a riesgo de deficiencia de B12 y vitamina D, y a pérdida de masa muscular reflejada en creatinina; metformina asociada a deficiencia de B12 a largo plazo
+  - Salida: lista de advertencias accionables desde nutrición, visible solo para la nutrióloga, nunca para el paciente
 
 ### Fase 4, Aprobación, PDF y envío
 - Flujo de un clic: revisar, aprobar, PDF, correo
 - **Botón "Modificar propuesta".** Campo de texto simple en la pantalla de revisión (por ejemplo "quita el aguacate y cambia las colaciones por opciones frías") y la IA regenera. Ingeniería: el ajuste se aplica siempre sobre la última versión guardada en el historial, no sobre un hilo de conversación libre. Se envía versión actual más instrucción de ajuste, y el resultado se guarda como nueva versión. System prompt con regla explícita de devolver únicamente la dieta modificada, cero saludos, cero disculpas, cero relleno
 - **Motor de maquetación de flujo.** La caja se dibuja alrededor del texto, no al revés. El motor mide el contenido, dibuja la tarjeta del tamaño exacto, y si no cabe corta limpio y continúa en la siguiente lámina con su encabezado. El desbordamiento deja de ser posible por construcción
 - **Dos tipos de documento:** plan personalizado (con nombre y fecha) y guía de padecimiento (reutilizable, se adjunta según diagnóstico)
-- **Pie de página** en toda lámina: fecha exacta, próxima cita, número de lámina y datos de contacto
+- **Pie de página** en toda lámina: fecha exacta, próxima cita, número de lámina y datos de contacto. **Datos confirmados:** "Marifer Utrilla Lack, Nutrióloga y Especialista en Salud Hormonal, Educadora en Diabetes", teléfono/WhatsApp +52 238 136 7151
 - **Módulo de acciones de salida**, común a los 4 tipos de documento (dieta, guía, recomendación, carta al médico), disponible al finalizar cualquiera de ellos:
   - **Enviar por correo:** casilla de sí o no antes de confirmar, si está marcada se envía automático al aprobar
   - **Descargar localmente:** botón que guarda el PDF en su computadora o tablet
@@ -134,11 +149,11 @@ Puntos clave:
 - [x] Dietas reales anonimizadas. Recibidos 22 documentos, base de la guía de estilo
 - [x] Colores e identidad visual, extraídos del material
 - [ ] Logo vectorizado (SVG o PNG con transparencia). Michel confirmó que puede conseguirlo
-- [ ] Datos de contacto para el pie de página: teléfono, WhatsApp, redes
-- [ ] Validar el cambio de mayúsculas, único punto donde se toca su identidad visual
-- [ ] Su formato actual de intake (papel, Word, lo que sea)
+- [x] Datos de contacto para el pie de página. Marifer Utrilla Lack, Nutrióloga y Especialista en Salud Hormonal, Educadora en Diabetes, +52 238 136 7151 (mismo número para WhatsApp). Sin redes pendientes de agregar
+- [x] Validar el cambio de mayúsculas. Validado
+- [x] Su formato actual de intake. Compartido y analizado (Historia_Clínica.docx), rediseño en discusión, ver Fase 1
 - [x] PDFs de InBody de ejemplo. Recibidos 3 reportes reales de InBody370S (clínica UNIDO), base del diseño de extracción y del mecanismo de identificación de paciente
-- [ ] Confirmar si trabaja con SMAE y qué guías clínicas respeta
+- [x] Confirmar si trabaja con SMAE y qué guías clínicas respeta. SMAE es cálculo interno, nunca expuesto al paciente en crudo. Guía clínica de obesidad: EASO, como referencia, no protocolo estricto
 - [ ] Aviso de privacidad para datos de salud (obligatorio, LFPDPPP)
 
 ### De Michel
@@ -191,3 +206,4 @@ Las API keys nunca van al repo. Viven en un archivo `.env` local, ya cubierto po
 | 2026-08-27 | v1.5, análisis de 22 documentos reales de la nutrióloga. Se identifica la marca (Marifer Utrilla, Nutrición y Salud Hormonal) y se crean `GUIA_DE_ESTILO.md` y `STYLE_SPEC.md`. Nuevas decisiones: dos tipos de documento, biblioteca de bloques paramétrica que guarda el qué y no el cómo, motor de maquetación de flujo que hace imposible el desbordamiento, reglas anti IA, mayúsculas solo donde sirven, y pie de página con fecha, próxima cita y número de lámina. Se corrige el principio de tono: sin frases motivacionales genéricas. Se define la estructura del repo |
 | 2026-08-27 | v1.6, se agrega el módulo de acciones de salida al finalizar cualquier documento: correo (casilla sí o no), descarga local, y WhatsApp por enlace directo (camino simple, sin costo). Se descarta imprimir por redundante con la descarga. Queda anotada la API oficial de WhatsApp Business como mejora futura no bloqueante |
 | 2026-08-27 | v1.7, análisis de 3 reportes reales de InBody370S (clínica UNIDO). Se amplía el set de campos a extraer, se agrega lectura del historial interno del PDF (número de puntos variable), y se define el mecanismo de identificación de paciente en 3 capas: búsqueda por lista (nunca texto libre), pantalla de comparación que bloquea ante datos que no cuadran, y lista de IDs conocidos por paciente para admitir cambios de clínica o dispositivo sin perder la confirmación humana obligatoria |
+| 2026-08-27 | v2.0, se confirman datos de contacto y validación de mayúsculas. Se analiza la Historia Clínica actual (33 campos) contra un intake nutricional estándar, se identifican 6 vacíos (destaca antecedentes gineco-obstétricos, dada la especialidad) y una reorganización en 11 secciones, pendiente de aprobación para generar la versión nueva. Se diseña el follow-up de captura libre-guiada, ligado entre consultas. Se agrega el análisis de estudios de laboratorio: mismo mecanismo que InBody, cruza resultados contra alimentación, suplementos y medicamentos, solo advertencias accionables para la nutrióloga, nunca diagnóstico. Se aclara la regla crítica del SMAE (cálculo interno, nunca expuesto en crudo) y se confirma EASO como guía de referencia para obesidad |
