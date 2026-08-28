@@ -1,6 +1,6 @@
 # Sistema Integral de Nutrición, Documento Maestro del Proyecto
 
-**Versión:** 2.2
+**Versión:** 2.3
 **Fecha:** 27 de agosto de 2026
 **Estado:** Fase 0 completa. Infraestructura lista. Guía de estilo cerrada. Recolección de material en curso.
 
@@ -56,14 +56,7 @@ Stack, servidor, IA, base de alimentos, alcance, identidad visual y guía de est
 
 ### Fase 1, Base de datos y plantillas
 - Estructura de pacientes y expedientes
-- **Historia Clínica (intake inicial), rediseño en curso.** Se recibió y analizó el documento Word que usa actualmente (33 campos en tabla simple). Fortalezas identificadas: antecedentes patológicos completos, revisión de síntomas metabólicos/hormonales sólida (Acantosis Nigricans, hormigueo, caída de pelo, etc.), recordatorio de 24 horas. Vacíos detectados frente a un intake nutricional estándar, pendientes de aprobación antes de generar la versión nueva:
-  - Antecedentes heredofamiliares (diabetes, obesidad, tiroides, cardiovascular en la familia)
-  - Antecedentes gineco-obstétricos (menarca, ciclo menstrual, anticonceptivos, embarazos, menopausia), vacío notable dada la especialidad hormonal y de fertilidad
-  - Historia de peso (máximo y mínimo en la vida adulta, dietas previas intentadas y qué funcionó o no)
-  - Objetivos y expectativas del paciente
-  - Separar alergias reales de preferencias alimentarias (hoy están mezcladas en un solo campo)
-  - Campos menores: correo electrónico, hidratación diaria, quién cocina en casa o frecuencia de comer fuera
-  - Reorganización propuesta en 11 secciones con encabezado, en vez de lista plana de 33 renglones
+- **Historia Clínica (intake inicial), APROBADA.** Rediseño de las 33 preguntas originales en 11 secciones, documento de referencia en `docs/Historia_Clinica_v2.docx`. Es la especificación de contenido, no el formulario final: en esta fase se construye como formulario interactivo dentro de la app (campos de texto, menús desplegables donde aplique, casillas sí/no, navegable por sección, pensado para tablet). Se espera seguir ajustando campos con el uso real, sin problema. Secciones: datos generales, objetivos y expectativas, antecedentes heredofamiliares, antecedentes personales patológicos, antecedentes gineco-obstétricos, historia de peso, revisión de síntomas, alergias/intolerancias/preferencias (separadas), hábitos alimentarios, actividad física/sueño/hábitos, suplementos/medicamentos/laboratorios
 - **Follow-up, sin plantilla fija por diseño**, pero con captura ordenada. Campos de texto libre guiado: qué le gustó del plan anterior, qué no le gustó o le costó trabajo, principales cambios que hizo, en qué puede mejorar, estatus del tratamiento médico, datos del InBody del día (si aplica), notas libres de la nutrióloga. Cada follow-up queda ligado al anterior en el expediente, para que el sistema pueda mostrar un resumen de la consulta previa antes de la siguiente cita
 - Plantillas de intake y follow-up usables desde tablet
 - **Historial de versiones de dietas** (ninguna dieta se sobreescribe jamás)
@@ -184,7 +177,8 @@ sistema-nutricion/
 └── docs/
     ├── PROJECT_PLAN.md
     ├── GUIA_DE_ESTILO.md
-    └── STYLE_SPEC.md
+    ├── STYLE_SPEC.md
+    └── Historia_Clinica_v2.docx
 ```
 
 **Nota de nomenclatura:** nombres de archivo sin espacios (guion bajo en su lugar), para evitar errores al referenciarlos desde código.
@@ -220,3 +214,4 @@ Las API keys nunca van al repo. Viven en un archivo `.env` local, ya cubierto po
 | 2026-08-27 | v2.0, se confirman datos de contacto y validación de mayúsculas. Se analiza la Historia Clínica actual (33 campos) contra un intake nutricional estándar, se identifican 6 vacíos (destaca antecedentes gineco-obstétricos, dada la especialidad) y una reorganización en 11 secciones, pendiente de aprobación para generar la versión nueva. Se diseña el follow-up de captura libre-guiada, ligado entre consultas. Se agrega el análisis de estudios de laboratorio: mismo mecanismo que InBody, cruza resultados contra alimentación, suplementos y medicamentos, solo advertencias accionables para la nutrióloga, nunca diagnóstico. Se aclara la regla crítica del SMAE (cálculo interno, nunca expuesto en crudo) y se confirma EASO como guía de referencia para obesidad |
 | 2026-08-27 | v2.1, logo recibido y confirmado (6 archivos PNG con transparencia, sin vector real pero de calidad suficiente). Se detectó y resolvió una discrepancia de tagline entre archivos ("Nutrición y Salud Hormonal" vs "Nutrición y Vida en Equilibrio"); queda vigente la primera. Se asigna cada archivo a su uso (encabezados, ícono cuadrado, elemento decorativo). Checklist de Michel completo salvo el correo de envío |
 | 2026-08-27 | v2.2, se documenta la estructura real del repo con la carpeta `assets/logo/` ya creada, y se anota la recomendación de quitar espacios de los nombres de archivo |
+| 2026-08-27 | v2.3, Historia Clínica aprobada: se genera `Historia_Clinica_v2.docx` con las 11 secciones (incluye antecedentes heredofamiliares, gineco-obstétricos, historia de peso y objetivos, antes ausentes). Se aclara que este Word es la especificación de contenido, no el formulario final, el cual se construirá interactivo dentro de la app en la Fase 1. Se deja explícito que los campos seguirán ajustándose con el uso real |
