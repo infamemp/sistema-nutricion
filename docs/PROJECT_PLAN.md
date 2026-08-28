@@ -1,6 +1,6 @@
 # Sistema Integral de Nutrición, Documento Maestro del Proyecto
 
-**Versión:** 2.1
+**Versión:** 2.2
 **Fecha:** 27 de agosto de 2026
 **Estado:** Fase 0 completa. Infraestructura lista. Guía de estilo cerrada. Recolección de material en curso.
 
@@ -173,11 +173,21 @@ Puntos clave:
 sistema-nutricion/
 ├── README.md
 ├── .gitignore
+├── assets/
+│   └── logo/
+│       ├── Limon.png
+│       ├── Logo_Marifer_360x360.png
+│       ├── Mafer_Logo_Grande.png
+│       ├── Mafer_Profile_Pic_360X360.png
+│       ├── Marifer_Inicio.jpg
+│       └── Marifer_Inicio.png
 └── docs/
     ├── PROJECT_PLAN.md
     ├── GUIA_DE_ESTILO.md
     └── STYLE_SPEC.md
 ```
+
+**Nota de nomenclatura:** nombres de archivo sin espacios (guion bajo en su lugar), para evitar errores al referenciarlos desde código.
 
 Las API keys nunca van al repo. Viven en un archivo `.env` local, ya cubierto por el .gitignore de Python.
 
@@ -209,3 +219,4 @@ Las API keys nunca van al repo. Viven en un archivo `.env` local, ya cubierto po
 | 2026-08-27 | v1.7, análisis de 3 reportes reales de InBody370S (clínica UNIDO). Se amplía el set de campos a extraer, se agrega lectura del historial interno del PDF (número de puntos variable), y se define el mecanismo de identificación de paciente en 3 capas: búsqueda por lista (nunca texto libre), pantalla de comparación que bloquea ante datos que no cuadran, y lista de IDs conocidos por paciente para admitir cambios de clínica o dispositivo sin perder la confirmación humana obligatoria |
 | 2026-08-27 | v2.0, se confirman datos de contacto y validación de mayúsculas. Se analiza la Historia Clínica actual (33 campos) contra un intake nutricional estándar, se identifican 6 vacíos (destaca antecedentes gineco-obstétricos, dada la especialidad) y una reorganización en 11 secciones, pendiente de aprobación para generar la versión nueva. Se diseña el follow-up de captura libre-guiada, ligado entre consultas. Se agrega el análisis de estudios de laboratorio: mismo mecanismo que InBody, cruza resultados contra alimentación, suplementos y medicamentos, solo advertencias accionables para la nutrióloga, nunca diagnóstico. Se aclara la regla crítica del SMAE (cálculo interno, nunca expuesto en crudo) y se confirma EASO como guía de referencia para obesidad |
 | 2026-08-27 | v2.1, logo recibido y confirmado (6 archivos PNG con transparencia, sin vector real pero de calidad suficiente). Se detectó y resolvió una discrepancia de tagline entre archivos ("Nutrición y Salud Hormonal" vs "Nutrición y Vida en Equilibrio"); queda vigente la primera. Se asigna cada archivo a su uso (encabezados, ícono cuadrado, elemento decorativo). Checklist de Michel completo salvo el correo de envío |
+| 2026-08-27 | v2.2, se documenta la estructura real del repo con la carpeta `assets/logo/` ya creada, y se anota la recomendación de quitar espacios de los nombres de archivo |
