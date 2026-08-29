@@ -1,6 +1,6 @@
 # Sistema Integral de Nutrición, Documento Maestro del Proyecto
 
-**Versión:** 2.7
+**Versión:** 3.0
 **Fecha:** 27 de agosto de 2026
 **Estado:** Fase 0 completa. Infraestructura lista. Guía de estilo cerrada. Recolección de material en curso.
 
@@ -150,7 +150,7 @@ Puntos clave:
 - [x] Su formato actual de intake. Compartido y analizado (Historia_Clínica.docx), rediseño en discusión, ver Fase 1
 - [x] PDFs de InBody de ejemplo. Recibidos 3 reportes reales de InBody370S (clínica UNIDO), base del diseño de extracción y del mecanismo de identificación de paciente
 - [x] Confirmar si trabaja con SMAE y qué guías clínicas respeta. SMAE es cálculo interno, nunca expuesto al paciente en crudo. Guía clínica de obesidad: EASO, como referencia, no protocolo estricto
-- [ ] Aviso de privacidad para datos de salud (obligatorio, LFPDPPP)
+- [x] Aviso de privacidad para datos de salud. Generado (`docs/Aviso_de_Privacidad.docx`) con base en la LFPDPPP vigente desde marzo 2025 (ley nueva, no la de 2010; autoridad ahora es la Secretaría Anticorrupción y Buen Gobierno tras la desaparición del INAI). Cubre datos recabados, finalidades, uso de IA como encargada del tratamiento con obligación de confidencialidad, transferencia internacional (servidor en EE.UU.), derechos ARCO, cláusula de plazos de conservación/bloqueo/supresión de datos, y bloque de consentimiento firmado. Datos completados: Lic. María Fernanda Utrilla Lack, domicilio en Av. Kepler 2143, Reserva Territorial Atlixcáyotl, Puebla. Pendientes: formato específico de solicitud ARCO (separado de este aviso), y revisión de un abogado especializado antes de uso real (el reglamento de la ley nueva aún no se publica)
 
 ### De Michel
 - [x] Crear cuenta de DigitalOcean y droplet. `sistema-nutricion`, Ubuntu 24.04, NYC1, IP `165.22.7.251`, $7.20 al mes con respaldo semanal activo
@@ -181,7 +181,8 @@ sistema-nutricion/
     ├── GUIA_DE_ESTILO.md
     ├── STYLE_SPEC.md
     ├── Historia_Clinica_v2.docx
-    └── KNOWLEDGEBASE.md
+    ├── KNOWLEDGEBASE.md
+    └── Aviso_de_Privacidad.docx
 ```
 
 **Nota de nomenclatura:** nombres de archivo sin espacios (guion bajo en su lugar), para evitar errores al referenciarlos desde código.
@@ -222,3 +223,6 @@ Las API keys nunca van al repo. Viven en un archivo `.env` local, ya cubierto po
 | 2026-08-28 | v2.5, dominio y correo resueltos: `mafernut.com` registrado y administrado en Cloudflare (DNS apunta al droplet), correo de envío resuelto con Hostinger Premium (ya incluido en el plan, conectado vía registros MX en el DNS de Cloudflare). El hosting compartido de Hostinger queda limitado exclusivamente al correo, la aplicación sigue viviendo solo en el droplet |
 | 2026-08-28 | v2.6, cuenta de correo `contacto@mafernut.com` creada y verificada en Hostinger (registro TXT confirmado en el DNS de Cloudflare). Checklist de infraestructura de Michel queda completo |
 | 2026-08-28 | v2.7, configuración de correo completada al 100%: agregados MX, SPF, 3 DKIM y DMARC en el DNS de Cloudflare (8 registros en total). Las 4 validaciones de Hostinger (recepción, antisuplantación, antispam, antiphishing) confirmadas en verde |
+| 2026-08-28 | v2.8, primer borrador del Aviso de Privacidad generado, verificando primero que la LFPDPPP cambió por completo en marzo de 2025 (ley nueva, no solo cambio de autoridad; INAI desaparecido, ahora Secretaría Anticorrupción y Buen Gobierno). Cubre datos sensibles de salud, uso de IA como encargada del tratamiento, transferencia internacional de datos, y derechos ARCO. Marcado como borrador pendiente de revisión legal profesional, ya que el reglamento de la ley nueva aún no existe |
+| 2026-08-28 | v2.9, Aviso de Privacidad completado con datos reales: nombre legal Lic. María Fernanda Utrilla Lack, domicilio del consultorio en Puebla, fecha de actualización 01 de septiembre de 2026. Sigue pendiente únicamente la revisión de un abogado especializado |
+| 2026-08-28 | v3.0, se agrega al Aviso de Privacidad la cláusula de plazos de conservación, bloqueo y supresión de datos (verificado que la ley nueva formaliza este ciclo en dos fases, no tres), y se refuerza la sección de IA con la obligación explícita de confidencialidad de los encargados del tratamiento. Queda pendiente, por separado, un formato específico de solicitud ARCO |
