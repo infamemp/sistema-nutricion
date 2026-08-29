@@ -88,6 +88,9 @@ pip install -r requirements.txt
 - [x] FastAPI + Uvicorn + Jinja2 + python-multipart instalados
 - [x] Primer `main.py` mínimo, verificado de extremo a extremo desde el navegador
 - [x] Diseño y creación de la base de datos SQLite: 8 tablas (`pacientes`, `historias_clinicas`, `mediciones_inbody`, `ids_inbody_conocidos`, `follow_ups`, `dietas_versiones`, `opciones_prescritas`, `laboratorios`), definidas en `models.py` con SQLAlchemy, creadas físicamente en `sistema_nutricion.db` vía `init_db.py`, verificadas con `sqlite3 .tables`
+- [ ] Novena tabla `citas` (agendar sin requerir Historia Clínica completa, campo `google_event_id` preparado para sincronización futura con Google Calendar, ver `docs/PROJECT_PLAN.md` Fase 1), diseñada, falta agregarla a `models.py` y recrear la base de datos
+- [ ] Formulario de alta rápida (datos básicos del paciente + agendar cita)
+- [ ] Formulario completo de Historia Clínica
 - [ ] Formulario digital de intake (basado en `Historia_Clinica_v2.docx`)
 - [ ] Formulario digital de follow-up (basado en `Follow_Up_v1.docx`)
 - [ ] Mecanismo de identificación de InBody en 3 capas (búsqueda por lista, pantalla de comparación, lista de IDs por paciente)
