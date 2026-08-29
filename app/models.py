@@ -25,6 +25,7 @@ class Paciente(Base):
     follow_ups = relationship("FollowUp", back_populates="paciente")
     dietas = relationship("DietaVersion", back_populates="paciente")
     laboratorios = relationship("Laboratorio", back_populates="paciente")
+    citas = relationship("Cita", back_populates="paciente")
 
 
 class HistoriaClinica(Base):
@@ -193,3 +194,18 @@ class Laboratorio(Base):
     analisis_ia = Column(Text)
 
     paciente = relationship("Paciente", back_populates="laboratorios")
+
+
+class Cita(Base):
+    __tablename__ = "citas"
+
+    id = Column(Integer, primary_key=True, index=True)
+    paciente_id = Column(Integer, ForeignKey("pacientes.id"), nullable=False)
+    fecha_hora = Column(DateTime, nullable=False)
+    tipo = Column(String, default="primera_consulta")
+    estado = Column(String, default="agendada")
+    notas_breves = Column(Text)
+    google_event_id = Column(String, nullable=True)
+    fecha_creacion = Column(DateTime, default=datetime.utcnow)
+
+    paciente = relationship("Paciente", back_populates="citas")
