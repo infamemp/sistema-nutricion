@@ -1,9 +1,9 @@
 # Guía de Estilo, Marifer Utrilla
 
-**Versión:** 1.0
-**Fecha:** 27 de agosto de 2026
+**Versión:** 1.1
+**Fecha:** 29 de agosto de 2026
 **Para:** referencia humana. La versión que lee la IA es `STYLE_SPEC.md` (inglés).
-**Base:** análisis de 22 documentos reales entregados a pacientes entre febrero y agosto de 2026.
+**Base:** análisis de 24 documentos reales entregados a pacientes entre febrero y agosto de 2026.
 
 ---
 
@@ -12,6 +12,8 @@
 **Firma:** Marifer Utrilla, Nutrición y Salud Hormonal
 **Especialidad:** obesidad, diabetes, resistencia a la insulina, SOP, endometriosis, salud hormonal, fertilidad, embarazo.
 **Paciente típico:** mujer adulta mexicana, con frecuencia referida por un ginecólogo, internista o especialista en fertilidad. También atiende hombres (fertilidad masculina) y pacientes en línea fuera de México.
+
+**Caso adicional confirmado:** mantenimiento y composición corporal (fuerza, pasos diarios, proteína alta), distinto de los casos de pérdida de peso o padecimiento específico que predominan en el resto del material.
 
 ### Colores
 
@@ -115,7 +117,7 @@ Nunca dice "un suplemento de magnesio". Dice cuál, cuánto, cuándo y dónde co
 
 taza, ½ taza, ⅓ taza, ¾ taza, ¼ taza, cda (cucharada), cdita (cucharadita), rebanada, pieza, paquetito, puñito, bowl, scoop, filete, medallón, chorrito.
 
-**Excepción, la proteína sí va en gramos:** "120 g", "150 g", "120 a 140 g", "80 g de queso panela", "meta: 120 g al día aprox".
+**Excepción, la proteína sí va en gramos:** "120 g", "150 g", "120 a 140 g", "80 g de queso panela", "meta: 120 g al día aprox". Puede llegar al nivel de detalle de una **meta diaria total** (ej. "120 g de proteína al día"), repartida en **porciones estándar** (ej. "4 porciones de 30 g"), con el gramaje aproximado por alimento cuando el caso lo amerita (objetivos de composición corporal). Esto no rompe la regla de "sin macros visibles", la proteína siempre fue la excepción.
 
 **Prohibido:** calorías, macros, porcentajes de macronutrientes. Ella nunca los muestra al paciente. No es un olvido, es una decisión de estilo.
 
@@ -177,6 +179,12 @@ Título grande, sin nombre de paciente. Es material reutilizable por condición 
 - Subtítulos en verde oscuro, no verde claro sobre blanco
 - Zona segura alrededor del logo, el texto nunca pasa por debajo
 
+### 5.3 Tres formatos de menú (no dos)
+
+- **Rejilla:** elige 1 de 4 opciones fijas por tiempo de comida.
+- **Cajitas:** elige 1 de cada columna (proteína, verdura, grasa, carbohidrato).
+- **Tabla libre por categoría** (confirmado ago 2026): tablas de "Alimento | Cantidad" separadas por Proteínas, Carbohidratos y Grasas. El paciente arma su plato combinando libremente, sin opciones predefinidas. Es, en esencia, una hoja de equivalencias personal entregada directo al paciente, útil sobre todo en casos de mantenimiento y composición corporal.
+
 ---
 
 ## 6. Bloques de contenido
@@ -202,6 +210,11 @@ Ella ya trabaja por bloques, solo que los copia a mano. El sistema los convierte
 | Condimentos libres | ninguno |
 | Progresión por semanas | duración, metas |
 | Valores de referencia | tipo de medición |
+| Metas diarias (resumen) | porciones de proteína, fruta, verdura, agua, ejercicio, pasos |
+| Tabla libre por categoría | proteínas/carbohidratos/grasas, meta de proteína total si aplica |
+| Combinaciones aditivas | dos o más alimentos que juntos completan una porción de proteína |
+
+**Colación flexible (confirmado ago 2026):** la colación no siempre es fija, puede usarse como espacio para completar lo que faltó en las comidas principales del día (una verdura, una grasa, un carbohidrato, o una proteína parcial vía yogurt o cottage).
 
 ### 6.2 La regla que evita el robot
 
@@ -247,3 +260,4 @@ Toda lámina lleva: fecha exacta, próxima cita, número de lámina ("2 de 4") y
 | Fecha | Cambio |
 |---|---|
 | 2026-08-27 | v1.0, primera versión a partir del análisis de 22 documentos reales |
+| 2026-08-29 | v1.1, se integran 2 documentos nuevos (Naomi, mantenimiento; Margarita, meta de proteína alta). Se agrega el tercer formato de menú (tabla libre por categoría), el bloque de metas diarias, la precisión sobre proteína total en gramos por porciones estándar, las combinaciones aditivas, la colación flexible, y el caso de mantenimiento/composición corporal |
