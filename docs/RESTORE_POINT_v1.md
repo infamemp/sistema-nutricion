@@ -49,6 +49,13 @@ Esto corre en primer plano en la terminal SSH. Si se cierra la sesión de SSH, e
 
 ## 2. Cómo retomar desde cero si hace falta
 
+**Nota de flujo de trabajo, aprendida en la práctica (29 ago 2026):** pegar bloques largos de código directamente en la terminal SSH **no es confiable**, PowerShell corta el pegado a media línea y corrompe el archivo (ocurrió dos veces con `models.py`). Métodos que sí funcionan:
+
+1. **`nano` (probado y confiable):** `nano -i archivo.py`, pegar con clic derecho o Ctrl+Shift+V, guardar con Ctrl+O y Enter, salir con Ctrl+X. La bandera `-i` desactiva el auto-indentado, que arruinaría el código de Python. Nano confirma abajo cuántas líneas escribió, lo que sirve de verificación inmediata
+2. **Vía GitHub (preferido a futuro):** subir el archivo al repo desde la computadora (donde copiar y pegar funciona sin límites) y hacer que el servidor lo descargue. Pendiente de configurar la autenticación del repo privado en el servidor
+
+Siempre verificar después de escribir un archivo con `wc -l archivo.py` y comparar contra el número esperado.
+
 Si el droplet se pierde o se necesita reconstruir el entorno desde cero:
 
 ```
@@ -88,7 +95,7 @@ pip install -r requirements.txt
 - [x] FastAPI + Uvicorn + Jinja2 + python-multipart instalados
 - [x] Primer `main.py` mínimo, verificado de extremo a extremo desde el navegador
 - [x] Diseño y creación de la base de datos SQLite: 8 tablas (`pacientes`, `historias_clinicas`, `mediciones_inbody`, `ids_inbody_conocidos`, `follow_ups`, `dietas_versiones`, `opciones_prescritas`, `laboratorios`), definidas en `models.py` con SQLAlchemy, creadas físicamente en `sistema_nutricion.db` vía `init_db.py`, verificadas con `sqlite3 .tables`
-- [ ] Novena tabla `citas` (agendar sin requerir Historia Clínica completa, campo `google_event_id` preparado para sincronización futura con Google Calendar, ver `docs/PROJECT_PLAN.md` Fase 1), diseñada, falta agregarla a `models.py` y recrear la base de datos
+- [x] Novena tabla `citas` creada (agendar sin requerir Historia Clínica completa, campo `google_event_id` preparado para sincronización futura con Google Calendar, ver `docs/PROJECT_PLAN.md` Fase 1). `models.py` ahora tiene 211 líneas y 9 tablas
 - [ ] Formulario de alta rápida (datos básicos del paciente + agendar cita)
 - [ ] Formulario completo de Historia Clínica
 - [ ] Formulario digital de intake (basado en `Historia_Clinica_v2.docx`)
@@ -154,3 +161,4 @@ pip install -r requirements.txt
 | 2026-08-28 | Entorno virtual creado, FastAPI y dependencias instaladas |
 | 2026-08-28 | Primer `main.py` de prueba, verificado funcionando desde navegador externo (`http://165.22.7.251:8000`) |
 | 2026-08-29 | Base de datos SQLite creada: 8 tablas definidas en `models.py`, generadas físicamente vía `init_db.py`, verificadas con `sqlite3` |
+| 2026-08-29 | Novena tabla `citas` agregada (211 líneas en `models.py`, 9 tablas en total). Se descubre que pegar código largo por SSH corrompe archivos; se adopta `nano -i` como método confiable, documentado en la sección 2 |
