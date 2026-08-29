@@ -1,6 +1,6 @@
 # Sistema Integral de Nutrición, Documento Maestro del Proyecto
 
-**Versión:** 2.4
+**Versión:** 2.7
 **Fecha:** 27 de agosto de 2026
 **Estado:** Fase 0 completa. Infraestructura lista. Guía de estilo cerrada. Recolección de material en curso.
 
@@ -27,7 +27,8 @@ Plataforma web para **Marifer Utrilla, Nutrición y Salud Hormonal**, nutriólog
 | Motor de IA, redacción | **Claude API (Anthropic)** | Solo documentos para humanos: dieta final, recomendaciones, carta al médico. Redacta sobre el plan ya resuelto por Gemini. Costo estimado $2 a $5 USD/mes |
 | Base de datos | **SQLite** (un solo archivo) | Gratis, no es un servicio contratado. Suficiente para el volumen actual, encaja natural con el respaldo nocturno a Google Drive |
 | Base de alimentos | **OpenFoodFacts** (gratuita, abierta, sin key) | FatSecret queda como mejora posterior (acceso restringido por región) |
-| Dominio y correo | Permanecen en el **Hostinger Premium** actual | El dominio apunta al droplet, el hosting compartido no se usa para la app |
+| Dominio | **mafernut.com**, registrado y administrado en **Cloudflare** | El DNS (registro A) apunta al droplet de DigitalOcean, para que la app sea accesible en ese dominio |
+| Correo de envío | **contacto@mafernut.com**, cuenta activa en Hostinger, DNS completo | 8 registros en el DNS de Cloudflare: verificación TXT, 2 MX (mx1/mx2.hostinger.com, prioridad 5/10), SPF, 3 CNAME de DKIM (a/b/c), y DMARC (`p=none`). Las 4 validaciones de Hostinger (recepción, SPF, DKIM, DMARC) confirmadas en verde. El hosting compartido de Hostinger sigue sin usarse para la aplicación, únicamente para el correo |
 | Idiomas | Español (México) por defecto, inglés disponible | Alimentación, ingredientes y lenguaje adaptados a Puebla |
 | InBody | **Opcional por paciente** (interruptor con o sin InBody) | Solo disponible para pacientes atendidos en UniDO. Sin InBody, captura manual de peso y medidas |
 
@@ -157,7 +158,7 @@ Puntos clave:
 - [x] Obtener API key de Anthropic (solo redacción)
 - [x] Crear repo de GitHub del proyecto (privado, con .gitignore de Python)
 - [x] Subir la documentación al repo en `docs/`
-- [ ] Definir correo de envío. **Pendiente de confirmar con la nutrióloga:** opción A, crear correo con su dominio en Hostinger (más profesional, requiere configurar SMTP), opción B, usar su Gmail actual ya configurado como nutrióloga (más simple, remitente genérico)
+- [x] Definir correo de envío. Completado y verificado al 100%: `contacto@mafernut.com` en Hostinger, con los 8 registros DNS correctos en Cloudflare (MX, SPF, DKIM, DMARC, verificación) y las 4 validaciones de Hostinger en verde
 
 ---
 
@@ -218,3 +219,6 @@ Las API keys nunca van al repo. Viven en un archivo `.env` local, ya cubierto po
 | 2026-08-27 | v2.2, se documenta la estructura real del repo con la carpeta `assets/logo/` ya creada, y se anota la recomendación de quitar espacios de los nombres de archivo |
 | 2026-08-27 | v2.3, Historia Clínica aprobada: se genera `Historia_Clinica_v2.docx` con las 11 secciones (incluye antecedentes heredofamiliares, gineco-obstétricos, historia de peso y objetivos, antes ausentes). Se aclara que este Word es la especificación de contenido, no el formulario final, el cual se construirá interactivo dentro de la app en la Fase 1. Se deja explícito que los campos seguirán ajustándose con el uso real |
 | 2026-08-27 | v2.4, Knowledgebase clínica aprobada: 17 fuentes analizadas y clasificadas por nivel de autoridad en `docs/KNOWLEDGEBASE.md`. Se investigó a fondo un caso de dos autoras de perfil similar sin título médico; una se excluyó por conflicto de interés comercial y errores señalados por dietistas registrados, otra se incluyó con nivel ajustado por tener respaldo académico verificable. Se documenta el procedimiento de 4 preguntas para que el motor de IA evalúe cualquier fuente nueva que encuentre en la web. Se confirma la menopausia como área de expansión futura de la práctica |
+| 2026-08-28 | v2.5, dominio y correo resueltos: `mafernut.com` registrado y administrado en Cloudflare (DNS apunta al droplet), correo de envío resuelto con Hostinger Premium (ya incluido en el plan, conectado vía registros MX en el DNS de Cloudflare). El hosting compartido de Hostinger queda limitado exclusivamente al correo, la aplicación sigue viviendo solo en el droplet |
+| 2026-08-28 | v2.6, cuenta de correo `contacto@mafernut.com` creada y verificada en Hostinger (registro TXT confirmado en el DNS de Cloudflare). Checklist de infraestructura de Michel queda completo |
+| 2026-08-28 | v2.7, configuración de correo completada al 100%: agregados MX, SPF, 3 DKIM y DMARC en el DNS de Cloudflare (8 registros en total). Las 4 validaciones de Hostinger (recepción, antisuplantación, antispam, antiphishing) confirmadas en verde |
