@@ -21,19 +21,20 @@
 **Paquetes instalados** (ver `requirements.txt` en el repo para la lista exacta con versiones):
 fastapi, uvicorn[standard], jinja2, python-multipart, y sus dependencias.
 
-**Código actual:** `main.py`, una aplicación mínima de prueba:
+**Código actual:** `main.py` (85 líneas) con las rutas del primer módulo funcional:
 
-```python
-from fastapi import FastAPI
+| Ruta | Método | Qué hace |
+|---|---|---|
+| `/` | GET | Muestra el formulario de alta rápida |
+| `/pacientes/nuevo` | GET | Mismo formulario, ruta alterna |
+| `/pacientes/alta` | POST | Guarda el paciente y, si se llenó fecha, crea también la cita |
+| `/pacientes` | GET | Lista todos los pacientes registrados |
 
-app = FastAPI()
+**Plantillas en `templates/`:** `alta_rapida.html` (123 líneas, formulario con secciones de datos del paciente y agendar cita) y `lista_pacientes.html` (53 líneas, tabla de pacientes). Ambas usan Tailwind vía CDN y la paleta verde de la marca.
 
-@app.get("/")
-def inicio():
-    return {"mensaje": "El sistema de Marifer está funcionando"}
-```
+**Verificado de extremo a extremo (29 ago 2026):** se dio de alta un paciente de prueba con cita agendada, apareció el mensaje de confirmación, y el registro se muestra correctamente en la lista de pacientes. Ciclo completo capturar → guardar → consultar funcionando.
 
-**Verificado:** accesible desde un navegador externo en `http://165.22.7.251:8000`, mostrando el mensaje de prueba correctamente. Confirma que la cadena completa funciona: servidor, Python, FastAPI, firewall, y acceso externo.
+**Nota técnica importante:** las versiones actuales de FastAPI cambiaron la sintaxis de `TemplateResponse`. La forma correcta es `templates.TemplateResponse(request, "archivo.html", {...})`, con el `request` como primer argumento. La forma antigua (`TemplateResponse("archivo.html", {"request": request, ...})`) produce el error `TypeError: unhashable type: 'dict'`.
 
 **Cómo se ejecuta hoy** (modo de desarrollo, manual, no automático):
 ```
@@ -96,7 +97,8 @@ pip install -r requirements.txt
 - [x] Primer `main.py` mínimo, verificado de extremo a extremo desde el navegador
 - [x] Diseño y creación de la base de datos SQLite: 8 tablas (`pacientes`, `historias_clinicas`, `mediciones_inbody`, `ids_inbody_conocidos`, `follow_ups`, `dietas_versiones`, `opciones_prescritas`, `laboratorios`), definidas en `models.py` con SQLAlchemy, creadas físicamente en `sistema_nutricion.db` vía `init_db.py`, verificadas con `sqlite3 .tables`
 - [x] Novena tabla `citas` creada (agendar sin requerir Historia Clínica completa, campo `google_event_id` preparado para sincronización futura con Google Calendar, ver `docs/PROJECT_PLAN.md` Fase 1). `models.py` ahora tiene 211 líneas y 9 tablas
-- [ ] Formulario de alta rápida (datos básicos del paciente + agendar cita)
+- [x] Formulario de alta rápida (datos básicos del paciente + agendar cita), funcionando y verificado
+- [x] Lista de pacientes, funcionando
 - [ ] Formulario completo de Historia Clínica
 - [ ] Formulario digital de intake (basado en `Historia_Clinica_v2.docx`)
 - [ ] Formulario digital de follow-up (basado en `Follow_Up_v1.docx`)
@@ -162,3 +164,4 @@ pip install -r requirements.txt
 | 2026-08-28 | Primer `main.py` de prueba, verificado funcionando desde navegador externo (`http://165.22.7.251:8000`) |
 | 2026-08-29 | Base de datos SQLite creada: 8 tablas definidas en `models.py`, generadas físicamente vía `init_db.py`, verificadas con `sqlite3` |
 | 2026-08-29 | Novena tabla `citas` agregada (211 líneas en `models.py`, 9 tablas en total). Se descubre que pegar código largo por SSH corrompe archivos; se adopta `nano -i` como método confiable, documentado en la sección 2 |
+| 2026-08-29 | Primer módulo funcional completo: formulario de alta rápida de paciente con agendado de cita, más lista de pacientes. Verificado de extremo a extremo con un registro de prueba. Se corrige la sintaxis de `TemplateResponse` para FastAPI moderno |
