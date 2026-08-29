@@ -1,6 +1,6 @@
 # Sistema Integral de Nutrición, Documento Maestro del Proyecto
 
-**Versión:** 3.1
+**Versión:** 3.2
 **Fecha:** 27 de agosto de 2026
 **Estado:** Fase 0 completa. Infraestructura lista. Guía de estilo cerrada. Recolección de material en curso.
 
@@ -41,7 +41,7 @@ Proveedores evaluados y descartados para el VPS: Hostinger KVM (precio promocion
 1. **Base de datos de pacientes.** Historias clínicas, perfil, mediciones, historial de citas y dietas. Dinámica, consultable por la IA, versionada.
 2. **Captura de información.** Plantilla de intake inicial y plantilla de follow-up, optimizadas para tablet.
 3. **Motor de IA nutricional.** Genera la dieta sugerida a partir de: expediente del paciente, knowledgebase, y búsqueda web controlada con lista blanca. Prohibido: redes sociales, influencers, modas sin sustento.
-4. **Knowledgebase.** Fuente de verdad: guías clínicas por padecimiento, SMAE, alimentación mexicana, base de alimentos vía API.
+4. **Knowledgebase.** Fuente de verdad: guías clínicas por padecimiento, Tabla de Equivalencias Nutrimentales propia, alimentación mexicana, base de alimentos vía API.
 5. **Flujo de aprobación y entrega.** La IA propone, la nutrióloga revisa, un clic aprueba, se genera el PDF y se envía por correo.
 6. **Portal del paciente** (fase posterior). El paciente ve su dieta y avance en la web, con pagos en línea.
 7. **La plataforma.** La envoltura: una sola interfaz web sencilla, responsiva, doble clic y a trabajar.
@@ -76,7 +76,7 @@ Stack, servidor, IA, base de alimentos, alcance, identidad visual y guía de est
 ### Fase 2, Knowledgebase y base de alimentos
 - **Guías clínicas por padecimiento, APROBADAS.** 17 fuentes (19 recibidas, 1 excluida) cubriendo obesidad, diabetes tipo 2, RI, SOP, endometriosis, fertilidad, embarazo, salud hormonal general, menopausia (área de expansión futura) y recetario para pacientes con GLP-1. Inventario completo, nivel de autoridad de cada fuente y criterio de evaluación en `docs/KNOWLEDGEBASE.md`
 - **Procedimiento de evaluación de fuentes nuevas para búsquedas web del motor de IA**, documentado a partir de un caso real: se investigó y comparó a dos autoras de perfil similar (ambas sin título médico, ambas con libros exitosos): una se excluyó (evidencia de errores señalados por dietistas registrados, conflicto de interés comercial activo con un suplemento propio) y otra se incluyó con nivel ajustado (respaldo de una reseña académica publicada por una ginecobstetra en una revista revisada por pares). El criterio de 4 preguntas queda documentado en `docs/KNOWLEDGEBASE.md` sección 5, y debe aplicarse cada vez que el motor evalúe una fuente nueva encontrada en la web
-- **SMAE** (Sistema Mexicano de Alimentos Equivalentes) como pilar de cálculo interno. Un solo archivo `smae.json` plano, organizado por categorías, que se lee completo desde Python y se inyecta en el prompt de Gemini. Nada de tablas relacionales complejas, así la IA no inventa porciones inexistentes. **Regla crítica confirmada:** el SMAE es una herramienta de cálculo para que la nutrióloga decida cuántos equivalentes prescribir, nunca se expone al paciente en su forma cruda. El sistema de equivalencias, tomado literal, permitiría sustituir un carbohidrato por una dona de chocolate del mismo peso en gramos, y eso jamás debe llegar como sugerencia visible. El SMAE informa el cálculo, la IA redacta solo alimentos reales y apropiados
+- **Tabla de Equivalencias Nutrimentales (TEN), decisión final.** Se descartó usar el SMAE directamente: es una publicación protegida por derechos de autor de Fomento de Nutrición y Salud, A.C., y aunque Marifer posee un ejemplar comprado legítimamente, eso da derecho a usarlo con su criterio clínico para escribir dietas, no a digitalizar su compilación específica dentro de un producto de software. En su lugar, se construye una tabla propia (mismo método general de "alimentos equivalentes", categorías y valores de referencia de ciencia nutricional de dominio público, confirmados por estar publicados de forma independiente en múltiples fuentes sin relación entre sí) más datos de OpenFoodFacts para alimentos mexicanos específicos. Diseño completo en `docs/TABLA_DE_EQUIVALENCIAS.md`. Nombrada distinto a SMAE para evitar confusión de marca; el archivo técnico será `tabla_equivalencias.json`, no `smae.json`. **Regla crítica sin cambios:** cálculo interno para que la nutrióloga decida cuántos equivalentes prescribir, nunca expuesta al paciente en crudo. La construcción del archivo real con alimentos mexicanos poblados queda pendiente para el código de la Fase 2
 - **Guía clínica de referencia:** EASO (European Association for the Study of Obesity) para obesidad, usada como marco de referencia, no como protocolo estricto de seguir al pie de la letra. Otras guías por padecimiento (diabetes, RI, SOP, endometriosis, fertilidad, GLP-1) pendientes de definir con la nutrióloga
 - **Biblioteca de bloques de contenido** (15 bloques identificados, ver `GUIA_DE_ESTILO.md` sección 6)
 - **Valores clínicos de referencia** ya recuperados de su material: rangos de glucosa en ayunas, preprandial, posprandial 1h y 2h, nocturna, y HbA1c
@@ -149,7 +149,7 @@ Puntos clave:
 - [x] Validar el cambio de mayúsculas. Validado
 - [x] Su formato actual de intake. Compartido y analizado (Historia_Clínica.docx), rediseño en discusión, ver Fase 1
 - [x] PDFs de InBody de ejemplo. Recibidos 3 reportes reales de InBody370S (clínica UNIDO), base del diseño de extracción y del mecanismo de identificación de paciente
-- [x] Confirmar si trabaja con SMAE y qué guías clínicas respeta. SMAE es cálculo interno, nunca expuesto al paciente en crudo. Guía clínica de obesidad: EASO, como referencia, no protocolo estricto
+- [x] Confirmar si trabaja con SMAE y qué guías clínicas respeta. Usaba el SMAE comprado como referencia personal; el sistema no lo digitaliza (ver decisión de la Tabla de Equivalencias Nutrimentales propia en la Fase 2). Guía clínica de obesidad: EASO, como referencia, no protocolo estricto
 - [x] Aviso de privacidad para datos de salud. Generado (`docs/Aviso_de_Privacidad.docx`) con base en la LFPDPPP vigente desde marzo 2025 (ley nueva, no la de 2010; autoridad ahora es la Secretaría Anticorrupción y Buen Gobierno tras la desaparición del INAI). Cubre datos recabados, finalidades, uso de IA como encargada del tratamiento con obligación de confidencialidad, transferencia internacional (servidor en EE.UU.), derechos ARCO, cláusula de plazos de conservación/bloqueo/supresión de datos, y bloque de consentimiento firmado. Datos completados: Lic. María Fernanda Utrilla Lack, domicilio en Av. Kepler 2143, Reserva Territorial Atlixcáyotl, Puebla. Pendientes: formato específico de solicitud ARCO (separado de este aviso), y revisión de un abogado especializado antes de uso real (el reglamento de la ley nueva aún no se publica)
 
 ### De Michel
@@ -183,6 +183,7 @@ sistema-nutricion/
     ├── Historia_Clinica_v2.docx
     ├── Follow_Up_v1.docx
     ├── KNOWLEDGEBASE.md
+    ├── TABLA_DE_EQUIVALENCIAS.md
     └── Aviso_de_Privacidad.docx
 ```
 
@@ -228,3 +229,4 @@ Las API keys nunca van al repo. Viven en un archivo `.env` local, ya cubierto po
 | 2026-08-28 | v2.9, Aviso de Privacidad completado con datos reales: nombre legal Lic. María Fernanda Utrilla Lack, domicilio del consultorio en Puebla, fecha de actualización 01 de septiembre de 2026. Sigue pendiente únicamente la revisión de un abogado especializado |
 | 2026-08-28 | v3.0, se agrega al Aviso de Privacidad la cláusula de plazos de conservación, bloqueo y supresión de datos (verificado que la ley nueva formaliza este ciclo en dos fases, no tres), y se refuerza la sección de IA con la obligación explícita de confidencialidad de los encargados del tratamiento. Queda pendiente, por separado, un formato específico de solicitud ARCO |
 | 2026-08-28 | v3.1, Follow-up aprobado: se genera `Follow_Up_v1.docx` con captura libre-guiada organizada en 5 secciones, incluyendo porcentaje de apego al plan, promedio de días de ejercicio, y mediciones alineadas con los campos reales del InBody (peso, IMC, porcentaje de grasa, masa grasa en kg, MME, grasa visceral). Se aclara que el número de consulta es automático, asignado por el sistema. Con esto queda cerrada toda la planeación de contenido de la Fase 1, salvo el SMAE, en pausa hasta contar con la fuente real de equivalencias |
+| 2026-08-28 | v3.2, decisión final sobre equivalencias: se descarta usar el SMAE real (protegido por derechos de autor, incluso siendo un ejemplar comprado legítimamente por Marifer, la compra da derecho de uso profesional pero no de digitalizar la compilación dentro de un producto de software). Se construye una Tabla de Equivalencias Nutrimentales propia, con nombre distinto para evitar confusión de marca, basada en valores de ciencia nutricional de dominio público (verificados por estar publicados de forma independiente en múltiples fuentes) más OpenFoodFacts. Diseño completo en `docs/TABLA_DE_EQUIVALENCIAS.md`. Se identifica que la cuenta de OpenFoodFacts de Michel puede usarse para contribuir alimentos mexicanos faltantes a la base de datos abierta. Con esto, toda la planeación de contenido de la Fase 1 y las decisiones clave de la Fase 2 quedan cerradas |
