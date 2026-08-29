@@ -1,6 +1,6 @@
 # Sistema Integral de Nutrición, Documento Maestro del Proyecto
 
-**Versión:** 3.2
+**Versión:** 3.3
 **Fecha:** 27 de agosto de 2026
 **Estado:** Fase 0 completa. Infraestructura lista. Guía de estilo cerrada. Recolección de material en curso.
 
@@ -55,7 +55,9 @@ Regla de oro: **no se avanza de fase hasta que la nutrióloga use y apruebe la a
 ### Fase 0, Cimientos y decisiones. COMPLETA
 Stack, servidor, IA, base de alimentos, alcance, identidad visual y guía de estilo.
 
-### Fase 1, Base de datos y plantillas
+### Fase 1, Base de datos y plantillas 🔵 EN CURSO (arrancada 28 ago 2026, ver `docs/RESTORE_POINT_v1.md`)
+- [x] Droplet preparado: Python 3.12.3, entorno virtual en `/opt/sistema-nutricion/venv`, FastAPI/Uvicorn/Jinja2/python-multipart instalados
+- [x] Primer `main.py` mínimo, verificado de extremo a extremo (servidor, firewall, navegador externo)
 - Estructura de pacientes y expedientes
 - **Historia Clínica (intake inicial), APROBADA.** Rediseño de las 33 preguntas originales en 11 secciones, documento de referencia en `docs/Historia_Clinica_v2.docx`. Es la especificación de contenido, no el formulario final: en esta fase se construye como formulario interactivo dentro de la app (campos de texto, menús desplegables donde aplique, casillas sí/no, navegable por sección, pensado para tablet). Se espera seguir ajustando campos con el uso real, sin problema. Secciones: datos generales, objetivos y expectativas, antecedentes heredofamiliares, antecedentes personales patológicos, antecedentes gineco-obstétricos, historia de peso, revisión de síntomas, alergias/intolerancias/preferencias (separadas), hábitos alimentarios, actividad física/sueño/hábitos, suplementos/medicamentos/laboratorios
 - **Follow-up, APROBADO.** Documento de referencia en `docs/Follow_Up_v1.docx`, mismo tratamiento que la Historia Clínica (especificación de contenido, no el formulario final). Secciones: datos de la consulta (número de consulta automático, asignado por el sistema, nunca tecleado), continuidad del plan anterior (porcentaje de apego, promedio de días de ejercicio, qué le gustó/no le gustó, cambios que hizo, en qué puede mejorar), estatus médico y tratamiento, medición de hoy (peso, IMC, porcentaje de grasa, masa grasa en kg, MME, grasa visceral, alineado con los campos que ya extrae el InBody), y notas y ajustes acordados para el siguiente periodo. Sin plantilla rígida por diseño, la mayoría queda como texto libre guiado. Cada follow-up queda ligado al anterior en el expediente, para alimentar el resumen pre-consulta automático de la Fase 3. Se espera seguir ajustando campos con el uso real, sin problema
@@ -166,6 +168,9 @@ Puntos clave:
 
 ```
 sistema-nutricion/
+├── app/
+│   └── main.py
+├── requirements.txt
 ├── README.md
 ├── .gitignore
 ├── assets/
@@ -184,7 +189,8 @@ sistema-nutricion/
     ├── Follow_Up_v1.docx
     ├── KNOWLEDGEBASE.md
     ├── TABLA_DE_EQUIVALENCIAS.md
-    └── Aviso_de_Privacidad.docx
+    ├── Aviso_de_Privacidad.docx
+    └── RESTORE_POINT_v1.md
 ```
 
 **Nota de nomenclatura:** nombres de archivo sin espacios (guion bajo en su lugar), para evitar errores al referenciarlos desde código.
@@ -230,3 +236,4 @@ Las API keys nunca van al repo. Viven en un archivo `.env` local, ya cubierto po
 | 2026-08-28 | v3.0, se agrega al Aviso de Privacidad la cláusula de plazos de conservación, bloqueo y supresión de datos (verificado que la ley nueva formaliza este ciclo en dos fases, no tres), y se refuerza la sección de IA con la obligación explícita de confidencialidad de los encargados del tratamiento. Queda pendiente, por separado, un formato específico de solicitud ARCO |
 | 2026-08-28 | v3.1, Follow-up aprobado: se genera `Follow_Up_v1.docx` con captura libre-guiada organizada en 5 secciones, incluyendo porcentaje de apego al plan, promedio de días de ejercicio, y mediciones alineadas con los campos reales del InBody (peso, IMC, porcentaje de grasa, masa grasa en kg, MME, grasa visceral). Se aclara que el número de consulta es automático, asignado por el sistema. Con esto queda cerrada toda la planeación de contenido de la Fase 1, salvo el SMAE, en pausa hasta contar con la fuente real de equivalencias |
 | 2026-08-28 | v3.2, decisión final sobre equivalencias: se descarta usar el SMAE real (protegido por derechos de autor, incluso siendo un ejemplar comprado legítimamente por Marifer, la compra da derecho de uso profesional pero no de digitalizar la compilación dentro de un producto de software). Se construye una Tabla de Equivalencias Nutrimentales propia, con nombre distinto para evitar confusión de marca, basada en valores de ciencia nutricional de dominio público (verificados por estar publicados de forma independiente en múltiples fuentes) más OpenFoodFacts. Diseño completo en `docs/TABLA_DE_EQUIVALENCIAS.md`. Se identifica que la cuenta de OpenFoodFacts de Michel puede usarse para contribuir alimentos mexicanos faltantes a la base de datos abierta. Con esto, toda la planeación de contenido de la Fase 1 y las decisiones clave de la Fase 2 quedan cerradas |
+| 2026-08-28 | v3.3, arranca la Fase 1: se decide Python 3.12 (el que trae el droplet, no la 3.14 local) para evitar un paso de instalación innecesario. Servidor preparado con entorno virtual, FastAPI y dependencias. Primer `main.py` de prueba verificado de extremo a extremo desde un navegador externo. Se pierde y se resetea la contraseña root del droplet durante la sesión. Se genera `docs/RESTORE_POINT_v1.md` con el estado exacto del servidor, cómo reconstruirlo desde cero, y un checklist completo de todo el proyecto (hecho y pendiente, las 7 fases). Se agregan `app/main.py` y `requirements.txt` a la estructura del repo |
