@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Request, Form, Depends
+from fastapi import FastAPI, Request, Form, Depends, HTTPException
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
@@ -82,4 +82,31 @@ def lista_pacientes(request: Request, db: Session = Depends(get_db)):
     pacientes = db.query(models.Paciente).order_by(models.Paciente.id.desc()).all()
     return templates.TemplateResponse(
         request, "lista_pacientes.html", {"pacientes": pacientes}
+    )
+
+
+@app.get("/pacientes/{paciente_id}", response_class=HTMLResponse)
+def ver_expediente(paciente_id: int, request: Request, db: Session = Depends(get_db)):
+    paciente = db.query(models.Paciente).filter(models.Paciente.id == paciente_id).first()
+
+    if not paciente:
+        raise HTTPException(status_code=404, detail="Paciente no encontrado")
+
+    citas = (
+        db.query(models.Cita)
+        .filter(models.Cita.paciente_id == paciente_id)
+        .order_by(models.Cita.fecha_hora.desc())
+        .all()
+    )
+
+    historia = (
+        db.query(models.HistoriaClinica)
+        .filter(models.HistoriaClinica.paciente_id == paciente_id)
+        .first()
+    )
+
+    return templates.TemplateResponse(
+        request,
+        "expediente.html",
+        {"paciente": paciente, "citas": citas, "historia": historia},
     )

@@ -28,9 +28,12 @@ fastapi, uvicorn[standard], jinja2, python-multipart, y sus dependencias.
 | `/` | GET | Muestra el formulario de alta rápida |
 | `/pacientes/nuevo` | GET | Mismo formulario, ruta alterna |
 | `/pacientes/alta` | POST | Guarda el paciente y, si se llenó fecha, crea también la cita |
-| `/pacientes` | GET | Lista todos los pacientes registrados |
+| `/pacientes` | GET | Lista todos los pacientes registrados, con nombres clicables |
+| `/pacientes/{id}` | GET | Vista de expediente: datos de contacto, citas con su estado, y estado de la historia clínica |
 
-**Plantillas en `templates/`:** `alta_rapida.html` (123 líneas, formulario con secciones de datos del paciente y agendar cita) y `lista_pacientes.html` (53 líneas, tabla de pacientes). Ambas usan Tailwind vía CDN y la paleta verde de la marca.
+**Plantillas en `templates/`:** `alta_rapida.html` (123 líneas, formulario de alta con secciones de datos del paciente y agendar cita), `lista_pacientes.html` (57 líneas, tabla con nombres enlazados al expediente) y `expediente.html` (100 líneas, vista de expediente que combina datos de tres tablas distintas en una sola pantalla). Todas usan Tailwind vía CDN y la paleta verde de la marca.
+
+**Nota de diseño validada en la práctica:** el expediente demuestra el principio de "separados por dentro, juntos cuando hace falta verlos". Los datos del paciente, sus citas y el estado de su historia clínica viven en tablas distintas, pero se presentan unificados en una sola vista continua.
 
 **Verificado de extremo a extremo (29 ago 2026):** se dio de alta un paciente de prueba con cita agendada, apareció el mensaje de confirmación, y el registro se muestra correctamente en la lista de pacientes. Ciclo completo capturar → guardar → consultar funcionando.
 
@@ -127,6 +130,7 @@ pip install -r requirements.txt
 - [x] Novena tabla `citas` creada (agendar sin requerir Historia Clínica completa, campo `google_event_id` preparado para sincronización futura con Google Calendar, ver `docs/PROJECT_PLAN.md` Fase 1). `models.py` ahora tiene 211 líneas y 9 tablas
 - [x] Formulario de alta rápida (datos básicos del paciente + agendar cita), funcionando y verificado
 - [x] Lista de pacientes, funcionando
+- [x] Vista de expediente del paciente (datos de contacto, citas con estado, estado de historia clínica), funcionando
 - [ ] Pantalla de gestión de citas: ver, reagendar (cancelar la anterior y crear nueva, dejando registro), cancelar, marcar asistencia
 - [ ] Formulario completo de Historia Clínica
 - [ ] Formulario digital de intake (basado en `Historia_Clinica_v2.docx`)
@@ -195,3 +199,4 @@ pip install -r requirements.txt
 | 2026-08-29 | Novena tabla `citas` agregada (211 líneas en `models.py`, 9 tablas en total). Se descubre que pegar código largo por SSH corrompe archivos; se adopta `nano -i` como método confiable, documentado en la sección 2 |
 | 2026-08-29 | Primer módulo funcional completo: formulario de alta rápida de paciente con agendado de cita, más lista de pacientes. Verificado de extremo a extremo con un registro de prueba. Se corrige la sintaxis de `TemplateResponse` para FastAPI moderno |
 | 2026-08-29 | Aplicación convertida en servicio permanente de systemd (`sistema-nutricion.service`). Arranca automáticamente con el servidor, sobrevive al cierre de SSH, se reinicia solo si falla. Verificado cerrando la terminal. Nuevo flujo: cada cambio de código requiere `systemctl restart sistema-nutricion` |
+| 2026-08-29 | Vista de expediente del paciente construida y verificada. Combina en una sola pantalla los datos del paciente, sus citas (con etiqueta de estado por color) y el estado de su historia clínica, leyendo de tres tablas distintas |

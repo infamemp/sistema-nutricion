@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ paciente.nombre_completo }}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-green-50 min-h-screen">
+
+    <div class="max-w-3xl mx-auto p-6">
+
+        <div class="mb-4">
+            <a href="/pacientes" class="text-sm text-green-700 hover:underline">&larr; Volver a pacientes</a>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-sm p-6 mb-6">
+            <h1 class="text-2xl font-medium text-green-800">{{ paciente.nombre_completo }}</h1>
+            <p class="text-sm text-gray-500 mt-1">
+                Paciente desde {{ paciente.fecha_alta.strftime('%d/%m/%Y') if paciente.fecha_alta else 'fecha no registrada' }}
+            </p>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-sm p-6 mb-6">
+            <h2 class="text-lg font-medium text-green-700 border-b border-green-200 pb-2 mb-4">Datos de contacto</h2>
+
+            <dl class="grid grid-cols-2 gap-x-6 gap-y-4 text-sm">
+                <div>
+                    <dt class="text-gray-500">Celular</dt>
+                    <dd class="text-gray-800 mt-0.5">{{ paciente.celular or 'No registrado' }}</dd>
+                </div>
+                <div>
+                    <dt class="text-gray-500">Correo electrónico</dt>
+                    <dd class="text-gray-800 mt-0.5">{{ paciente.correo_electronico or 'No registrado' }}</dd>
+                </div>
+                <div>
+                    <dt class="text-gray-500">Fecha de nacimiento</dt>
+                    <dd class="text-gray-800 mt-0.5">
+                        {{ paciente.fecha_nacimiento.strftime('%d/%m/%Y') if paciente.fecha_nacimiento else 'No registrada' }}
+                    </dd>
+                </div>
+                <div>
+                    <dt class="text-gray-500">Sexo</dt>
+                    <dd class="text-gray-800 mt-0.5">{{ paciente.sexo or 'No especificado' }}</dd>
+                </div>
+                <div class="col-span-2">
+                    <dt class="text-gray-500">Referido por</dt>
+                    <dd class="text-gray-800 mt-0.5">{{ paciente.referido_por or 'No registrado' }}</dd>
+                </div>
+                <div class="col-span-2">
+                    <dt class="text-gray-500">Motivo de la consulta</dt>
+                    <dd class="text-gray-800 mt-0.5">{{ paciente.motivo_consulta or 'No registrado' }}</dd>
+                </div>
+            </dl>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-sm p-6 mb-6">
+            <h2 class="text-lg font-medium text-green-700 border-b border-green-200 pb-2 mb-4">Citas</h2>
+
+            {% if citas %}
+            <ul class="space-y-3">
+                {% for c in citas %}
+                <li class="flex items-center justify-between text-sm border-b border-gray-100 pb-3 last:border-0 last:pb-0">
+                    <div>
+                        <p class="text-gray-800">{{ c.fecha_hora.strftime('%d/%m/%Y a las %H:%M') }}</p>
+                        {% if c.notas_breves %}
+                        <p class="text-gray-500 text-xs mt-0.5">{{ c.notas_breves }}</p>
+                        {% endif %}
+                    </div>
+                    <span class="text-xs px-2 py-1 rounded-full
+                        {% if c.estado == 'cancelada' %}bg-gray-100 text-gray-600
+                        {% elif c.estado == 'completada' %}bg-green-100 text-green-700
+                        {% else %}bg-blue-50 text-blue-700{% endif %}">
+                        {{ c.estado }}
+                    </span>
+                </li>
+                {% endfor %}
+            </ul>
+            {% else %}
+            <p class="text-sm text-gray-500">Sin citas registradas.</p>
+            {% endif %}
+        </div>
+
+        <div class="bg-white rounded-xl shadow-sm p-6">
+            <h2 class="text-lg font-medium text-green-700 border-b border-green-200 pb-2 mb-4">Historia clínica</h2>
+
+            {% if historia %}
+            <p class="text-sm text-gray-600">
+                Registrada. Última actualización:
+                {{ historia.fecha_actualizacion.strftime('%d/%m/%Y') if historia.fecha_actualizacion else 'sin fecha' }}
+            </p>
+            {% else %}
+            <p class="text-sm text-gray-500">Todavía no se ha llenado la historia clínica de este paciente.</p>
+            {% endif %}
+        </div>
+
+    </div>
+
+</body>
+</html>
