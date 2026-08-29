@@ -36,13 +36,41 @@ fastapi, uvicorn[standard], jinja2, python-multipart, y sus dependencias.
 
 **Nota técnica importante:** las versiones actuales de FastAPI cambiaron la sintaxis de `TemplateResponse`. La forma correcta es `templates.TemplateResponse(request, "archivo.html", {...})`, con el `request` como primer argumento. La forma antigua (`TemplateResponse("archivo.html", {"request": request, ...})`) produce el error `TypeError: unhashable type: 'dict'`.
 
-**Cómo se ejecuta hoy** (modo de desarrollo, manual, no automático):
+**Cómo se ejecuta (desde el 29 ago 2026): como servicio permanente de systemd.**
+
+La aplicación corre sola, arranca automáticamente cuando el servidor enciende, y sobrevive al cierre de la sesión SSH. Verificado cerrando la terminal y confirmando que el sitio sigue respondiendo.
+
+Archivo del servicio: `/etc/systemd/system/sistema-nutricion.service`
+
 ```
-cd /opt/sistema-nutricion
-source venv/bin/activate
-uvicorn main:app --host 0.0.0.0 --reload
+[Unit]
+Description=Sistema de Nutricion Marifer Utrilla
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/sistema-nutricion
+Environment="PATH=/opt/sistema-nutricion/venv/bin"
+ExecStart=/opt/sistema-nutricion/venv/bin/uvicorn main:app --host 0.0.0.0 --port 8000
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
 ```
-Esto corre en primer plano en la terminal SSH. Si se cierra la sesión de SSH, el servidor se detiene. Convertirlo en un servicio permanente (que siga corriendo solo) es trabajo pendiente, ver checklist.
+
+**Comandos de operación del día a día:**
+
+| Para | Comando |
+|---|---|
+| Reiniciar tras editar código (obligatorio, ya no hay `--reload`) | `systemctl restart sistema-nutricion` |
+| Ver si está corriendo | `systemctl status sistema-nutricion` |
+| Ver errores y registros recientes | `journalctl -u sistema-nutricion -n 50` |
+| Detenerlo | `systemctl stop sistema-nutricion` |
+| Encenderlo | `systemctl start sistema-nutricion` |
+
+**Cambio de flujo importante:** durante el desarrollo inicial se usaba `uvicorn main:app --host 0.0.0.0 --reload` en primer plano, que recargaba solo al guardar cambios. Con el servicio, cada cambio de código requiere reiniciar manualmente con `systemctl restart sistema-nutricion`.
 
 **Nota de seguridad esperada:** el navegador muestra "Not secure" porque se accede por `http://` directo a la IP, sin certificado SSL. Es normal en esta etapa; el certificado se instala en la Fase 5, cuando se conecte el dominio `mafernut.com` a la aplicación real.
 
@@ -106,7 +134,7 @@ pip install -r requirements.txt
 - [ ] Mecanismo de identificación de InBody en 3 capas (búsqueda por lista, pantalla de comparación, lista de IDs por paciente)
 - [ ] Historial de versiones de dietas (nunca sobreescribir)
 - [ ] Registro de opciones ya prescritas por paciente
-- [ ] Convertir el servidor de prueba en un servicio permanente (hoy se detiene si se cierra la sesión SSH)
+- [x] Servidor convertido en servicio permanente de systemd (arranca solo, sobrevive al cierre de SSH, se reinicia solo si falla)
 
 ### Fase 2 — Knowledgebase y base de alimentos ⬜ PENDIENTE
 - [ ] Conexión real a la API de OpenFoodFacts
@@ -166,3 +194,4 @@ pip install -r requirements.txt
 | 2026-08-29 | Base de datos SQLite creada: 8 tablas definidas en `models.py`, generadas físicamente vía `init_db.py`, verificadas con `sqlite3` |
 | 2026-08-29 | Novena tabla `citas` agregada (211 líneas en `models.py`, 9 tablas en total). Se descubre que pegar código largo por SSH corrompe archivos; se adopta `nano -i` como método confiable, documentado en la sección 2 |
 | 2026-08-29 | Primer módulo funcional completo: formulario de alta rápida de paciente con agendado de cita, más lista de pacientes. Verificado de extremo a extremo con un registro de prueba. Se corrige la sintaxis de `TemplateResponse` para FastAPI moderno |
+| 2026-08-29 | Aplicación convertida en servicio permanente de systemd (`sistema-nutricion.service`). Arranca automáticamente con el servidor, sobrevive al cierre de SSH, se reinicia solo si falla. Verificado cerrando la terminal. Nuevo flujo: cada cambio de código requiere `systemctl restart sistema-nutricion` |
