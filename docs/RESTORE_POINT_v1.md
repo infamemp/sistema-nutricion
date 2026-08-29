@@ -87,7 +87,7 @@ pip install -r requirements.txt
 - [x] Entorno virtual creado y funcionando
 - [x] FastAPI + Uvicorn + Jinja2 + python-multipart instalados
 - [x] Primer `main.py` mínimo, verificado de extremo a extremo desde el navegador
-- [ ] Diseño de la base de datos SQLite (tablas: pacientes, historia clínica, mediciones de InBody, follow-ups, versiones de dietas)
+- [x] Diseño y creación de la base de datos SQLite: 8 tablas (`pacientes`, `historias_clinicas`, `mediciones_inbody`, `ids_inbody_conocidos`, `follow_ups`, `dietas_versiones`, `opciones_prescritas`, `laboratorios`), definidas en `models.py` con SQLAlchemy, creadas físicamente en `sistema_nutricion.db` vía `init_db.py`, verificadas con `sqlite3 .tables`
 - [ ] Formulario digital de intake (basado en `Historia_Clinica_v2.docx`)
 - [ ] Formulario digital de follow-up (basado en `Follow_Up_v1.docx`)
 - [ ] Mecanismo de identificación de InBody en 3 capas (búsqueda por lista, pantalla de comparación, lista de IDs por paciente)
@@ -132,6 +132,14 @@ pip install -r requirements.txt
 - [ ] Formato específico de solicitud ARCO (separado del aviso)
 - [ ] Confirmar guardado seguro de la nueva contraseña del droplet
 
+**Archivos de la base de datos, en `/opt/sistema-nutricion/`:**
+- `database.py` — conexión a SQLite vía SQLAlchemy
+- `models.py` — las 8 tablas (195 líneas)
+- `init_db.py` — script que crea las tablas físicas, ya ejecutado
+- `sistema_nutricion.db` — el archivo de base de datos real, ya creado con las 8 tablas dentro
+
+**Herramienta instalada:** `sqlite3` (cliente de línea de comandos, útil para inspeccionar la base de datos directamente: `sqlite3 sistema_nutricion.db ".tables"`)
+
 ---
 
 ## 4. Bitácora de este punto de restauración
@@ -142,3 +150,4 @@ pip install -r requirements.txt
 | 2026-08-28 | Servidor actualizado (`apt update && apt upgrade`), Python 3.12.3 confirmado |
 | 2026-08-28 | Entorno virtual creado, FastAPI y dependencias instaladas |
 | 2026-08-28 | Primer `main.py` de prueba, verificado funcionando desde navegador externo (`http://165.22.7.251:8000`) |
+| 2026-08-29 | Base de datos SQLite creada: 8 tablas definidas en `models.py`, generadas físicamente vía `init_db.py`, verificadas con `sqlite3` |
