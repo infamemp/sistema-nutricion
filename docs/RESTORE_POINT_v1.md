@@ -30,8 +30,14 @@ fastapi, uvicorn[standard], jinja2, python-multipart, y sus dependencias.
 | `/pacientes/alta` | POST | Guarda el paciente y, si se llenó fecha, crea también la cita |
 | `/pacientes` | GET | Lista todos los pacientes registrados, con nombres clicables |
 | `/pacientes/{id}` | GET | Vista de expediente: datos de contacto, citas con su estado, y estado de la historia clínica |
+| `/pacientes/{id}/historia` | GET | Formulario de historia clínica, precargado si ya existe |
+| `/pacientes/{id}/historia` | POST | Guarda o actualiza la historia clínica y redirige al expediente |
 
-**Plantillas en `templates/`:** `alta_rapida.html` (123 líneas, formulario de alta con secciones de datos del paciente y agendar cita), `lista_pacientes.html` (57 líneas, tabla con nombres enlazados al expediente) y `expediente.html` (100 líneas, vista de expediente que combina datos de tres tablas distintas en una sola pantalla). Todas usan Tailwind vía CDN y la paleta verde de la marca.
+**Plantillas en `templates/`:** `alta_rapida.html` (123 líneas, formulario de alta con secciones de datos del paciente y agendar cita), `lista_pacientes.html` (57 líneas, tabla con nombres enlazados al expediente), `expediente.html` (106 líneas, vista de expediente que combina datos de tres tablas distintas en una sola pantalla) e `historia_clinica.html` (323 líneas, formulario de 10 secciones en página única con botón de guardar fijo). Todas usan Tailwind vía CDN y la paleta verde de la marca.
+
+**Decisión de diseño del formulario de historia clínica:** página única con scroll, no pestañas ni paso a paso. Razón: la nutrióloga lo llena durante la consulta, hablando con el paciente, sin seguir un orden estricto. Con página única puede saltar entre secciones sin perder el hilo de la conversación. El botón de guardar es fijo en la parte inferior, siempre accesible.
+
+**Nota técnica:** la ruta que guarda la historia clínica lee el formulario completo con `await request.form()` en lugar de declarar 50 parámetros `Form(...)` uno por uno. Los nombres de campo se recorren desde la lista `CAMPOS_HISTORIA` en `main.py`, lo que hace trivial agregar campos nuevos en el futuro: basta agregarlos a esa lista y a la plantilla.
 
 **Nota de diseño validada en la práctica:** el expediente demuestra el principio de "separados por dentro, juntos cuando hace falta verlos". Los datos del paciente, sus citas y el estado de su historia clínica viven en tablas distintas, pero se presentan unificados en una sola vista continua.
 
@@ -132,7 +138,7 @@ pip install -r requirements.txt
 - [x] Lista de pacientes, funcionando
 - [x] Vista de expediente del paciente (datos de contacto, citas con estado, estado de historia clínica), funcionando
 - [ ] Pantalla de gestión de citas: ver, reagendar (cancelar la anterior y crear nueva, dejando registro), cancelar, marcar asistencia
-- [ ] Formulario completo de Historia Clínica
+- [x] Formulario completo de Historia Clínica (10 secciones, guardar y editar), funcionando y verificado
 - [ ] Formulario digital de intake (basado en `Historia_Clinica_v2.docx`)
 - [ ] Formulario digital de follow-up (basado en `Follow_Up_v1.docx`)
 - [ ] Mecanismo de identificación de InBody en 3 capas (búsqueda por lista, pantalla de comparación, lista de IDs por paciente)
@@ -200,3 +206,4 @@ pip install -r requirements.txt
 | 2026-08-29 | Primer módulo funcional completo: formulario de alta rápida de paciente con agendado de cita, más lista de pacientes. Verificado de extremo a extremo con un registro de prueba. Se corrige la sintaxis de `TemplateResponse` para FastAPI moderno |
 | 2026-08-29 | Aplicación convertida en servicio permanente de systemd (`sistema-nutricion.service`). Arranca automáticamente con el servidor, sobrevive al cierre de SSH, se reinicia solo si falla. Verificado cerrando la terminal. Nuevo flujo: cada cambio de código requiere `systemctl restart sistema-nutricion` |
 | 2026-08-29 | Vista de expediente del paciente construida y verificada. Combina en una sola pantalla los datos del paciente, sus citas (con etiqueta de estado por color) y el estado de su historia clínica, leyendo de tres tablas distintas |
+| 2026-08-29 | Formulario de Historia Clínica completo (10 secciones, ~50 campos) construido y verificado: guardar, redirigir al expediente, y editar recuperando los datos. **El sistema ya es utilizable en la vida real** para dar de alta pacientes, agendar citas y capturar historias clínicas |

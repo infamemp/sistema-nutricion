@@ -1,5 +1,5 @@
 from fastapi import FastAPI, Request, Form, Depends, HTTPException
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 from datetime import datetime, date
@@ -12,6 +12,13 @@ models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
 templates = Jinja2Templates(directory="templates")
+
+
+def obtener_paciente(db: Session, paciente_id: int):
+    paciente = db.query(models.Paciente).filter(models.Paciente.id == paciente_id).first()
+    if not paciente:
+        raise HTTPException(status_code=404, detail="Paciente no encontrado")
+    return paciente
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -87,10 +94,7 @@ def lista_pacientes(request: Request, db: Session = Depends(get_db)):
 
 @app.get("/pacientes/{paciente_id}", response_class=HTMLResponse)
 def ver_expediente(paciente_id: int, request: Request, db: Session = Depends(get_db)):
-    paciente = db.query(models.Paciente).filter(models.Paciente.id == paciente_id).first()
-
-    if not paciente:
-        raise HTTPException(status_code=404, detail="Paciente no encontrado")
+    paciente = obtener_paciente(db, paciente_id)
 
     citas = (
         db.query(models.Cita)
@@ -110,3 +114,73 @@ def ver_expediente(paciente_id: int, request: Request, db: Session = Depends(get
         "expediente.html",
         {"paciente": paciente, "citas": citas, "historia": historia},
     )
+
+
+@app.get("/pacientes/{paciente_id}/historia", response_class=HTMLResponse)
+def ver_historia(paciente_id: int, request: Request, db: Session = Depends(get_db)):
+    paciente = obtener_paciente(db, paciente_id)
+
+    historia = (
+        db.query(models.HistoriaClinica)
+        .filter(models.HistoriaClinica.paciente_id == paciente_id)
+        .first()
+    )
+
+    if not historia:
+        historia = models.HistoriaClinica(paciente_id=paciente_id)
+
+    return templates.TemplateResponse(
+        request,
+        "historia_clinica.html",
+        {"paciente": paciente, "h": historia},
+    )
+
+
+CAMPOS_HISTORIA = [
+    "objetivo_que_espera", "objetivo_tiempo", "objetivo_importante",
+    "antecedente_diabetes", "antecedente_obesidad", "antecedente_tiroides",
+    "antecedente_hipertension", "antecedente_cardiovascular", "antecedente_cancer",
+    "antecedente_otros", "padecimientos_diagnosticados", "cirugias",
+    "tratamiento_medico_actual", "gineco_menarca", "gineco_ciclo",
+    "gineco_anticonceptivo", "gineco_embarazos", "gineco_busca_embarazo",
+    "gineco_menopausia", "edad_inicio_sobrepeso", "dietas_previas",
+    "sint_gastrointestinal", "sint_distension", "sint_hormigueo",
+    "sint_caida_pelo", "sint_unas_debiles", "sint_dolor_cabeza",
+    "sint_memoria", "sint_fatiga", "sint_piel_seca", "sint_acantosis",
+    "sint_otro", "alergias", "intolerancias", "alimentos_evitar",
+    "restricciones_eleccion", "recordatorio_desayuno", "recordatorio_comida",
+    "recordatorio_cena", "recordatorio_snacks", "hidratacion", "quien_cocina",
+    "ejercicio_rutina", "alcohol", "tabaco", "sueno", "suplementos", "medicamentos",
+]
+
+
+@app.post("/pacientes/{paciente_id}/historia")
+async def guardar_historia(paciente_id: int, request: Request, db: Session = Depends(get_db)):
+    obtener_paciente(db, paciente_id)
+
+    form = await request.form()
+
+    historia = (
+        db.query(models.HistoriaClinica)
+        .filter(models.HistoriaClinica.paciente_id == paciente_id)
+        .first()
+    )
+
+    if not historia:
+        historia = models.HistoriaClinica(paciente_id=paciente_id)
+        db.add(historia)
+
+    for campo in CAMPOS_HISTORIA:
+        valor = form.get(campo)
+        setattr(historia, campo, valor if valor else None)
+
+    for campo_num in ["peso_maximo", "peso_minimo"]:
+        valor = form.get(campo_num)
+        setattr(historia, campo_num, float(valor) if valor else None)
+
+    estres = form.get("nivel_estres")
+    historia.nivel_estres = int(estres) if estres else None
+
+    db.commit()
+
+    return RedirectResponse(url="/pacientes/" + str(paciente_id), status_code=303)

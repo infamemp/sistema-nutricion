@@ -82,7 +82,13 @@
         </div>
 
         <div class="bg-white rounded-xl shadow-sm p-6">
-            <h2 class="text-lg font-medium text-green-700 border-b border-green-200 pb-2 mb-4">Historia clínica</h2>
+            <div class="flex justify-between items-center border-b border-green-200 pb-2 mb-4">
+                <h2 class="text-lg font-medium text-green-700">Historia clínica</h2>
+                <a href="/pacientes/{{ paciente.id }}/historia"
+                   class="bg-green-600 hover:bg-green-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition">
+                    {% if historia %}Editar{% else %}Llenar historia clínica{% endif %}
+                </a>
+            </div>
 
             {% if historia %}
             <p class="text-sm text-gray-600">
