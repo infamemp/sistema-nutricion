@@ -99,6 +99,7 @@ pip install -r requirements.txt
 - [x] Novena tabla `citas` creada (agendar sin requerir Historia Clínica completa, campo `google_event_id` preparado para sincronización futura con Google Calendar, ver `docs/PROJECT_PLAN.md` Fase 1). `models.py` ahora tiene 211 líneas y 9 tablas
 - [x] Formulario de alta rápida (datos básicos del paciente + agendar cita), funcionando y verificado
 - [x] Lista de pacientes, funcionando
+- [ ] Pantalla de gestión de citas: ver, reagendar (cancelar la anterior y crear nueva, dejando registro), cancelar, marcar asistencia
 - [ ] Formulario completo de Historia Clínica
 - [ ] Formulario digital de intake (basado en `Historia_Clinica_v2.docx`)
 - [ ] Formulario digital de follow-up (basado en `Follow_Up_v1.docx`)
