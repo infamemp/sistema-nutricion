@@ -1,6 +1,6 @@
 # Sistema Integral de Nutrición, Documento Maestro del Proyecto
 
-**Versión:** 3.0
+**Versión:** 3.1
 **Fecha:** 27 de agosto de 2026
 **Estado:** Fase 0 completa. Infraestructura lista. Guía de estilo cerrada. Recolección de material en curso.
 
@@ -58,7 +58,7 @@ Stack, servidor, IA, base de alimentos, alcance, identidad visual y guía de est
 ### Fase 1, Base de datos y plantillas
 - Estructura de pacientes y expedientes
 - **Historia Clínica (intake inicial), APROBADA.** Rediseño de las 33 preguntas originales en 11 secciones, documento de referencia en `docs/Historia_Clinica_v2.docx`. Es la especificación de contenido, no el formulario final: en esta fase se construye como formulario interactivo dentro de la app (campos de texto, menús desplegables donde aplique, casillas sí/no, navegable por sección, pensado para tablet). Se espera seguir ajustando campos con el uso real, sin problema. Secciones: datos generales, objetivos y expectativas, antecedentes heredofamiliares, antecedentes personales patológicos, antecedentes gineco-obstétricos, historia de peso, revisión de síntomas, alergias/intolerancias/preferencias (separadas), hábitos alimentarios, actividad física/sueño/hábitos, suplementos/medicamentos/laboratorios
-- **Follow-up, sin plantilla fija por diseño**, pero con captura ordenada. Campos de texto libre guiado: qué le gustó del plan anterior, qué no le gustó o le costó trabajo, principales cambios que hizo, en qué puede mejorar, estatus del tratamiento médico, datos del InBody del día (si aplica), notas libres de la nutrióloga. Cada follow-up queda ligado al anterior en el expediente, para que el sistema pueda mostrar un resumen de la consulta previa antes de la siguiente cita
+- **Follow-up, APROBADO.** Documento de referencia en `docs/Follow_Up_v1.docx`, mismo tratamiento que la Historia Clínica (especificación de contenido, no el formulario final). Secciones: datos de la consulta (número de consulta automático, asignado por el sistema, nunca tecleado), continuidad del plan anterior (porcentaje de apego, promedio de días de ejercicio, qué le gustó/no le gustó, cambios que hizo, en qué puede mejorar), estatus médico y tratamiento, medición de hoy (peso, IMC, porcentaje de grasa, masa grasa en kg, MME, grasa visceral, alineado con los campos que ya extrae el InBody), y notas y ajustes acordados para el siguiente periodo. Sin plantilla rígida por diseño, la mayoría queda como texto libre guiado. Cada follow-up queda ligado al anterior en el expediente, para alimentar el resumen pre-consulta automático de la Fase 3. Se espera seguir ajustando campos con el uso real, sin problema
 - Plantillas de intake y follow-up usables desde tablet
 - **Historial de versiones de dietas** (ninguna dieta se sobreescribe jamás)
 - Datos estructurados de medicación y padecimientos (base para las banderas clínicas)
@@ -181,6 +181,7 @@ sistema-nutricion/
     ├── GUIA_DE_ESTILO.md
     ├── STYLE_SPEC.md
     ├── Historia_Clinica_v2.docx
+    ├── Follow_Up_v1.docx
     ├── KNOWLEDGEBASE.md
     └── Aviso_de_Privacidad.docx
 ```
@@ -226,3 +227,4 @@ Las API keys nunca van al repo. Viven en un archivo `.env` local, ya cubierto po
 | 2026-08-28 | v2.8, primer borrador del Aviso de Privacidad generado, verificando primero que la LFPDPPP cambió por completo en marzo de 2025 (ley nueva, no solo cambio de autoridad; INAI desaparecido, ahora Secretaría Anticorrupción y Buen Gobierno). Cubre datos sensibles de salud, uso de IA como encargada del tratamiento, transferencia internacional de datos, y derechos ARCO. Marcado como borrador pendiente de revisión legal profesional, ya que el reglamento de la ley nueva aún no existe |
 | 2026-08-28 | v2.9, Aviso de Privacidad completado con datos reales: nombre legal Lic. María Fernanda Utrilla Lack, domicilio del consultorio en Puebla, fecha de actualización 01 de septiembre de 2026. Sigue pendiente únicamente la revisión de un abogado especializado |
 | 2026-08-28 | v3.0, se agrega al Aviso de Privacidad la cláusula de plazos de conservación, bloqueo y supresión de datos (verificado que la ley nueva formaliza este ciclo en dos fases, no tres), y se refuerza la sección de IA con la obligación explícita de confidencialidad de los encargados del tratamiento. Queda pendiente, por separado, un formato específico de solicitud ARCO |
+| 2026-08-28 | v3.1, Follow-up aprobado: se genera `Follow_Up_v1.docx` con captura libre-guiada organizada en 5 secciones, incluyendo porcentaje de apego al plan, promedio de días de ejercicio, y mediciones alineadas con los campos reales del InBody (peso, IMC, porcentaje de grasa, masa grasa en kg, MME, grasa visceral). Se aclara que el número de consulta es automático, asignado por el sistema. Con esto queda cerrada toda la planeación de contenido de la Fase 1, salvo el SMAE, en pausa hasta contar con la fuente real de equivalencias |
