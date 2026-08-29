@@ -184,3 +184,79 @@ async def guardar_historia(paciente_id: int, request: Request, db: Session = Dep
     db.commit()
 
     return RedirectResponse(url="/pacientes/" + str(paciente_id), status_code=303)
+
+
+@app.post("/pacientes/{paciente_id}/citas/nueva")
+def nueva_cita(
+    paciente_id: int,
+    fecha: str = Form(...),
+    hora: str = Form(...),
+    notas: Optional[str] = Form(None),
+    db: Session = Depends(get_db),
+):
+    obtener_paciente(db, paciente_id)
+
+    existe_previa = (
+        db.query(models.Cita)
+        .filter(models.Cita.paciente_id == paciente_id)
+        .first()
+    )
+    tipo = "seguimiento" if existe_previa else "primera_consulta"
+
+    cita = models.Cita(
+        paciente_id=paciente_id,
+        fecha_hora=datetime.fromisoformat(fecha + "T" + hora),
+        tipo=tipo,
+        estado="agendada",
+        notas_breves=notas,
+    )
+    db.add(cita)
+    db.commit()
+
+    return RedirectResponse(url="/pacientes/" + str(paciente_id), status_code=303)
+
+
+@app.post("/citas/{cita_id}/estado")
+def cambiar_estado_cita(
+    cita_id: int,
+    nuevo_estado: str = Form(...),
+    db: Session = Depends(get_db),
+):
+    cita = db.query(models.Cita).filter(models.Cita.id == cita_id).first()
+    if not cita:
+        raise HTTPException(status_code=404, detail="Cita no encontrada")
+
+    estados_validos = ["agendada", "confirmada", "cancelada", "completada", "no_asistio"]
+    if nuevo_estado not in estados_validos:
+        raise HTTPException(status_code=400, detail="Estado no valido")
+
+    cita.estado = nuevo_estado
+    db.commit()
+
+    return RedirectResponse(url="/pacientes/" + str(cita.paciente_id), status_code=303)
+
+
+@app.post("/citas/{cita_id}/reagendar")
+def reagendar_cita(
+    cita_id: int,
+    fecha: str = Form(...),
+    hora: str = Form(...),
+    db: Session = Depends(get_db),
+):
+    cita_anterior = db.query(models.Cita).filter(models.Cita.id == cita_id).first()
+    if not cita_anterior:
+        raise HTTPException(status_code=404, detail="Cita no encontrada")
+
+    cita_anterior.estado = "cancelada"
+
+    cita_nueva = models.Cita(
+        paciente_id=cita_anterior.paciente_id,
+        fecha_hora=datetime.fromisoformat(fecha + "T" + hora),
+        tipo=cita_anterior.tipo,
+        estado="agendada",
+        notas_breves=cita_anterior.notas_breves,
+    )
+    db.add(cita_nueva)
+    db.commit()
+
+    return RedirectResponse(url="/pacientes/" + str(cita_anterior.paciente_id), status_code=303)

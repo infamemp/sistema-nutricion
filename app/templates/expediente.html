@@ -21,6 +21,12 @@
             </p>
         </div>
 
+        {% if mensaje %}
+        <div class="bg-green-100 border border-green-300 text-green-800 rounded-lg p-4 mb-6">
+            {{ mensaje }}
+        </div>
+        {% endif %}
+
         <div class="bg-white rounded-xl shadow-sm p-6 mb-6">
             <h2 class="text-lg font-medium text-green-700 border-b border-green-200 pb-2 mb-4">Datos de contacto</h2>
 
@@ -55,24 +61,94 @@
         </div>
 
         <div class="bg-white rounded-xl shadow-sm p-6 mb-6">
-            <h2 class="text-lg font-medium text-green-700 border-b border-green-200 pb-2 mb-4">Citas</h2>
+            <div class="flex justify-between items-center border-b border-green-200 pb-2 mb-4">
+                <h2 class="text-lg font-medium text-green-700">Citas</h2>
+                <button onclick="document.getElementById('form-nueva-cita').classList.toggle('hidden')"
+                        class="bg-green-600 hover:bg-green-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition">
+                    Agendar cita
+                </button>
+            </div>
+
+            <form id="form-nueva-cita" method="post" action="/pacientes/{{ paciente.id }}/citas/nueva"
+                  class="hidden bg-green-50 rounded-lg p-4 mb-4">
+                <div class="grid grid-cols-2 gap-4 mb-3">
+                    <div>
+                        <label class="block text-sm text-gray-700 mb-1">Fecha</label>
+                        <input type="date" name="fecha" required
+                               class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400">
+                    </div>
+                    <div>
+                        <label class="block text-sm text-gray-700 mb-1">Hora</label>
+                        <input type="time" name="hora" required
+                               class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400">
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="block text-sm text-gray-700 mb-1">Notas</label>
+                    <input type="text" name="notas" placeholder="Opcional"
+                           class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400">
+                </div>
+                <button type="submit"
+                        class="bg-green-600 hover:bg-green-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition">
+                    Guardar cita
+                </button>
+            </form>
 
             {% if citas %}
             <ul class="space-y-3">
                 {% for c in citas %}
-                <li class="flex items-center justify-between text-sm border-b border-gray-100 pb-3 last:border-0 last:pb-0">
-                    <div>
-                        <p class="text-gray-800">{{ c.fecha_hora.strftime('%d/%m/%Y a las %H:%M') }}</p>
-                        {% if c.notas_breves %}
-                        <p class="text-gray-500 text-xs mt-0.5">{{ c.notas_breves }}</p>
-                        {% endif %}
+                <li class="border-b border-gray-100 pb-3 last:border-0 last:pb-0">
+                    <div class="flex items-start justify-between">
+                        <div>
+                            <p class="text-sm {% if c.estado == 'cancelada' %}text-gray-400 line-through{% else %}text-gray-800{% endif %}">
+                                {{ c.fecha_hora.strftime('%d/%m/%Y a las %H:%M') }}
+                            </p>
+                            {% if c.notas_breves %}
+                            <p class="text-gray-500 text-xs mt-0.5">{{ c.notas_breves }}</p>
+                            {% endif %}
+                        </div>
+                        <span class="text-xs px-2 py-1 rounded-full whitespace-nowrap
+                            {% if c.estado == 'cancelada' %}bg-gray-100 text-gray-600
+                            {% elif c.estado == 'completada' %}bg-green-100 text-green-700
+                            {% elif c.estado == 'no_asistio' %}bg-orange-100 text-orange-700
+                            {% else %}bg-blue-50 text-blue-700{% endif %}">
+                            {{ c.estado.replace('_', ' ') }}
+                        </span>
                     </div>
-                    <span class="text-xs px-2 py-1 rounded-full
-                        {% if c.estado == 'cancelada' %}bg-gray-100 text-gray-600
-                        {% elif c.estado == 'completada' %}bg-green-100 text-green-700
-                        {% else %}bg-blue-50 text-blue-700{% endif %}">
-                        {{ c.estado }}
-                    </span>
+
+                    {% if c.estado in ['agendada', 'confirmada'] %}
+                    <div class="flex gap-2 mt-2">
+                        <button onclick="document.getElementById('reagendar-{{ c.id }}').classList.toggle('hidden')"
+                                class="text-xs text-green-700 hover:underline">Reagendar</button>
+                        <form method="post" action="/citas/{{ c.id }}/estado" class="inline">
+                            <input type="hidden" name="nuevo_estado" value="completada">
+                            <button type="submit" class="text-xs text-green-700 hover:underline">Marcar completada</button>
+                        </form>
+                        <form method="post" action="/citas/{{ c.id }}/estado" class="inline">
+                            <input type="hidden" name="nuevo_estado" value="no_asistio">
+                            <button type="submit" class="text-xs text-orange-600 hover:underline">No asistió</button>
+                        </form>
+                        <form method="post" action="/citas/{{ c.id }}/estado" class="inline">
+                            <input type="hidden" name="nuevo_estado" value="cancelada">
+                            <button type="submit" class="text-xs text-gray-500 hover:underline">Cancelar</button>
+                        </form>
+                    </div>
+
+                    <form id="reagendar-{{ c.id }}" method="post" action="/citas/{{ c.id }}/reagendar"
+                          class="hidden bg-green-50 rounded-lg p-3 mt-2">
+                        <p class="text-xs text-gray-600 mb-2">La cita actual se marcará como cancelada y se creará una nueva.</p>
+                        <div class="grid grid-cols-2 gap-3 mb-2">
+                            <input type="date" name="fecha" required
+                                   class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-400">
+                            <input type="time" name="hora" required
+                                   class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-400">
+                        </div>
+                        <button type="submit"
+                                class="bg-green-600 hover:bg-green-700 text-white text-xs font-medium px-3 py-2 rounded-lg transition">
+                            Confirmar nueva fecha
+                        </button>
+                    </form>
+                    {% endif %}
                 </li>
                 {% endfor %}
             </ul>
