@@ -1,7 +1,7 @@
 # Sistema Integral de Nutrición, Documento Maestro del Proyecto
 
-**Versión:** 3.6
-**Fecha:** 27 de agosto de 2026
+**Versión:** 3.7
+**Fecha:** 30 de agosto de 2026
 **Estado:** Fase 0 completa. Infraestructura lista. Guía de estilo cerrada. Recolección de material en curso.
 
 ---
@@ -91,7 +91,12 @@ Stack, servidor, IA, base de alimentos, alcance, identidad visual y guía de est
 - **Guía clínica de referencia:** EASO (European Association for the Study of Obesity) para obesidad, usada como marco de referencia, no como protocolo estricto de seguir al pie de la letra. Otras guías por padecimiento (diabetes, RI, SOP, endometriosis, fertilidad, GLP-1) pendientes de definir con la nutrióloga
 - **Biblioteca de bloques de contenido** (15 bloques identificados, ver `GUIA_DE_ESTILO.md` sección 6)
 - **Valores clínicos de referencia** ya recuperados de su material: rangos de glucosa en ayunas, preprandial, posprandial 1h y 2h, nocturna, y HbA1c
-- Conexión a OpenFoodFacts
+- **Fuentes de alimentos, IMPLEMENTADO Y VERIFICADO.** Arquitectura de tres fuentes con jerarquía, documentada en `docs/FUENTES_ALIMENTOS.md`:
+  1. **BAM 18.1.1** (Base de Alimentos de México, INCMNSZ + INSP), archivo local con 2,045 alimentos genéricos mexicanos. Fuente principal, sin API ni límites
+  2. **USDA FoodData Central** (API, dominio público CC0), fuente activa para alimentos genéricos no mexicanos: quinoa, kale, pistaches
+  3. **OpenFoodFacts** (API), restringido a productos de marca con verificación humana obligatoria
+  - **Hallazgo que cambió el plan:** se probó OpenFoodFacts como fuente principal y falló, precisión de 3 de 20. Devolvía Takis al buscar "tortilla de maíz", galletas María al buscar "huevo", aceite al buscar "aguacate". Es una base de productos con código de barras, no de alimentos genéricos. Sin esta prueba, el sistema habría calculado dietas con datos incorrectos
+  - **Regla de seguridad:** ningún resultado de OpenFoodFacts se acepta automáticamente, siempre se devuelven candidatos para que la nutrióloga elija
 - Lista blanca de fuentes web permitidas
 
 ### Fase 3, Motor de IA
@@ -170,6 +175,7 @@ Puntos clave:
 - [x] Crear repo de GitHub del proyecto (privado, con .gitignore de Python)
 - [x] Subir la documentación al repo en `docs/`
 - [x] Definir correo de envío. Completado y verificado al 100%: `contacto@mafernut.com` en Hostinger, con los 8 registros DNS correctos en Cloudflare (MX, SPF, DKIM, DMARC, verificación) y las 4 validaciones de Hostinger en verde
+- [x] Obtener API key del USDA FoodData Central (gratuita, api.data.gov). Guardada en `.env` del servidor, nunca en el repo
 - [ ] Obtener credenciales de Google Calendar API (trámite separado de la clave de Gemini, para la sincronización de citas planeada en la Fase 1, implementación diferida hasta contar con el certificado SSL de la Fase 5 para la dirección Google → sistema)
 
 ---
@@ -199,6 +205,7 @@ sistema-nutricion/
     ├── Follow_Up_v1.docx
     ├── KNOWLEDGEBASE.md
     ├── TABLA_DE_EQUIVALENCIAS.md
+    ├── FUENTES_ALIMENTOS.md
     ├── Aviso_de_Privacidad.docx
     └── RESTORE_POINT_v1.md
 ```
@@ -250,3 +257,4 @@ Las API keys nunca van al repo. Viven en un archivo `.env` local, ya cubierto po
 | 2026-08-29 | v3.4, pausa breve en el código para integrar 2 documentos reales nuevos de la nutrióloga (Naomi, mantenimiento; Margarita, meta de proteína alta). `GUIA_DE_ESTILO.md` y `STYLE_SPEC.md` actualizados a v1.1: tercer formato de menú (tabla libre por categoría), bloque de metas diarias, proteína total en gramos por porciones estándar, combinaciones aditivas, colación flexible, y caso de mantenimiento/composición corporal. Se retoma el Paso 3 de la Fase 1 (modelos de la base de datos) donde se dejó |
 | 2026-08-29 | v3.5, base de datos SQLite creada y verificada (8 tablas). Se detecta un caso sin cubrir (agendar una cita telefónica sin llenar la Historia Clínica) y se agrega una novena tabla, `citas`, con campo `google_event_id` preparado para una futura sincronización con Google Calendar (documentada en dos direcciones de complejidad distinta, no bloqueante, diferida a fases posteriores). Se decide el flujo de alta rápida (datos básicos + cita) separado de la Historia Clínica completa, con la vista de expediente combinada quedando como pantalla futura. Nuevo pendiente: credenciales de Google Calendar API |
 | 2026-08-29 | v3.6, tabla `citas` creada en código (9 tablas en total) y **primer módulo funcional del sistema terminado**: formulario de alta rápida de paciente con agendado de cita, más lista de pacientes, verificado de extremo a extremo en el servidor con un registro de prueba. Se decide que reagendar deja registro (cancelar la anterior y crear nueva, nunca sobreescribir), y se agrega al checklist la pantalla de gestión de citas. Se documenta en el punto de restauración que pegar código largo por SSH corrompe archivos, y que `nano -i` es el método confiable |
+| 2026-08-30 | v3.7, Fase 2 avanzada: se implementó y verificó la arquitectura de fuentes de alimentos. Se probó OpenFoodFacts como fuente principal y se descartó por precisión de 3 de 20 (devolvía Takis al buscar tortilla, galletas al buscar huevo). Se adoptó la BAM del INCMNSZ e INSP como fuente principal (2,045 alimentos mexicanos, archivo local) y el USDA como fuente activa secundaria (dominio público). OpenFoodFacts queda restringido a productos de marca con verificación humana. Documentado en `docs/FUENTES_ALIMENTOS.md` |

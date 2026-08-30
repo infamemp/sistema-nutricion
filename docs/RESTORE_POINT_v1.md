@@ -205,6 +205,17 @@ pip install -r requirements.txt
 
 ---
 
+
+**Módulo de alimentos (Fase 2), agregado el 30 ago 2026:**
+
+Archivos en `/opt/sistema-nutricion/`: `alimentos.py` (orquestador, 109 líneas), `bam.py` (118), `usda.py` (119), `openfoodfacts.py` (112), `probar_openfoodfacts.py` (102, diagnóstico) y `datos/alimentos_bam.json` (1.1 MB, 2045 alimentos).
+
+Arquitectura de tres fuentes con jerarquía, detallada en `docs/FUENTES_ALIMENTOS.md`: BAM local para alimentos mexicanos, USDA para genéricos internacionales, OpenFoodFacts restringido a productos de marca con verificación humana.
+
+**Variable de entorno nueva:** `USDA_API_KEY` en el archivo `.env` (permisos 600). Para usarla en la terminal: `export $(cat .env | xargs)`.
+
+---
+
 ## 4. Bitácora de este punto de restauración
 
 | Fecha | Evento |
@@ -220,4 +231,5 @@ pip install -r requirements.txt
 | 2026-08-29 | Vista de expediente del paciente construida y verificada. Combina en una sola pantalla los datos del paciente, sus citas (con etiqueta de estado por color) y el estado de su historia clínica, leyendo de tres tablas distintas |
 | 2026-08-29 | Formulario de Historia Clínica completo (10 secciones, ~50 campos) construido y verificado: guardar, redirigir al expediente, y editar recuperando los datos. **El sistema ya es utilizable en la vida real** para dar de alta pacientes, agendar citas y capturar historias clínicas |
 | 2026-08-29 | Gestión de citas completa desde el expediente: agendar, reagendar, cancelar, marcar completada o no asistió. El reagendado cancela la cita anterior y crea una nueva, dejando el rastro visible (cita anterior tachada con etiqueta "cancelada"), conforme a la política acordada de no sobreescribir nada |
+| 2026-08-30 | Arquitectura de fuentes de alimentos implementada y verificada: BAM (local, 2045 alimentos mexicanos), USDA (API, dominio público) y OpenFoodFacts (restringido a marcas). Se descartó OpenFoodFacts como fuente principal tras medir su precisión: 3 de 20 |
 | 2026-08-30 | Módulo de follow-up terminado y verificado. Incluye tres automatizaciones: número de consulta autoasignado, creación del registro de medición si se llenan esos campos, y agendado automático de la próxima cita. Al abrir una consulta nueva muestra los ajustes acordados y el punto de mejora de la anterior |
