@@ -109,10 +109,17 @@ def ver_expediente(paciente_id: int, request: Request, db: Session = Depends(get
         .first()
     )
 
+    followups = (
+        db.query(models.FollowUp)
+        .filter(models.FollowUp.paciente_id == paciente_id)
+        .order_by(models.FollowUp.numero_consulta.desc())
+        .all()
+    )
+
     return templates.TemplateResponse(
         request,
         "expediente.html",
-        {"paciente": paciente, "citas": citas, "historia": historia},
+        {"paciente": paciente, "citas": citas, "historia": historia, "followups": followups},
     )
 
 
@@ -260,3 +267,93 @@ def reagendar_cita(
     db.commit()
 
     return RedirectResponse(url="/pacientes/" + str(cita_anterior.paciente_id), status_code=303)
+
+
+@app.get("/pacientes/{paciente_id}/followup/nuevo", response_class=HTMLResponse)
+def formulario_followup(paciente_id: int, request: Request, db: Session = Depends(get_db)):
+    paciente = obtener_paciente(db, paciente_id)
+
+    anterior = (
+        db.query(models.FollowUp)
+        .filter(models.FollowUp.paciente_id == paciente_id)
+        .order_by(models.FollowUp.numero_consulta.desc())
+        .first()
+    )
+
+    numero_consulta = (anterior.numero_consulta + 1) if anterior else 1
+
+    return templates.TemplateResponse(
+        request,
+        "follow_up.html",
+        {
+            "paciente": paciente,
+            "anterior": anterior,
+            "numero_consulta": numero_consulta,
+            "hoy": date.today().isoformat(),
+        },
+    )
+
+
+@app.post("/pacientes/{paciente_id}/followup")
+async def guardar_followup(paciente_id: int, request: Request, db: Session = Depends(get_db)):
+    obtener_paciente(db, paciente_id)
+    form = await request.form()
+
+    anterior = (
+        db.query(models.FollowUp)
+        .filter(models.FollowUp.paciente_id == paciente_id)
+        .order_by(models.FollowUp.numero_consulta.desc())
+        .first()
+    )
+    numero_consulta = (anterior.numero_consulta + 1) if anterior else 1
+
+    medicion_id = None
+    campos_medicion = ["peso", "imc", "porcentaje_grasa", "masa_grasa_kg", "mme", "grasa_visceral"]
+    hay_medicion = any(form.get(c) for c in campos_medicion)
+
+    if hay_medicion:
+        medicion = models.MedicionInBody(paciente_id=paciente_id, origen="manual")
+        for campo in campos_medicion:
+            valor = form.get(campo)
+            setattr(medicion, campo, float(valor) if valor else None)
+        db.add(medicion)
+        db.commit()
+        db.refresh(medicion)
+        medicion_id = medicion.id
+
+    fecha_consulta = form.get("fecha_consulta")
+    proxima_cita = form.get("proxima_cita")
+    apego = form.get("porcentaje_apego")
+    dias_ejercicio = form.get("promedio_dias_ejercicio")
+
+    followup = models.FollowUp(
+        paciente_id=paciente_id,
+        numero_consulta=numero_consulta,
+        fecha_consulta=datetime.fromisoformat(fecha_consulta) if fecha_consulta else datetime.utcnow(),
+        proxima_cita=date.fromisoformat(proxima_cita) if proxima_cita else None,
+        porcentaje_apego=float(apego) if apego else None,
+        promedio_dias_ejercicio=float(dias_ejercicio) if dias_ejercicio else None,
+        que_le_gusto=form.get("que_le_gusto") or None,
+        que_no_le_gusto=form.get("que_no_le_gusto") or None,
+        cambios_que_hizo=form.get("cambios_que_hizo") or None,
+        en_que_puede_mejorar=form.get("en_que_puede_mejorar") or None,
+        estatus_tratamiento_medico=form.get("estatus_tratamiento_medico") or None,
+        notas_libres=form.get("notas_libres") or None,
+        ajustes_acordados=form.get("ajustes_acordados") or None,
+        medicion_inbody_id=medicion_id,
+    )
+    db.add(followup)
+
+    if proxima_cita:
+        cita = models.Cita(
+            paciente_id=paciente_id,
+            fecha_hora=datetime.fromisoformat(proxima_cita + "T09:00"),
+            tipo="seguimiento",
+            estado="agendada",
+            notas_breves="Agendada desde la consulta " + str(numero_consulta),
+        )
+        db.add(cita)
+
+    db.commit()
+
+    return RedirectResponse(url="/pacientes/" + str(paciente_id), status_code=303)

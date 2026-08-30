@@ -157,6 +157,39 @@
             {% endif %}
         </div>
 
+        <div class="bg-white rounded-xl shadow-sm p-6 mb-6">
+            <div class="flex justify-between items-center border-b border-green-200 pb-2 mb-4">
+                <h2 class="text-lg font-medium text-green-700">Consultas de seguimiento</h2>
+                <a href="/pacientes/{{ paciente.id }}/followup/nuevo"
+                   class="bg-green-600 hover:bg-green-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition">
+                    Nueva consulta
+                </a>
+            </div>
+
+            {% if followups %}
+            <ul class="space-y-4">
+                {% for f in followups %}
+                <li class="border-b border-gray-100 pb-4 last:border-0 last:pb-0">
+                    <div class="flex justify-between items-baseline mb-1">
+                        <p class="text-sm font-medium text-gray-800">
+                            Consulta {{ f.numero_consulta }}
+                            <span class="font-normal text-gray-500">&middot; {{ f.fecha_consulta.strftime('%d/%m/%Y') }}</span>
+                        </p>
+                        {% if f.porcentaje_apego is not none %}
+                        <span class="text-xs text-gray-500">Apego {{ f.porcentaje_apego|int }}%</span>
+                        {% endif %}
+                    </div>
+                    {% if f.ajustes_acordados %}
+                    <p class="text-sm text-gray-600 mt-1">{{ f.ajustes_acordados }}</p>
+                    {% endif %}
+                </li>
+                {% endfor %}
+            </ul>
+            {% else %}
+            <p class="text-sm text-gray-500">Sin consultas de seguimiento registradas.</p>
+            {% endif %}
+        </div>
+
         <div class="bg-white rounded-xl shadow-sm p-6">
             <div class="flex justify-between items-center border-b border-green-200 pb-2 mb-4">
                 <h2 class="text-lg font-medium text-green-700">Historia clínica</h2>

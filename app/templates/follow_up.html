@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Consulta de seguimiento - {{ paciente.nombre_completo }}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-green-50 min-h-screen pb-24">
+
+    <div class="max-w-3xl mx-auto p-6">
+
+        <div class="mb-4">
+            <a href="/pacientes/{{ paciente.id }}" class="text-sm text-green-700 hover:underline">&larr; Volver al expediente</a>
+        </div>
+
+        <div class="mb-6">
+            <h1 class="text-2xl font-medium text-green-800">Consulta de seguimiento</h1>
+            <p class="text-sm text-gray-600 mt-1">
+                {{ paciente.nombre_completo }} &middot; Consulta número {{ numero_consulta }}
+            </p>
+        </div>
+
+        {% if anterior %}
+        <div class="bg-white border-l-4 border-green-400 rounded-lg p-4 mb-6 shadow-sm">
+            <p class="text-xs font-medium text-green-700 mb-2">
+                De la consulta anterior ({{ anterior.fecha_consulta.strftime('%d/%m/%Y') }})
+            </p>
+            {% if anterior.ajustes_acordados %}
+            <p class="text-sm text-gray-700"><span class="text-gray-500">Ajustes acordados:</span> {{ anterior.ajustes_acordados }}</p>
+            {% endif %}
+            {% if anterior.en_que_puede_mejorar %}
+            <p class="text-sm text-gray-700 mt-1"><span class="text-gray-500">Podía mejorar en:</span> {{ anterior.en_que_puede_mejorar }}</p>
+            {% endif %}
+            {% if not anterior.ajustes_acordados and not anterior.en_que_puede_mejorar %}
+            <p class="text-sm text-gray-500">Sin notas de seguimiento registradas.</p>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        <form method="post" action="/pacientes/{{ paciente.id }}/followup" class="space-y-6">
+
+            <div class="bg-white rounded-xl shadow-sm p-6">
+                <h2 class="text-lg font-medium text-green-700 border-b border-green-200 pb-2 mb-4">Datos de la consulta</h2>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm text-gray-700 mb-1">Fecha de esta consulta</label>
+                        <input type="date" name="fecha_consulta" value="{{ hoy }}"
+                               class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400">
+                    </div>
+                    <div>
+                        <label class="block text-sm text-gray-700 mb-1">Próxima cita</label>
+                        <input type="date" name="proxima_cita"
+                               class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400">
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-sm p-6">
+                <h2 class="text-lg font-medium text-green-700 border-b border-green-200 pb-2 mb-4">Continuidad del plan anterior</h2>
+                <div class="space-y-4">
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm text-gray-700 mb-1">Apego al plan (%)</label>
+                            <input type="number" min="0" max="100" name="porcentaje_apego"
+                                   class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400">
+                        </div>
+                        <div>
+                            <label class="block text-sm text-gray-700 mb-1">Días de ejercicio por semana (promedio)</label>
+                            <input type="number" step="0.5" min="0" max="7" name="promedio_dias_ejercicio"
+                                   class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-sm text-gray-700 mb-1">¿Qué le gustó del plan anterior?</label>
+                        <textarea name="que_le_gusto" rows="2" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400"></textarea>
+                    </div>
+                    <div>
+                        <label class="block text-sm text-gray-700 mb-1">¿Qué no le gustó o le costó trabajo?</label>
+                        <textarea name="que_no_le_gusto" rows="2" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400"></textarea>
+                    </div>
+                    <div>
+                        <label class="block text-sm text-gray-700 mb-1">Principales cambios que hizo</label>
+                        <textarea name="cambios_que_hizo" rows="2" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400"></textarea>
+                    </div>
+                    <div>
+                        <label class="block text-sm text-gray-700 mb-1">¿En qué puede mejorar?</label>
+                        <textarea name="en_que_puede_mejorar" rows="2" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400"></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-sm p-6">
+                <h2 class="text-lg font-medium text-green-700 border-b border-green-200 pb-2 mb-4">Estatus médico</h2>
+                <div>
+                    <label class="block text-sm text-gray-700 mb-1">Tratamiento médico (medicamentos, dosis, cambios)</label>
+                    <textarea name="estatus_tratamiento_medico" rows="3" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400"></textarea>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-sm p-6">
+                <h2 class="text-lg font-medium text-green-700 border-b border-green-200 pb-2 mb-4">Medición de hoy</h2>
+                <p class="text-xs text-gray-500 mb-4">Si no se hizo medición, deja los campos vacíos.</p>
+                <div class="grid grid-cols-3 gap-4">
+                    <div>
+                        <label class="block text-sm text-gray-700 mb-1">Peso (kg)</label>
+                        <input type="number" step="0.1" name="peso"
+                               class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400">
+                    </div>
+                    <div>
+                        <label class="block text-sm text-gray-700 mb-1">IMC</label>
+                        <input type="number" step="0.1" name="imc"
+                               class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400">
+                    </div>
+                    <div>
+                        <label class="block text-sm text-gray-700 mb-1">Grasa corporal (%)</label>
+                        <input type="number" step="0.1" name="porcentaje_grasa"
+                               class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400">
+                    </div>
+                    <div>
+                        <label class="block text-sm text-gray-700 mb-1">Masa grasa (kg)</label>
+                        <input type="number" step="0.1" name="masa_grasa_kg"
+                               class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400">
+                    </div>
+                    <div>
+                        <label class="block text-sm text-gray-700 mb-1">MME (kg)</label>
+                        <input type="number" step="0.1" name="mme"
+                               class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400">
+                    </div>
+                    <div>
+                        <label class="block text-sm text-gray-700 mb-1">Grasa visceral</label>
+                        <input type="number" step="0.1" name="grasa_visceral"
+                               class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400">
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-sm p-6">
+                <h2 class="text-lg font-medium text-green-700 border-b border-green-200 pb-2 mb-4">Notas y ajustes</h2>
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm text-gray-700 mb-1">Notas libres</label>
+                        <textarea name="notas_libres" rows="3" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400"></textarea>
+                    </div>
+                    <div>
+                        <label class="block text-sm text-gray-700 mb-1">Ajustes acordados para el siguiente periodo</label>
+                        <textarea name="ajustes_acordados" rows="3" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400"></textarea>
+                    </div>
+                </div>
+            </div>
+
+        </form>
+
+    </div>
+
+    <div class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 shadow-lg">
+        <div class="max-w-3xl mx-auto">
+            <button onclick="document.querySelector('form').submit()"
+                    class="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-3 rounded-lg transition">
+                Guardar consulta
+            </button>
+        </div>
+    </div>
+
+</body>
+</html>

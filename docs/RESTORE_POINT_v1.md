@@ -35,8 +35,16 @@ fastapi, uvicorn[standard], jinja2, python-multipart, y sus dependencias.
 | `/pacientes/{id}/citas/nueva` | POST | Agenda una cita nueva (detecta solo si es primera consulta o seguimiento) |
 | `/citas/{id}/estado` | POST | Cambia el estado de una cita: confirmada, cancelada, completada, no_asistio |
 | `/citas/{id}/reagendar` | POST | Marca la cita como cancelada y crea una nueva con la fecha nueva, conservando el registro |
+| `/pacientes/{id}/followup/nuevo` | GET | Formulario de consulta de seguimiento, con recordatorio de la consulta anterior y número autoasignado |
+| `/pacientes/{id}/followup` | POST | Guarda la consulta, crea la medición si se llenó, y agenda la próxima cita si se indicó fecha |
 
-**Plantillas en `templates/`:** `alta_rapida.html` (123 líneas, formulario de alta con secciones de datos del paciente y agendar cita), `lista_pacientes.html` (57 líneas, tabla con nombres enlazados al expediente), `expediente.html` (182 líneas, vista de expediente que combina datos de tres tablas distintas en una sola pantalla, incluye gestión completa de citas con formularios desplegables) e `historia_clinica.html` (323 líneas, formulario de 10 secciones en página única con botón de guardar fijo). Todas usan Tailwind vía CDN y la paleta verde de la marca.
+**Plantillas en `templates/`:** `alta_rapida.html` (123 líneas, formulario de alta con secciones de datos del paciente y agendar cita), `lista_pacientes.html` (57 líneas, tabla con nombres enlazados al expediente), `expediente.html` (215 líneas, vista de expediente que combina datos de cuatro tablas distintas en una sola pantalla, incluye gestión completa de citas e historial de consultas) e `historia_clinica.html` (323 líneas, formulario de 10 secciones en página única con botón de guardar fijo) y `follow_up.html` (166 líneas, formulario de consulta de seguimiento con recordatorio de la consulta previa). Todas usan Tailwind vía CDN y la paleta verde de la marca.
+
+**Automatizaciones del follow-up:**
+- El número de consulta se asigna solo (última consulta + 1), nunca se teclea
+- Si se llenan campos de medición, se crea un registro en `mediciones_inbody` con `origen="manual"` y queda enlazado al follow-up
+- Si se indica fecha de próxima cita, se agenda automáticamente una cita nueva con nota "Agendada desde la consulta N"
+- Al abrir una consulta nueva se muestran los ajustes acordados y el punto de mejora de la consulta anterior. Resuelve la necesidad planteada por la nutrióloga de "poder retomar la conversación en la siguiente consulta"
 
 **Decisión de diseño del formulario de historia clínica:** página única con scroll, no pestañas ni paso a paso. Razón: la nutrióloga lo llena durante la consulta, hablando con el paciente, sin seguir un orden estricto. Con página única puede saltar entre secciones sin perder el hilo de la conversación. El botón de guardar es fijo en la parte inferior, siempre accesible.
 
@@ -141,6 +149,7 @@ pip install -r requirements.txt
 - [x] Lista de pacientes, funcionando
 - [x] Vista de expediente del paciente (datos de contacto, citas con estado, estado de historia clínica), funcionando
 - [x] Gestión de citas desde el expediente: agendar nueva, reagendar (cancela la anterior y crea nueva, dejando registro visible), cancelar, marcar completada, marcar no asistió. Verificado
+- [x] Módulo de follow-up (consultas de seguimiento) con número autoasignado, registro de medición, agendado automático de próxima cita, y recordatorio de la consulta anterior. Verificado
 - [x] Formulario completo de Historia Clínica (10 secciones, guardar y editar), funcionando y verificado
 - [ ] Formulario digital de intake (basado en `Historia_Clinica_v2.docx`)
 - [ ] Formulario digital de follow-up (basado en `Follow_Up_v1.docx`)
@@ -211,3 +220,4 @@ pip install -r requirements.txt
 | 2026-08-29 | Vista de expediente del paciente construida y verificada. Combina en una sola pantalla los datos del paciente, sus citas (con etiqueta de estado por color) y el estado de su historia clínica, leyendo de tres tablas distintas |
 | 2026-08-29 | Formulario de Historia Clínica completo (10 secciones, ~50 campos) construido y verificado: guardar, redirigir al expediente, y editar recuperando los datos. **El sistema ya es utilizable en la vida real** para dar de alta pacientes, agendar citas y capturar historias clínicas |
 | 2026-08-29 | Gestión de citas completa desde el expediente: agendar, reagendar, cancelar, marcar completada o no asistió. El reagendado cancela la cita anterior y crea una nueva, dejando el rastro visible (cita anterior tachada con etiqueta "cancelada"), conforme a la política acordada de no sobreescribir nada |
+| 2026-08-30 | Módulo de follow-up terminado y verificado. Incluye tres automatizaciones: número de consulta autoasignado, creación del registro de medición si se llenan esos campos, y agendado automático de la próxima cita. Al abrir una consulta nueva muestra los ajustes acordados y el punto de mejora de la anterior |
