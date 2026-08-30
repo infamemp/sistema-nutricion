@@ -1,6 +1,6 @@
 # Sistema Integral de Nutrición, Documento Maestro del Proyecto
 
-**Versión:** 3.8
+**Versión:** 3.9
 **Fecha:** 30 de agosto de 2026
 **Estado:** Fase 0 completa. Infraestructura lista. Guía de estilo cerrada. Recolección de material en curso.
 
@@ -42,7 +42,7 @@ Proveedores evaluados y descartados para el VPS: Hostinger KVM (precio promocion
 2. **Captura de información.** Plantilla de intake inicial y plantilla de follow-up, optimizadas para tablet.
 3. **Motor de IA nutricional.** Genera la dieta sugerida a partir de: expediente del paciente, knowledgebase, y búsqueda web controlada con lista blanca. Prohibido: redes sociales, influencers, modas sin sustento.
 4. **Knowledgebase.** Fuente de verdad: guías clínicas por padecimiento, Tabla de Equivalencias Nutrimentales propia, alimentación mexicana, base de alimentos vía API.
-5. **Flujo de aprobación y entrega.** La IA propone, la nutrióloga revisa, un clic aprueba, se genera el PDF y se envía por correo.
+8. **Flujo de aprobación y entrega.** La IA propone, la nutrióloga revisa, un clic aprueba, se genera el PDF y se envía por correo.
 6. **Portal del paciente** (fase posterior). El paciente ve su dieta y avance en la web, con pagos en línea.
 7. **La plataforma.** La envoltura: una sola interfaz web sencilla, responsiva, doble clic y a trabajar.
 
@@ -213,6 +213,7 @@ sistema-nutricion/
     ├── TABLA_DE_EQUIVALENCIAS.md
     ├── FUENTES_ALIMENTOS.md
     ├── REGLAS_CLINICAS.md
+    ├── APRENDIZAJE_CONTINUO.md
     ├── Aviso_de_Privacidad.docx
     └── RESTORE_POINT_v1.md
 ```
@@ -229,9 +230,10 @@ Las API keys nunca van al repo. Viven en un archivo `.env` local, ya cubierto po
 2. **La IA nunca aprueba sola.** Toda dieta pasa por revisión y clic de aprobación de la nutrióloga.
 3. **Fuentes serias únicamente.** Knowledgebase primero, web solo como soporte con lista blanca. Cero redes sociales, influencers o modas.
 4. **La voz es suya, no de la IA.** El paciente debe reconocer a su nutrióloga en cada documento. Nada de texto que se sienta generado.
-5. **Individualización real.** Mismo criterio clínico, distinta redacción y distintos ejemplos para cada paciente. Se acaba el copy paste.
-6. **Nada se pierde.** Historial completo, versionado, respaldo doble (DigitalOcean y Google Drive).
-7. **México primero.** Alimentos, ingredientes y lenguaje de Puebla, inglés disponible cuando se necesite.
+5. **El sistema razona, no repite.** Es inteligente, flexible, adaptable, proactivo, experto, y capaz de investigar. **NO es un robot rígido, repetitivo, ni de copiar y pegar.** Este principio tiene prioridad sobre cualquier mecanismo de mejora que se construya: si algo aumenta la consistencia a costa de volver repetitivo al sistema, no se implementa. Ver `docs/APRENDIZAJE_CONTINUO.md`
+6. **Individualización real.** Mismo criterio clínico, distinta redacción y distintos ejemplos para cada paciente. Se acaba el copy paste.
+7. **Nada se pierde.** Historial completo, versionado, respaldo doble (DigitalOcean y Google Drive).
+8. **México primero.** Alimentos, ingredientes y lenguaje de Puebla, inglés disponible cuando se necesite.
 
 ---
 
@@ -266,3 +268,4 @@ Las API keys nunca van al repo. Viven en un archivo `.env` local, ya cubierto po
 | 2026-08-29 | v3.6, tabla `citas` creada en código (9 tablas en total) y **primer módulo funcional del sistema terminado**: formulario de alta rápida de paciente con agendado de cita, más lista de pacientes, verificado de extremo a extremo en el servidor con un registro de prueba. Se decide que reagendar deja registro (cancelar la anterior y crear nueva, nunca sobreescribir), y se agrega al checklist la pantalla de gestión de citas. Se documenta en el punto de restauración que pegar código largo por SSH corrompe archivos, y que `nano -i` es el método confiable |
 | 2026-08-30 | v3.7, Fase 2 avanzada: se implementó y verificó la arquitectura de fuentes de alimentos. Se probó OpenFoodFacts como fuente principal y se descartó por precisión de 3 de 20 (devolvía Takis al buscar tortilla, galletas al buscar huevo). Se adoptó la BAM del INCMNSZ e INSP como fuente principal (2,045 alimentos mexicanos, archivo local) y el USDA como fuente activa secundaria (dominio público). OpenFoodFacts queda restringido a productos de marca con verificación humana. Documentado en `docs/FUENTES_ALIMENTOS.md` |
 | 2026-08-30 | v3.8, motor de reglas clínicas implementado. Se recabaron directamente de la nutrióloga sus criterios de prescripción (rangos de proteína según uso de GLP-1 con respaldo EASO, piso no negociable de 60 g, mínimos y límites por grupo, reglas de calidad, y su filtro propio que corrige al SMAE excluyendo margarina, mayonesa y crema). Codificados en un archivo de configuración editable más motor de cálculo, verificados con dos casos de prueba. Se aclara que Marifer piensa en equivalentes pero prescribe en medidas caseras, lo que vuelve indispensable la Tabla de Equivalencias como motor interno |
+| 2026-08-30 | v3.9, se documenta el diseño de aprendizaje continuo en `docs/APRENDIZAJE_CONTINUO.md`. Se aclara que la IA no aprende sola entre casos, pero el sistema puede volverse más listo sobre qué contexto darle. Tres niveles diseñados: registro de correcciones (recomendado, la base de datos ya está preparada con el campo `instruccion_ajuste`), banco de dietas aprobadas (**riesgo alto de volver el sistema repetitivo, no implementar por ahora**) y análisis periódico asistido (para cuando haya 50 a 100 dietas reales). Se eleva a principio no negociable que el sistema razona y no repite |
