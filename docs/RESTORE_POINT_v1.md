@@ -212,6 +212,12 @@ Archivos en `/opt/sistema-nutricion/`: `alimentos.py` (orquestador, 109 líneas)
 
 Arquitectura de tres fuentes con jerarquía, detallada en `docs/FUENTES_ALIMENTOS.md`: BAM local para alimentos mexicanos, USDA para genéricos internacionales, OpenFoodFacts restringido a productos de marca con verificación humana.
 
+**Conversión de medidas caseras, agregado el 30 ago 2026:**
+
+`medidas.py` (246 líneas) más `datos/medidas_caseras.json` (62 alimentos). Traduce entre las medidas de Marifer y los gramos de la BAM.
+
+**Advertencia importante para quien retome:** los alimentos cambian su densidad al cocerse. Siempre usar `medidas.buscar_en_bam(alimento, bam)` en lugar de `bam.buscar_palabras()` directo, porque la primera aplica el campo `buscar_como` que evita tomar el alimento crudo cuando debe ser cocido. Detalle en `docs/MEDIDAS_CASERAS.md`.
+
 **Motor de reglas clínicas, agregado el 30 ago 2026:**
 
 `reglas.py` (179 líneas) más `datos/reglas_clinicas.json`. Codifica los criterios de prescripción de Marifer, recabados directamente de ella. Los números viven en el JSON, editable sin tocar código.
@@ -237,6 +243,7 @@ Verificado con dos casos: paciente de 85 kg con GLP-1 (objetivo 105 g, detectó 
 | 2026-08-29 | Vista de expediente del paciente construida y verificada. Combina en una sola pantalla los datos del paciente, sus citas (con etiqueta de estado por color) y el estado de su historia clínica, leyendo de tres tablas distintas |
 | 2026-08-29 | Formulario de Historia Clínica completo (10 secciones, ~50 campos) construido y verificado: guardar, redirigir al expediente, y editar recuperando los datos. **El sistema ya es utilizable en la vida real** para dar de alta pacientes, agendar citas y capturar historias clínicas |
 | 2026-08-29 | Gestión de citas completa desde el expediente: agendar, reagendar, cancelar, marcar completada o no asistió. El reagendado cancela la cita anterior y crea una nueva, dejando el rastro visible (cita anterior tachada con etiqueta "cancelada"), conforme a la política acordada de no sobreescribir nada |
+| 2026-08-30 | Tabla de conversión de medidas caseras implementada. Se detectaron dos errores silenciosos de cálculo (arroz crudo contra cocido, pollo con piel contra sin piel) y se resolvieron con el campo `buscar_como` |
 | 2026-08-30 | Motor de reglas clínicas implementado y verificado. Los criterios de prescripción de la nutrióloga quedan codificados y editables sin tocar código |
 | 2026-08-30 | Arquitectura de fuentes de alimentos implementada y verificada: BAM (local, 2045 alimentos mexicanos), USDA (API, dominio público) y OpenFoodFacts (restringido a marcas). Se descartó OpenFoodFacts como fuente principal tras medir su precisión: 3 de 20 |
 | 2026-08-30 | Módulo de follow-up terminado y verificado. Incluye tres automatizaciones: número de consulta autoasignado, creación del registro de medición si se llenan esos campos, y agendado automático de la próxima cita. Al abrir una consulta nueva muestra los ajustes acordados y el punto de mejora de la anterior |

@@ -1,6 +1,6 @@
 # Sistema Integral de Nutrición, Documento Maestro del Proyecto
 
-**Versión:** 3.9
+**Versión:** 4.0
 **Fecha:** 30 de agosto de 2026
 **Estado:** Fase 0 completa. Infraestructura lista. Guía de estilo cerrada. Recolección de material en curso.
 
@@ -103,6 +103,10 @@ Stack, servidor, IA, base de alimentos, alcance, identidad visual y guía de est
   - **Dos reglas que van antes que el cálculo:** la calidad del alimento (nada de ultraprocesados, light o empaquetados) y el filtro propio sobre el SMAE (excluye margarina, mayonesa y crema aunque el sistema de equivalentes las incluya)
   - **No se cuentan calorías**, ni se muestran al paciente, ni se construye el plan a partir de un objetivo calórico
   - **Hallazgo:** Marifer sí piensa en equivalentes pero prescribe en medidas caseras. Confirma que la Tabla de Equivalencias propia es indispensable como motor interno de cálculo, no opcional
+- **Conversión de medidas caseras, IMPLEMENTADO Y VERIFICADO.** 62 alimentos con sus medidas reales en `datos/medidas_caseras.json` y `medidas.py`. Es el puente entre las tazas y piezas que prescribe Marifer y los valores por 100 g de la BAM. Documentado en `docs/MEDIDAS_CASERAS.md`
+  - **Hallazgo crítico, crudo contra cocido:** los cereales y leguminosas triplican su peso al cocerse. El arroz crudo tiene 363 kcal por 100 g y el cocido 123. El sistema devolvía 287 kcal en media taza de arroz cuando el valor correcto era 97. **El error no producía ninguna señal**, una dieta mal calculada se habría visto normal. Resuelto con el campo `buscar_como` que indica el término exacto de la BAM
+  - **Segundo hallazgo:** "pechuga de pollo" resolvía a la versión con piel (181 kcal, 11.1 g de grasa) en lugar de sin piel (120 kcal, 2.62 g), que es la que ella prescribe. Más de 4 veces la grasa
+  - **Chequeo de sensatez** sobre cada porción calculada, mismo principio que el del InBody: detecta densidades calóricas imposibles y avisa en vez de aceptar callado
 - Lista blanca de fuentes web permitidas
 
 ### Fase 3, Motor de IA
@@ -214,6 +218,7 @@ sistema-nutricion/
     ├── FUENTES_ALIMENTOS.md
     ├── REGLAS_CLINICAS.md
     ├── APRENDIZAJE_CONTINUO.md
+    ├── MEDIDAS_CASERAS.md
     ├── Aviso_de_Privacidad.docx
     └── RESTORE_POINT_v1.md
 ```
@@ -269,3 +274,4 @@ Las API keys nunca van al repo. Viven en un archivo `.env` local, ya cubierto po
 | 2026-08-30 | v3.7, Fase 2 avanzada: se implementó y verificó la arquitectura de fuentes de alimentos. Se probó OpenFoodFacts como fuente principal y se descartó por precisión de 3 de 20 (devolvía Takis al buscar tortilla, galletas al buscar huevo). Se adoptó la BAM del INCMNSZ e INSP como fuente principal (2,045 alimentos mexicanos, archivo local) y el USDA como fuente activa secundaria (dominio público). OpenFoodFacts queda restringido a productos de marca con verificación humana. Documentado en `docs/FUENTES_ALIMENTOS.md` |
 | 2026-08-30 | v3.8, motor de reglas clínicas implementado. Se recabaron directamente de la nutrióloga sus criterios de prescripción (rangos de proteína según uso de GLP-1 con respaldo EASO, piso no negociable de 60 g, mínimos y límites por grupo, reglas de calidad, y su filtro propio que corrige al SMAE excluyendo margarina, mayonesa y crema). Codificados en un archivo de configuración editable más motor de cálculo, verificados con dos casos de prueba. Se aclara que Marifer piensa en equivalentes pero prescribe en medidas caseras, lo que vuelve indispensable la Tabla de Equivalencias como motor interno |
 | 2026-08-30 | v3.9, se documenta el diseño de aprendizaje continuo en `docs/APRENDIZAJE_CONTINUO.md`. Se aclara que la IA no aprende sola entre casos, pero el sistema puede volverse más listo sobre qué contexto darle. Tres niveles diseñados: registro de correcciones (recomendado, la base de datos ya está preparada con el campo `instruccion_ajuste`), banco de dietas aprobadas (**riesgo alto de volver el sistema repetitivo, no implementar por ahora**) y análisis periódico asistido (para cuando haya 50 a 100 dietas reales). Se eleva a principio no negociable que el sistema razona y no repite |
+| 2026-08-30 | v4.0, tabla de conversión de medidas caseras implementada (62 alimentos). Se detectaron y corrigieron dos errores silenciosos que habrían producido dietas mal calculadas sin señal de alerta: el arroz se tomaba crudo en lugar de cocido (287 kcal contra 97 reales en media taza) y la pechuga de pollo con piel en lugar de sin piel (4 veces la grasa). Resueltos con el campo `buscar_como`, más un chequeo de sensatez sobre cada porción calculada |

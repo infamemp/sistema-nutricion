@@ -1,0 +1,374 @@
+{
+  "_meta": {
+    "version": "1.1",
+    "fecha": "2026-08-30",
+    "proposito": "Traducir entre las medidas caseras que usa Marifer en sus dietas y los gramos que necesita el sistema para consultar la BAM. Sin esta tabla el sistema no puede verificar si una dieta cumple el objetivo de proteina.",
+    "nota": "Los pesos son aproximados y sirven para calculo interno. El paciente siempre ve la medida casera, nunca los gramos.",
+    "fuentes": "Medidas observadas en las 24 dietas reales de la nutriologa, complementadas con equivalencias de uso comun en Mexico",
+    "advertencia_crudo_cocido": "CRITICO: muchos alimentos cambian su densidad nutricional al cocerse. El arroz crudo tiene 363 kcal por 100 g y cocido 123. Los cereales, leguminosas y pastas absorben agua y triplican su peso. Al consultar la BAM hay que usar el alimento en el MISMO estado que la medida casera. El campo 'buscar_como' de cada alimento indica el termino correcto para la BAM."
+  },
+  "volumen_a_ml": {
+    "taza": 240,
+    "media_taza": 120,
+    "tercio_taza": 80,
+    "cuarto_taza": 60,
+    "tres_cuartos_taza": 180,
+    "cucharada": 15,
+    "cucharadita": 5,
+    "vaso": 240,
+    "chorrito": 5
+  },
+  "alimentos": {
+    "aguacate": {
+      "pieza_g": 200,
+      "porciones_usuales": {
+        "1/3 de aguacate": 67,
+        "1/2 aguacate": 100,
+        "3 rebanadas": 45,
+        "30 g": 30
+      },
+      "nota": "Marifer usa mucho el tercio de aguacate"
+    },
+    "tortilla de maiz": {
+      "pieza_g": 30,
+      "porciones_usuales": {
+        "1 tortilla": 30,
+        "2 tortillas": 60
+      }
+    },
+    "tortilla de harina": {
+      "pieza_g": 42
+    },
+    "tostada horneada": {
+      "pieza_g": 12,
+      "porciones_usuales": {
+        "2 tostadas": 24,
+        "3 tostadas": 36
+      }
+    },
+    "salmas": {
+      "paquetito_g": 30,
+      "pieza_g": 6,
+      "nota": "El paquetito individual trae aproximadamente 5 piezas"
+    },
+    "tortita de arroz inflado": {
+      "pieza_g": 9,
+      "porciones_usuales": {
+        "1 tortita": 9,
+        "2 tortitas": 18
+      }
+    },
+    "pan de caja": {
+      "rebanada_g": 28
+    },
+    "pan thin": {
+      "pieza_g": 45
+    },
+    "pan de masa madre": {
+      "rebanada_g": 40
+    },
+    "arroz cocido": {
+      "taza_g": 158,
+      "porciones_usuales": {
+        "1/2 taza": 79,
+        "1 taza": 158
+      },
+      "buscar_como": "arroz integral cocido",
+      "estado": "cocido"
+    },
+    "quinoa cocida": {
+      "taza_g": 185,
+      "porciones_usuales": {
+        "1/2 taza": 93
+      },
+      "buscar_como": "quinoa cocida",
+      "estado": "cocido"
+    },
+    "avena cruda": {
+      "taza_g": 80,
+      "porciones_usuales": {
+        "1/2 taza cruda": 40,
+        "1/3 taza": 27,
+        "2 cucharadas": 16
+      },
+      "buscar_como": "avena cruda",
+      "estado": "crudo"
+    },
+    "pasta cocida": {
+      "taza_g": 140,
+      "porciones_usuales": {
+        "1/2 taza": 70
+      },
+      "buscar_como": "pasta cocida",
+      "estado": "cocido"
+    },
+    "camote": {
+      "taza_g": 200,
+      "pieza_g": 130,
+      "porciones_usuales": {
+        "1/2 taza": 100,
+        "1/2 camote hervido": 65
+      },
+      "buscar_como": "camote cocido",
+      "estado": "cocido"
+    },
+    "papa": {
+      "pieza_g": 170,
+      "taza_g": 150,
+      "buscar_como": "papa cocida",
+      "estado": "cocido"
+    },
+    "frijol cocido": {
+      "taza_g": 172,
+      "porciones_usuales": {
+        "1/3 taza": 57,
+        "1/2 taza": 86,
+        "1 cucharada de frijoles molidos": 20
+      },
+      "buscar_como": "frijol cocido",
+      "estado": "cocido"
+    },
+    "lentejas cocidas": {
+      "taza_g": 198,
+      "porciones_usuales": {
+        "1/2 taza": 99
+      },
+      "buscar_como": "lentejas cocidas",
+      "estado": "cocido"
+    },
+    "garbanzo cocido": {
+      "taza_g": 164,
+      "buscar_como": "garbanzo cocido",
+      "estado": "cocido"
+    },
+    "pechuga de pollo": {
+      "pieza_g": 120,
+      "taza_desmenuzado_g": 140,
+      "porciones_usuales": {
+        "1 pechuga": 120,
+        "3/4 taza desmenuzado": 105,
+        "100 g": 100,
+        "120 g": 120
+      },
+      "buscar_como": "pollo pechuga sin piel",
+      "estado": "cocido",
+      "nota": "Marifer prescribe pechuga sin piel. Con piel tiene mas grasa."
+    },
+    "carne de res": {
+      "porciones_usuales": {
+        "1 sabana": 120,
+        "120 g carne molida": 120,
+        "3/4 taza falda deshebrada": 105
+      }
+    },
+    "pescado": {
+      "filete_g": 130,
+      "porciones_usuales": {
+        "1 filete": 130
+      }
+    },
+    "salmon": {
+      "filete_g": 140,
+      "buscar_como": "salmon cocido",
+      "estado": "cocido"
+    },
+    "atun en agua": {
+      "lata_grande_g": 140,
+      "lata_chica_g": 80,
+      "medallon_g": 100
+    },
+    "huevo": {
+      "pieza_g": 50,
+      "clara_g": 33,
+      "yema_g": 17,
+      "porciones_usuales": {
+        "2 huevos": 100,
+        "3 huevos": 150,
+        "1/2 taza de claras": 120
+      },
+      "buscar_como": "huevo duro",
+      "estado": "cocido"
+    },
+    "queso panela": {
+      "rebanada_g": 30,
+      "porciones_usuales": {
+        "2 rebanadas": 60,
+        "4 rebanadas": 120,
+        "90 g": 90
+      }
+    },
+    "queso cottage": {
+      "taza_g": 226,
+      "porciones_usuales": {
+        "1/2 taza": 113,
+        "1 taza": 226
+      }
+    },
+    "queso oaxaca": {
+      "porciones_usuales": {
+        "30 g": 30
+      }
+    },
+    "yogurt griego": {
+      "taza_g": 245,
+      "porciones_usuales": {
+        "1/2 taza": 123,
+        "3/4 taza": 184,
+        "1 cucharada": 15
+      }
+    },
+    "leche de almendras": {
+      "taza_ml": 240
+    },
+    "proteina en polvo": {
+      "scoop_g": 30,
+      "nota": "Varia por marca, 30 g es el promedio"
+    },
+    "almendras": {
+      "pieza_g": 1.2,
+      "porciones_usuales": {
+        "10 almendras": 12,
+        "1/4 taza": 35
+      }
+    },
+    "nueces": {
+      "mitad_g": 2,
+      "porciones_usuales": {
+        "5 mitades": 10,
+        "10 nueces": 20,
+        "1/4 taza": 30
+      }
+    },
+    "pistaches": {
+      "pieza_g": 0.7,
+      "porciones_usuales": {
+        "15 pistaches": 10
+      }
+    },
+    "cacahuates": {
+      "porciones_usuales": {
+        "2 cucharadas": 18
+      }
+    },
+    "crema de almendras": {
+      "cucharada_g": 16
+    },
+    "crema de cacahuate": {
+      "cucharada_g": 16
+    },
+    "chia": {
+      "cucharada_g": 12
+    },
+    "linaza": {
+      "cucharada_g": 10
+    },
+    "pepitas": {
+      "cucharada_g": 10,
+      "porciones_usuales": {
+        "2 cucharadas": 20
+      }
+    },
+    "aceite de oliva": {
+      "cucharada_g": 14,
+      "cucharadita_g": 4.5
+    },
+    "hummus": {
+      "cucharada_g": 15,
+      "cucharadita_g": 5
+    },
+    "guacamole": {
+      "cucharada_g": 30
+    },
+    "nopales": {
+      "pieza_g": 40,
+      "taza_g": 150,
+      "porciones_usuales": {
+        "2 nopales asados": 80
+      },
+      "buscar_como": "nopales cocidos",
+      "estado": "cocido"
+    },
+    "verdura cruda": {
+      "taza_g": 80,
+      "nota": "Hojas verdes y ensaladas, promedio"
+    },
+    "verdura cocida": {
+      "taza_g": 150,
+      "nota": "Verduras al vapor o salteadas, promedio",
+      "buscar_como": "verdura cocida",
+      "estado": "cocido"
+    },
+    "espinaca cruda": {
+      "taza_g": 30
+    },
+    "jitomate": {
+      "pieza_g": 120
+    },
+    "pepino": {
+      "pieza_g": 200
+    },
+    "calabacita": {
+      "pieza_g": 100
+    },
+    "zanahoria": {
+      "pieza_g": 60
+    },
+    "jicama": {
+      "taza_g": 130
+    },
+    "brocoli": {
+      "taza_g": 90
+    },
+    "manzana": {
+      "pieza_g": 180
+    },
+    "platano": {
+      "pieza_g": 120,
+      "porciones_usuales": {
+        "1/2 platano": 60
+      }
+    },
+    "papaya": {
+      "taza_g": 145,
+      "porciones_usuales": {
+        "1/2 taza": 73
+      }
+    },
+    "fresas": {
+      "pieza_g": 12,
+      "taza_g": 150,
+      "porciones_usuales": {
+        "5 fresas": 60,
+        "1/2 taza": 75
+      }
+    },
+    "blueberries": {
+      "taza_g": 148,
+      "porciones_usuales": {
+        "1/3 taza": 49
+      }
+    },
+    "uvas": {
+      "pieza_g": 5,
+      "porciones_usuales": {
+        "10 uvas": 50,
+        "1/2 taza": 75
+      }
+    },
+    "pera": {
+      "pieza_g": 180
+    },
+    "naranja": {
+      "pieza_g": 150
+    },
+    "mandarina": {
+      "pieza_g": 90
+    },
+    "fruta picada": {
+      "taza_g": 150,
+      "porciones_usuales": {
+        "1/2 taza": 75
+      }
+    }
+  }
+}
