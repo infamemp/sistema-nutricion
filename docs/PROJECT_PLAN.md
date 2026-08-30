@@ -1,6 +1,6 @@
 # Sistema Integral de Nutrición, Documento Maestro del Proyecto
 
-**Versión:** 3.7
+**Versión:** 3.8
 **Fecha:** 30 de agosto de 2026
 **Estado:** Fase 0 completa. Infraestructura lista. Guía de estilo cerrada. Recolección de material en curso.
 
@@ -97,6 +97,12 @@ Stack, servidor, IA, base de alimentos, alcance, identidad visual y guía de est
   3. **OpenFoodFacts** (API), restringido a productos de marca con verificación humana obligatoria
   - **Hallazgo que cambió el plan:** se probó OpenFoodFacts como fuente principal y falló, precisión de 3 de 20. Devolvía Takis al buscar "tortilla de maíz", galletas María al buscar "huevo", aceite al buscar "aguacate". Es una base de productos con código de barras, no de alimentos genéricos. Sin esta prueba, el sistema habría calculado dietas con datos incorrectos
   - **Regla de seguridad:** ningún resultado de OpenFoodFacts se acepta automáticamente, siempre se devuelven candidatos para que la nutrióloga elija
+- **Motor de reglas clínicas, IMPLEMENTADO Y VERIFICADO.** Los criterios de prescripción de Marifer, recabados directamente de ella, codificados en `datos/reglas_clinicas.json` (editable sin tocar código) y `reglas.py`. Documentado en `docs/REGLAS_CLINICAS.md`
+  - Proteína como nutriente rector: 1.0 a 1.5 g/kg con GLP-1 (respaldo EASO), 1.2 a 1.8 g/kg sin GLP-1, piso absoluto de 60 g no negociable, distribuida en 3 comidas de 25 a 30 g
+  - Verdura mínimo 2 tazas, fruta máximo 2 piezas (3 en deportistas o embarazo), 4 porciones de grasa saludable, 1 a 2 equivalentes de carbohidrato por comida
+  - **Dos reglas que van antes que el cálculo:** la calidad del alimento (nada de ultraprocesados, light o empaquetados) y el filtro propio sobre el SMAE (excluye margarina, mayonesa y crema aunque el sistema de equivalentes las incluya)
+  - **No se cuentan calorías**, ni se muestran al paciente, ni se construye el plan a partir de un objetivo calórico
+  - **Hallazgo:** Marifer sí piensa en equivalentes pero prescribe en medidas caseras. Confirma que la Tabla de Equivalencias propia es indispensable como motor interno de cálculo, no opcional
 - Lista blanca de fuentes web permitidas
 
 ### Fase 3, Motor de IA
@@ -206,6 +212,7 @@ sistema-nutricion/
     ├── KNOWLEDGEBASE.md
     ├── TABLA_DE_EQUIVALENCIAS.md
     ├── FUENTES_ALIMENTOS.md
+    ├── REGLAS_CLINICAS.md
     ├── Aviso_de_Privacidad.docx
     └── RESTORE_POINT_v1.md
 ```
@@ -258,3 +265,4 @@ Las API keys nunca van al repo. Viven en un archivo `.env` local, ya cubierto po
 | 2026-08-29 | v3.5, base de datos SQLite creada y verificada (8 tablas). Se detecta un caso sin cubrir (agendar una cita telefónica sin llenar la Historia Clínica) y se agrega una novena tabla, `citas`, con campo `google_event_id` preparado para una futura sincronización con Google Calendar (documentada en dos direcciones de complejidad distinta, no bloqueante, diferida a fases posteriores). Se decide el flujo de alta rápida (datos básicos + cita) separado de la Historia Clínica completa, con la vista de expediente combinada quedando como pantalla futura. Nuevo pendiente: credenciales de Google Calendar API |
 | 2026-08-29 | v3.6, tabla `citas` creada en código (9 tablas en total) y **primer módulo funcional del sistema terminado**: formulario de alta rápida de paciente con agendado de cita, más lista de pacientes, verificado de extremo a extremo en el servidor con un registro de prueba. Se decide que reagendar deja registro (cancelar la anterior y crear nueva, nunca sobreescribir), y se agrega al checklist la pantalla de gestión de citas. Se documenta en el punto de restauración que pegar código largo por SSH corrompe archivos, y que `nano -i` es el método confiable |
 | 2026-08-30 | v3.7, Fase 2 avanzada: se implementó y verificó la arquitectura de fuentes de alimentos. Se probó OpenFoodFacts como fuente principal y se descartó por precisión de 3 de 20 (devolvía Takis al buscar tortilla, galletas al buscar huevo). Se adoptó la BAM del INCMNSZ e INSP como fuente principal (2,045 alimentos mexicanos, archivo local) y el USDA como fuente activa secundaria (dominio público). OpenFoodFacts queda restringido a productos de marca con verificación humana. Documentado en `docs/FUENTES_ALIMENTOS.md` |
+| 2026-08-30 | v3.8, motor de reglas clínicas implementado. Se recabaron directamente de la nutrióloga sus criterios de prescripción (rangos de proteína según uso de GLP-1 con respaldo EASO, piso no negociable de 60 g, mínimos y límites por grupo, reglas de calidad, y su filtro propio que corrige al SMAE excluyendo margarina, mayonesa y crema). Codificados en un archivo de configuración editable más motor de cálculo, verificados con dos casos de prueba. Se aclara que Marifer piensa en equivalentes pero prescribe en medidas caseras, lo que vuelve indispensable la Tabla de Equivalencias como motor interno |

@@ -1,0 +1,136 @@
+{
+  "_meta": {
+    "version": "1.0",
+    "fecha": "2026-08-30",
+    "fuente": "Criterios clinicos de Marifer Utrilla Lack, recabados directamente",
+    "nota": "Este archivo define COMO decide la nutriologa que prescribir. Es editable sin tocar codigo. Si ella cambia un criterio, se ajusta aqui.",
+    "referencia_clinica": "EASO para los rangos de proteina en pacientes con GLP-1"
+  },
+
+  "proteina": {
+    "descripcion": "El nutriente rector del plan. Marifer construye la dieta alrededor de la proteina.",
+    "con_glp1": {
+      "g_por_kg_min": 1.0,
+      "g_por_kg_max": 1.5,
+      "justificacion": "Guias EASO: rango necesario para que haya perdida de peso preservando masa muscular"
+    },
+    "sin_glp1": {
+      "g_por_kg_min": 1.2,
+      "g_por_kg_max": 1.8,
+      "justificacion": "Segun objetivos y resultados del paciente"
+    },
+    "piso_absoluto_g": 60,
+    "piso_no_negociable": true,
+    "distribucion": {
+      "comidas_principales": 3,
+      "g_por_comida_min": 25,
+      "g_por_comida_max": 30,
+      "nota": "Puede haber una colacion adicional con proteina si el objetivo diario lo requiere"
+    }
+  },
+
+  "verdura": {
+    "tazas_minimas_dia": 2,
+    "distribuir_en_el_dia": true,
+    "nota": "Minimo no negociable, se reparte entre las comidas"
+  },
+
+  "fruta": {
+    "piezas_max_dia": 2,
+    "piezas_max_dia_casos_especiales": 3,
+    "casos_especiales": ["deportista", "embarazo"],
+    "preferir_bajo_indice_glucemico": true,
+    "preferidas": [
+      "frutos rojos",
+      "fresas",
+      "moras",
+      "arandanos",
+      "manzana",
+      "papaya",
+      "pera"
+    ],
+    "prohibidas": [],
+    "nota": "No hay frutas prohibidas, solo se cuida la porcion"
+  },
+
+  "grasa": {
+    "porciones_ideales_dia": 4,
+    "unidad": "equivalente de grasa",
+    "preferidas": [
+      "aguacate",
+      "aceite de oliva",
+      "aceite de aguacate",
+      "almendras",
+      "nueces",
+      "pistaches",
+      "cacahuates",
+      "semillas de chia",
+      "linaza",
+      "pepitas",
+      "crema de almendras sin azucar",
+      "crema de cacahuate sin azucar"
+    ],
+    "excluidas": [
+      "margarina",
+      "mayonesa",
+      "crema",
+      "manteca",
+      "aceites refinados"
+    ],
+    "nota": "Marifer corrige al SMAE con criterio propio: aunque el sistema de equivalentes incluya margarina, mayonesa o crema como grasas, ella no las prescribe"
+  },
+
+  "carbohidrato": {
+    "equivalentes_por_comida_min": 1,
+    "equivalentes_por_comida_max": 2,
+    "segun_el_caso": true,
+    "preferir_bajo_indice_glucemico": true,
+    "preferidos": [
+      "tortilla de maiz",
+      "avena",
+      "quinoa",
+      "arroz",
+      "camote",
+      "papa",
+      "leguminosas",
+      "frijol",
+      "lentejas",
+      "pan de masa madre",
+      "tostadas horneadas",
+      "salmas",
+      "tortitas de arroz"
+    ],
+    "nota": "El rango se ajusta segun el caso clinico y el objetivo del paciente"
+  },
+
+  "calorias": {
+    "contar": false,
+    "nota": "Marifer no cuenta calorias. Saca un estimado pero no es estricto. Le interesa mas el punto de partida del paciente, el cambio de habitos y la calidad de los alimentos. El sistema NUNCA debe mostrar conteo calorico al paciente ni construir el plan a partir de un objetivo calorico."
+  },
+
+  "calidad_de_alimentos": {
+    "principio": "Alimentos reales y naturales",
+    "evitar_siempre": [
+      "ultraprocesados",
+      "productos light",
+      "productos empaquetados con lista larga de ingredientes",
+      "bebidas azucaradas",
+      "harinas refinadas",
+      "azucar refinada",
+      "embutidos",
+      "grasas trans"
+    ],
+    "nota": "Esta regla tiene prioridad sobre cualquier calculo. Un alimento que cumple los numeros pero es ultraprocesado no se prescribe."
+  },
+
+  "jerarquia_de_decision": [
+    "1. Calidad del alimento: real y natural, sin ultraprocesados",
+    "2. Piso de proteina: 60 g diarios como minimo absoluto",
+    "3. Objetivo de proteina por kg segun uso de GLP-1",
+    "4. Distribucion de proteina en 3 comidas de 25 a 30 g",
+    "5. Minimos de verdura (2 tazas) y limites de fruta (2 piezas)",
+    "6. Grasas saludables, 4 porciones, solo de la lista preferida",
+    "7. Carbohidratos, 1 a 2 equivalentes por comida segun el caso",
+    "8. Preferencias y restricciones del paciente registradas en su historia clinica"
+  ]
+}
