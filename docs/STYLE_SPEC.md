@@ -1,7 +1,7 @@
 # Style Specification, Marifer Utrilla
 
-**Version:** 1.1
-**Date:** 2026-08-29
+**Version:** 1.2
+**Date:** 2026-08-31
 **Purpose:** machine-readable style contract injected into the writing prompt. Human-facing companion: `GUIA_DE_ESTILO.md` (Spanish).
 **Derived from:** 24 real patient documents, February to August 2026.
 
@@ -101,7 +101,11 @@ Assimilated anglicisms (smoothie, poke bowl, avotoast, lunch, snack) coexist wit
 
 **Measurements:** household units only. taza, ½ taza, ⅓ taza, ¾ taza, ¼ taza, cda, cdita, rebanada, pieza, paquetito, puñito, bowl, scoop, filete, medallón, chorrito.
 
-**Protein exception:** protein is given in grams. "120 g", "150 g", "120 a 140 g", "meta: 120 g al día aprox". May include a total daily target (e.g. "120 g de proteína al día") split into standard portions (e.g. "4 porciones de 30 g"), with approximate grams per food when the case calls for it (body composition goals). Still the only macro shown to the patient.
+**Protein exception:** protein is given in grams, but ONLY as the portion of a specific food: "120 g de pechuga de pollo", "80 g de queso panela".
+
+**NEVER write the total protein of a meal.** No "Proteína: 30 g" at the end of an option. The nutritionist confirmed (31 Aug 2026) that this total is internal verification for her, not information the patient needs. Writing it clutters the document and turns a plan into a spreadsheet.
+
+A total daily target ("120 g de proteína al día") may appear in the objectives section when the case calls for it, but never per meal.
 
 **Numbers:** single-character fractions (½ ⅓ ¼ ¾), ranges with "a" ("70 a 99 mg/dL", "4 a 5 horas"), always concrete quantities.
 
@@ -193,3 +197,4 @@ You emit content, not layout. The rendering engine handles boxes, pagination and
 |---|---|
 | 2026-08-27 | v1.0, initial version from 22 real documents |
 | 2026-08-29 | v1.1, added 2 new source documents (maintenance case, high-protein case). Added the free-category-table menu format, metas_diarias block, additive protein combinations, flexible colación, total daily protein target with standard portions, and the maintenance/body-composition case type |
+| 2026-08-31 | v1.2, the nutritionist reviewed the first generated PDF and asked to remove per-meal protein totals from the patient document. The calculation stays as internal verification. Phone number in the footer corrected |

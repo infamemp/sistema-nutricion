@@ -172,7 +172,7 @@ Stack, servidor, IA, base de alimentos, alcance, identidad visual y guía de est
 - **Botón "Modificar propuesta".** Campo de texto simple en la pantalla de revisión (por ejemplo "quita el aguacate y cambia las colaciones por opciones frías") y la IA regenera. Ingeniería: el ajuste se aplica siempre sobre la última versión guardada en el historial, no sobre un hilo de conversación libre. Se envía versión actual más instrucción de ajuste, y el resultado se guarda como nueva versión. System prompt con regla explícita de devolver únicamente la dieta modificada, cero saludos, cero disculpas, cero relleno
 - **Motor de maquetación de flujo.** La caja se dibuja alrededor del texto, no al revés. El motor mide el contenido, dibuja la tarjeta del tamaño exacto, y si no cabe corta limpio y continúa en la siguiente lámina con su encabezado. El desbordamiento deja de ser posible por construcción
 - **Dos tipos de documento:** plan personalizado (con nombre y fecha) y guía de padecimiento (reutilizable, se adjunta según diagnóstico)
-- **Pie de página** en toda lámina: fecha exacta, próxima cita, número de lámina y datos de contacto. **Datos confirmados:** "Marifer Utrilla Lack, Nutrióloga y Especialista en Salud Hormonal, Educadora en Diabetes", teléfono/WhatsApp +52 238 136 7151
+- **Pie de página** en toda lámina: fecha exacta, próxima cita, número de lámina y datos de contacto. **Datos confirmados:** "Marifer Utrilla Lack, Nutrióloga y Especialista en Salud Hormonal, Educadora en Diabetes", teléfono/WhatsApp +52 238 390 0875
 - **Módulo de acciones de salida**, común a los 4 tipos de documento (dieta, guía, recomendación, carta al médico), disponible al finalizar cualquiera de ellos:
   - **Enviar por correo:** casilla de sí o no antes de confirmar, si está marcada se envía automático al aprobar
   - **Descargar localmente:** botón que guarda el PDF en su computadora o tablet
@@ -217,7 +217,7 @@ Puntos clave:
 - [x] Dietas reales anonimizadas. Recibidos 22 documentos, base de la guía de estilo
 - [x] Colores e identidad visual, extraídos del material
 - [x] Logo, en PNG con transparencia (no vector real, pero suficiente calidad). Leyenda oficial confirmada: "Nutrición y Salud Hormonal" (se descartan las variantes con "Nutrición y Vida en Equilibrio", tagline anterior). Archivo principal para encabezados: `Mafer_Logo_Grande.png` (2413×1546 px, transparente); archivos cuadrados para ícono o foto de perfil: `Logo_Marifer_360x360.png` y equivalente; elemento decorativo suelto disponible: `Limon.png` (el círculo sin texto, alta resolución)
-- [x] Datos de contacto para el pie de página. Marifer Utrilla Lack, Nutrióloga y Especialista en Salud Hormonal, Educadora en Diabetes, +52 238 136 7151 (mismo número para WhatsApp). Sin redes pendientes de agregar
+- [x] Datos de contacto para el pie de página. Marifer Utrilla Lack, Nutrióloga y Especialista en Salud Hormonal, Educadora en Diabetes, +52 238 390 0875 (mismo número para WhatsApp). Sin redes pendientes de agregar
 - [x] Validar el cambio de mayúsculas. Validado
 - [x] Su formato actual de intake. Compartido y analizado (Historia_Clínica.docx), rediseño en discusión, ver Fase 1
 - [x] PDFs de InBody de ejemplo. Recibidos 3 reportes reales de InBody370S (clínica UNIDO), base del diseño de extracción y del mecanismo de identificación de paciente

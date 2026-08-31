@@ -41,7 +41,7 @@ RUTA_SALIDA = os.path.join(BASE_DIR, "pdfs")
 # Datos de contacto confirmados por la nutriologa
 PIE_NOMBRE = "Marifer Utrilla Lack"
 PIE_TITULO = "Nutrióloga y Especialista en Salud Hormonal, Educadora en Diabetes"
-PIE_TELEFONO = "+52 238 136 7151"
+PIE_TELEFONO = "+52 238 390 0875"
 
 MESES = [
     "enero", "febrero", "marzo", "abril", "mayo", "junio",

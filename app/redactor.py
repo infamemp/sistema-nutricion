@@ -73,13 +73,8 @@ def _resumen_del_plan(plan):
     prot = plan.get("objetivo_proteina_g")
     dist = plan.get("distribucion_proteina") or {}
     if prot:
-        partes.append("META DE PROTEINA: " + str(prot) + " g al dia")
-        if dist:
-            detalle = ", ".join(
-                k.replace("_g", "") + " " + str(v) + " g"
-                for k, v in dist.items() if v
-            )
-            partes.append("  Distribucion: " + detalle)
+        partes.append("META DE PROTEINA (dato interno, NO lo escribas en el "
+                      "documento): " + str(prot) + " g al dia")
         partes.append("")
 
     est = plan.get("estructura_diaria") or {}
@@ -105,9 +100,6 @@ def _resumen_del_plan(plan):
         for i, o in enumerate(opciones, 1):
             partes.append("  Opcion " + str(i) + ":")
             partes.append("    " + str(o.get("descripcion", "")))
-            p = o.get("proteina_estimada_g")
-            if p:
-                partes.append("    (proteina verificada: " + str(p) + " g)")
         partes.append("")
 
     if plan.get("recomendaciones"):
@@ -187,6 +179,11 @@ def redactar(plan, nombre_paciente=None, idioma="es"):
         "- Puedes nombrar las opciones cuando tenga sentido: 'Bowl de "
         "salmon', 'Avotoast', 'Ensalada de atun'.\n"
         "- Frases cortas y directas. Nada de parrafos largos.\n"
+        "- NUNCA escribas los gramos totales de proteina de una comida. "
+        "Nada de 'Proteina: 30 g' al final de una opcion. El calculo es "
+        "interno, de verificacion para la nutriologa, y el paciente no lo "
+        "necesita. Lo unico que puede llevar gramos es la porcion de un "
+        "alimento concreto, como '120 g de pechuga de pollo'.\n"
         "- Sin frases motivacionales genericas.\n"
         "- Sin calorias ni macros, salvo la proteina en gramos.\n"
     )
