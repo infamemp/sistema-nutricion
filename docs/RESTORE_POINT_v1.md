@@ -212,6 +212,14 @@ Archivos en `/opt/sistema-nutricion/`: `alimentos.py` (orquestador, 109 líneas)
 
 Arquitectura de tres fuentes con jerarquía, detallada en `docs/FUENTES_ALIMENTOS.md`: BAM local para alimentos mexicanos, USDA para genéricos internacionales, OpenFoodFacts restringido a productos de marca con verificación humana.
 
+**Knowledgebase clínica, cargada el 30 ago 2026:**
+
+19 archivos de extracciones de libros y guías clínicas en `datos/knowledgebase/` (1.4 MB), indexados en `datos/kb_indice.json` y accesibles vía `knowledgebase.py` (152 líneas).
+
+El índice clasifica cada fuente por tema clínico y nivel de autoridad, de modo que el sistema entrega solo las relevantes al caso. Verificado: SOP más resistencia a la insulina devuelve 4 fuentes de 19, con 338 KB de contexto.
+
+**Con esto la Fase 2 queda completa.** El sistema tiene las cuatro capas de conocimiento listas para la Fase 3: fuentes de alimentos (BAM, USDA, OFF), reglas clínicas de Marifer, conversión de medidas caseras, y knowledgebase clínica.
+
 **Conversión de medidas caseras, agregado el 30 ago 2026:**
 
 `medidas.py` (246 líneas) más `datos/medidas_caseras.json` (62 alimentos). Traduce entre las medidas de Marifer y los gramos de la BAM.
@@ -243,6 +251,7 @@ Verificado con dos casos: paciente de 85 kg con GLP-1 (objetivo 105 g, detectó 
 | 2026-08-29 | Vista de expediente del paciente construida y verificada. Combina en una sola pantalla los datos del paciente, sus citas (con etiqueta de estado por color) y el estado de su historia clínica, leyendo de tres tablas distintas |
 | 2026-08-29 | Formulario de Historia Clínica completo (10 secciones, ~50 campos) construido y verificado: guardar, redirigir al expediente, y editar recuperando los datos. **El sistema ya es utilizable en la vida real** para dar de alta pacientes, agendar citas y capturar historias clínicas |
 | 2026-08-29 | Gestión de citas completa desde el expediente: agendar, reagendar, cancelar, marcar completada o no asistió. El reagendado cancela la cita anterior y crea una nueva, dejando el rastro visible (cita anterior tachada con etiqueta "cancelada"), conforme a la política acordada de no sobreescribir nada |
+| 2026-08-30 | Knowledgebase clínica cargada e indexada. **Fase 2 completa** |
 | 2026-08-30 | Tabla de conversión de medidas caseras implementada. Se detectaron dos errores silenciosos de cálculo (arroz crudo contra cocido, pollo con piel contra sin piel) y se resolvieron con el campo `buscar_como` |
 | 2026-08-30 | Motor de reglas clínicas implementado y verificado. Los criterios de prescripción de la nutrióloga quedan codificados y editables sin tocar código |
 | 2026-08-30 | Arquitectura de fuentes de alimentos implementada y verificada: BAM (local, 2045 alimentos mexicanos), USDA (API, dominio público) y OpenFoodFacts (restringido a marcas). Se descartó OpenFoodFacts como fuente principal tras medir su precisión: 3 de 20 |

@@ -26,9 +26,9 @@ Cada fuente se clasifica en uno de tres niveles. Esto es independiente del siste
 
 ---
 
-## 3. Inventario completo (17 fuentes, 14 archivos)
+## 3. Inventario completo (19 fuentes, 19 archivos)
 
-Dos archivos contienen más de un libro combinado, marcado en la columna Archivo.
+Cada libro tiene su propio archivo. Nota: en la primera entrega dos archivos venían combinados (Lily Nichols con 2 libros, Hillary Wright con 3), pero al cargarlos al sistema se usaron las versiones separadas, quedando 19 archivos independientes.
 
 | Autor(es) | Obra | Año | Nivel | Especialidad | Archivo |
 |---|---|---|---|---|---|
@@ -109,14 +109,39 @@ Ninguna señal por sí sola descalifica una fuente. La combinación de "sin cred
 
 ---
 
-## 6. Pendientes
+## 6. Implementación en el sistema
+
+**Estado:** cargada y funcionando en el servidor desde el 30 de agosto de 2026.
+
+Los 19 archivos viven en `datos/knowledgebase/` (1.4 MB). El módulo `knowledgebase.py` los indexa mediante `datos/kb_indice.json`, que clasifica cada fuente por tema clínico y nivel de autoridad.
+
+**Por qué existe el índice:** cargar las 19 fuentes completas en cada consulta sería un desperdicio. El sistema selecciona solo las relevantes al caso del paciente.
+
+**Cobertura por tema:** obesidad, diabetes, resistencia a la insulina, SOP, endometriosis, fertilidad, embarazo, salud hormonal, menopausia y GLP-1.
+
+**Funciones disponibles:**
+
+| Función | Qué hace |
+|---|---|
+| `fuentes_por_tema(tema)` | Fuentes relevantes a un tema, ordenadas por nivel |
+| `contexto_para_caso(temas)` | Arma el bloque de conocimiento para el prompt de la IA |
+| `leer_fuente(archivo)` | Contenido completo de una fuente, con caché |
+| `temas_disponibles()` | Los 10 temas cubiertos |
+| `resumen()` | Estado de la knowledgebase, para diagnóstico |
+
+**Verificación realizada:** para un caso de SOP con resistencia a la insulina, el sistema seleccionó 4 fuentes de las 19 (PCOS Diet Plan, Prediabetes Diet Plan y guía de la ADA en nivel A, más PCOS Is My Power en nivel B), generando 338 KB de contexto. Tamaño adecuado para la ventana de Gemini.
+
+---
+
+## 7. Pendientes
 
 - Ninguna fuente pendiente identificada por el momento. Si en el futuro se detecta un hueco de cobertura (por ejemplo, un padecimiento nuevo que Marifer empiece a atender), este documento se actualiza antes de incorporar el material nuevo a la KB operativa.
 
 ---
 
-## 7. Bitácora
+## 8. Bitácora
 
 | Fecha | Cambio |
 |---|---|
 | 2026-08-27 | v1.0, inventario inicial de 17 fuentes (19 recibidas, 1 excluida por criterio de autoridad, 1 combinada correctamente contada como parte de un archivo con 3 libros). Se establece el procedimiento de evaluación de fuentes nuevas para búsquedas web del motor de IA, documentado a partir del caso Inchauspé vs. Fett |
+| 2026-08-30 | Knowledgebase cargada al servidor y funcionando. Los 19 archivos separados por libro, con índice que permite seleccionar las fuentes relevantes a cada caso en lugar de cargarlas todas |

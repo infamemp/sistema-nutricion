@@ -1,0 +1,177 @@
+{
+  "_meta": {
+    "version": "1.0",
+    "fecha": "2026-08-30",
+    "proposito": "Indice de la knowledgebase clinica. Permite seleccionar las fuentes relevantes al caso del paciente en lugar de cargar las 19 completas.",
+    "niveles": {
+      "A": "Clinico o academico: medicos, guias de sociedades cientificas, dietistas registrados con trayectoria institucional, investigacion primaria. Puede usarse para decisiones clinicas directas.",
+      "B": "Practico con credencial real: profesionales certificados cuyo trabajo es mas aplicado que clinico-formal. Complemento operativo, no unica base de una decision de peso."
+    },
+    "ver_tambien": "docs/KNOWLEDGEBASE.md para el criterio de evaluacion completo"
+  },
+
+  "fuentes": [
+    {
+      "archivo": "robert-kushner-practical-manual-of-clinical-obesity_kb.md",
+      "titulo": "Practical Manual of Clinical Obesity",
+      "autor": "Robert Kushner, Victor Lawrence, Sudhesh Kumar",
+      "ano": 2013,
+      "nivel": "A",
+      "temas": ["obesidad"]
+    },
+    {
+      "archivo": "michael-steelman-obesity-evaluation-and-treatment-essentials_kb.md",
+      "titulo": "Obesity: Evaluation and Treatment Essentials",
+      "autor": "G. Michael Steelman, Eric Westman",
+      "ano": 2016,
+      "nivel": "A",
+      "temas": ["obesidad"]
+    },
+    {
+      "archivo": "marion-j_kb.md",
+      "titulo": "ADA Guide to Nutrition Therapy for Diabetes",
+      "autor": "Marion Franz, Alison Evert (American Diabetes Association)",
+      "ano": 2012,
+      "nivel": "A",
+      "temas": ["diabetes", "resistencia_insulina"]
+    },
+    {
+      "archivo": "gary-scheiner-think-like-a-pancreas_kb.md",
+      "titulo": "Think Like a Pancreas",
+      "autor": "Gary Scheiner",
+      "ano": 2020,
+      "nivel": "A",
+      "temas": ["diabetes"],
+      "nota": "Enfocado en manejo practico de insulina"
+    },
+    {
+      "archivo": "hillary-wright-the-prediabetes-diet-plan_kb.md",
+      "titulo": "The Prediabetes Diet Plan",
+      "autor": "Hillary Wright",
+      "ano": 2013,
+      "nivel": "A",
+      "temas": ["resistencia_insulina", "diabetes"]
+    },
+    {
+      "archivo": "hillary-wright-the-pcos-diet-plan_kb.md",
+      "titulo": "The PCOS Diet Plan",
+      "autor": "Hillary Wright",
+      "ano": 2017,
+      "nivel": "A",
+      "temas": ["sop", "resistencia_insulina"]
+    },
+    {
+      "archivo": "hillary-wright-the-menopause-diet-plan_kb.md",
+      "titulo": "The Menopause Diet Plan",
+      "autor": "Hillary Wright, Elizabeth Ward",
+      "ano": 2020,
+      "nivel": "A",
+      "temas": ["menopausia", "salud_hormonal"]
+    },
+    {
+      "archivo": "eshre-guideline-endometriosis_kb.md",
+      "titulo": "ESHRE Guideline on Endometriosis",
+      "autor": "European Society of Human Reproduction and Embryology",
+      "ano": 2022,
+      "nivel": "A",
+      "temas": ["endometriosis"],
+      "nota": "Guia clinica formal con metodologia GRADE, 109 recomendaciones"
+    },
+    {
+      "archivo": "jorge-chavarro-the-fertility-diet_kb.md",
+      "titulo": "The Fertility Diet",
+      "autor": "Jorge Chavarro, Walter Willett (Harvard)",
+      "ano": 2008,
+      "nivel": "A",
+      "temas": ["fertilidad"],
+      "nota": "Basado en el Nurses Health Study II, investigacion epidemiologica primaria"
+    },
+    {
+      "archivo": "lily-nichols-real-food-for-fertility_kb.md",
+      "titulo": "Real Food for Fertility",
+      "autor": "Lily Nichols, Lisa Hendrickson-Jack",
+      "ano": 2024,
+      "nivel": "A",
+      "temas": ["fertilidad"]
+    },
+    {
+      "archivo": "lily-nichols-real-food-for-pregnancy_kb.md",
+      "titulo": "Real Food for Pregnancy",
+      "autor": "Lily Nichols",
+      "ano": 2018,
+      "nivel": "A",
+      "temas": ["embarazo"]
+    },
+    {
+      "archivo": "pamela-wartian-smith-what-you-must-know-about-womens-hormone_kb.md",
+      "titulo": "What You Must Know about Women's Hormones",
+      "autor": "Pamela Wartian Smith",
+      "ano": 2022,
+      "nivel": "A",
+      "temas": ["salud_hormonal"]
+    },
+    {
+      "archivo": "sara-gottfried-the-hormone-cure_kb.md",
+      "titulo": "The Hormone Cure",
+      "autor": "Sara Gottfried",
+      "ano": 2013,
+      "nivel": "A",
+      "temas": ["salud_hormonal", "menopausia"],
+      "nota": "Medica, ginecologa certificada, enfoque de medicina funcional"
+    },
+    {
+      "archivo": "cory-ruth-pcos-is-my-power_kb.md",
+      "titulo": "PCOS Is My Power",
+      "autor": "Cory Ruth, RDN",
+      "ano": 2026,
+      "nivel": "B",
+      "temas": ["sop"],
+      "nota": "Dietista registrada, con negocio de suplementos propio. Usar con ese matiz"
+    },
+    {
+      "archivo": "michael-vernon-dian-shepperson-mills-endometriosis_kb.md",
+      "titulo": "Endometriosis: A Key to Healing and Fertility Through Nutrition",
+      "autor": "Dian Shepperson Mills, Michael Vernon",
+      "ano": 2002,
+      "nivel": "B",
+      "temas": ["endometriosis", "fertilidad"],
+      "nota": "Fuente antigua, complementar siempre con la guia ESHRE"
+    },
+    {
+      "archivo": "katie-edmonds-heal-endo_kb.md",
+      "titulo": "Heal Endo",
+      "autor": "Katie Edmonds, FNTP",
+      "ano": 2022,
+      "nivel": "B",
+      "temas": ["endometriosis"],
+      "nota": "Complemento aplicado de la guia ESHRE. Prologo del director cientifico de la Endometriosis Foundation of America"
+    },
+    {
+      "archivo": "rebecca-fett-it-starts-with-the-egg_kb.md",
+      "titulo": "It Starts with the Egg",
+      "autor": "Rebecca Fett",
+      "ano": 2016,
+      "nivel": "B",
+      "temas": ["fertilidad"],
+      "nota": "Resumen de literatura cientifica, no autoridad clinica directa. Respaldada por resena academica revisada por pares"
+    },
+    {
+      "archivo": "toni-weschler-taking-charge-of-your-fertility_kb.md",
+      "titulo": "Taking Charge of Your Fertility",
+      "autor": "Toni Weschler, MPH",
+      "ano": 2015,
+      "nivel": "B",
+      "temas": ["fertilidad", "salud_hormonal"],
+      "nota": "Educacion sobre el ciclo menstrual"
+    },
+    {
+      "archivo": "summer-kessel-simple-meal-solutions-for-glp-1-diets_kb.md",
+      "titulo": "Simple Meal Solutions for GLP-1 Diets",
+      "autor": "Summer Kessel, RD",
+      "ano": 2026,
+      "nivel": "B",
+      "temas": ["glp1", "obesidad"],
+      "nota": "Recetario practico para pacientes con GLP-1"
+    }
+  ]
+}
