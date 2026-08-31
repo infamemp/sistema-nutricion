@@ -1,6 +1,6 @@
 # Sistema Integral de Nutrición, Documento Maestro del Proyecto
 
-**Versión:** 4.7
+**Versión:** 4.8
 **Fecha:** 30 de agosto de 2026
 **Estado:** Fase 0 completa. Infraestructura lista. Guía de estilo cerrada. Recolección de material en curso.
 
@@ -153,6 +153,13 @@ Stack, servidor, IA, base de alimentos, alcance, identidad visual y guía de est
   - Salida: lista de advertencias accionables desde nutrición, visible solo para la nutrióloga, nunca para el paciente
 
 ### Fase 4, Aprobación, PDF y envío
+
+- [x] **Generador de PDF, FUNCIONANDO.** `pdf.py` más `templates/plan_pdf.html`. Usa WeasyPrint, que convierte HTML y CSS a PDF
+  - **Por qué WeasyPrint:** permite diseñar la lámina con las mismas herramientas que las pantallas, y resuelve solo la maquetación de flujo. Las alternativas (ReportLab, FPDF) exigen posicionar por coordenadas, que es justo lo que produce los desbordamientos que queremos evitar
+  - **Paginación nativa vía `@page`:** el fondo verde, el encabezado blanco y el pie verde viven en los márgenes de la página, no en un contenedor del documento, así que se repiten correctamente en cada hoja real. Un primer intento los puso dentro de un contenedor que crecía con el contenido, y el pie terminaba flotando a media hoja con un tercio de página vacía
+  - **Continuidad al partirse:** cada sección va envuelta en una tabla cuyo `<thead>` lleva el título. Los motores de renderizado repiten el encabezado de tabla en cada página, así que si el desayuno se parte, el título reaparece arriba en la hoja siguiente en lugar de dejar opciones huérfanas sin contexto
+  - **Logo en SVG.** Se probaron varios PNG y todos se veían pobres: `Mafer_Logo_Grande.png` trae el tagline antiguo, `Marifer_Inicio.png` es de baja resolución, y una conversión propia del archivo de Illustrator salió mal. La solución fue el SVG, que WeasyPrint dibuja vectorialmente: nítido a cualquier tamaño y sin conversión de por medio. Vive en `assets/logo/logo_marifer.svg`
+  - **Encabezado de 38 mm** con el logo limitado por altura a 26 mm. Fijar el ancho hacía que la altura desbordara y cortara las hojitas del logo
 
 - **Control total de la nutrióloga sobre la dieta (decisión aprobada, 31 ago 2026).** Marifer nunca queda atrapada en lo que decidió la IA. Tres caminos disponibles al momento de revisar, sin tener que elegir un modo por adelantado:
   1. **Aprobar** el borrador tal cual
@@ -322,3 +329,4 @@ Las API keys nunca van al repo. Viven en un archivo `.env` local, ya cubierto po
 | 2026-08-31 | v4.5, se define el control de la nutrióloga sobre la dieta. En lugar de un interruptor previo de modo manual o automático, la libertad está siempre disponible al revisar: aprobar, pedir ajuste en lenguaje natural, o editar directamente. Más un botón de plan en blanco para empezar sin IA. Si edita cantidades a mano, el sistema recalcula y avisa si sale del rango |
 | 2026-08-31 | v4.6, porciones ajustadas al rango de Marifer. El máximo de proteína por comida bajó de 56.9 a 32.9 g tras agregar instrucciones concretas al prompt con ejemplos numéricos. Se acepta una variación natural de más o menos 3 g |
 | 2026-08-31 | v4.7, capa de redacción con Claude funcionando. **La Fase 3 queda funcionalmente completa:** Gemini analiza, el sistema verifica contra la BAM y el USDA, y Claude redacta con la voz de Marifer. El documento resultante ya incluye nombres de platillo, sazón, bebidas de acompañamiento y las construcciones propias de ella, respetando las cantidades verificadas |
+| 2026-08-31 | v4.8, generador de PDF funcionando con la identidad visual de Marifer. Paginación nativa de WeasyPrint para que el encabezado y el pie se repitan correctamente en cada hoja, títulos que se repiten cuando una sección se parte entre páginas, y logo en SVG tras descartar varios PNG por calidad y por traer el tagline antiguo |

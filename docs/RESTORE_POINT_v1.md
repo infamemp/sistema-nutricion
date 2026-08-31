@@ -212,6 +212,33 @@ Archivos en `/opt/sistema-nutricion/`: `alimentos.py` (orquestador, 109 líneas)
 
 Arquitectura de tres fuentes con jerarquía, detallada en `docs/FUENTES_ALIMENTOS.md`: BAM local para alimentos mexicanos, USDA para genéricos internacionales, OpenFoodFacts restringido a productos de marca con verificación humana.
 
+**Generador de PDF, agregado el 31 ago 2026 (Fase 4):**
+
+`pdf.py` (200 líneas) y `templates/plan_pdf.html` (249 líneas). Motor: WeasyPrint.
+
+**Dependencias del sistema instaladas:**
+```
+apt install -y libpango-1.0-0 libpangoft2-1.0-0 libharfbuzz0b libffi-dev
+pip install weasyprint
+```
+
+**Logo:** `assets/logo/logo_marifer.svg`. **Usar el SVG, no los PNG.** Los PNG dan mala calidad y `Mafer_Logo_Grande.png` además trae el tagline antiguo "Nutrición y Vida en Equilibrio".
+
+**Prueba rápida de diseño sin gastar llamadas a las IA:**
+```
+python -c "
+import pdf, json
+doc = json.load(open('/tmp/doc_prueba.json'))
+print(pdf.generar(doc, 'Ana López', proxima_cita='15 de septiembre de 2026'))
+"
+```
+`/tmp/doc_prueba.json` guarda un documento ya redactado, así que regenerar la lámina es instantáneo. Si se pierde, se recrea corriendo el flujo completo una vez.
+
+**Bajar un PDF a la PC:**
+```
+scp root@165.22.7.251:"/opt/sistema-nutricion/pdfs/ARCHIVO.pdf" E:\Descargas\
+```
+
 **Capa de redacción con Claude, agregada el 31 ago 2026:**
 
 `claude_api.py` (174 líneas) y `redactor.py` (216 líneas). Modelo: `claude-sonnet-4-5`.
@@ -295,6 +322,7 @@ Verificado con dos casos: paciente de 85 kg con GLP-1 (objetivo 105 g, detectó 
 | 2026-08-29 | Vista de expediente del paciente construida y verificada. Combina en una sola pantalla los datos del paciente, sus citas (con etiqueta de estado por color) y el estado de su historia clínica, leyendo de tres tablas distintas |
 | 2026-08-29 | Formulario de Historia Clínica completo (10 secciones, ~50 campos) construido y verificado: guardar, redirigir al expediente, y editar recuperando los datos. **El sistema ya es utilizable en la vida real** para dar de alta pacientes, agendar citas y capturar historias clínicas |
 | 2026-08-29 | Gestión de citas completa desde el expediente: agendar, reagendar, cancelar, marcar completada o no asistió. El reagendado cancela la cita anterior y crea una nueva, dejando el rastro visible (cita anterior tachada con etiqueta "cancelada"), conforme a la política acordada de no sobreescribir nada |
+| 2026-08-31 | Generador de PDF funcionando con la identidad visual de la marca. Fase 4 arrancada |
 | 2026-08-31 | Capa de redacción con Claude funcionando. Fase 3 funcionalmente completa |
 | 2026-08-31 | Verificación nutricional implementada. El sistema calcula la proteína real y corrige lo que estima la IA. Tabla ampliada a 171 alimentos con 100% de cobertura |
 | 2026-08-30 | **Fase 3 arrancada**: capa de análisis con Gemini funcionando, primer plan técnico generado y verificado |

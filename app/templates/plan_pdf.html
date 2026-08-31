@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<style>
+  /* Lamina de Marifer Utrilla.
+
+     Estructura: el fondo verde lo pinta @page. El encabezado blanco y
+     el pie verde ocupan los margenes superior e inferior de la pagina,
+     con su propio fondo. Sin margenes negativos ni trucos de posicion,
+     que es lo que rompio el intento anterior. */
+
+  @page {
+    size: letter;
+    margin: 44mm 0 16mm 0;
+    background: #d8ecd0;
+
+    @top-center {
+      content: element(encabezado);
+      width: 100%;
+      vertical-align: top;
+    }
+
+    @bottom-center {
+      content: element(pie);
+      width: 100%;
+      vertical-align: bottom;
+    }
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    font-family: "DejaVu Sans", sans-serif;
+    color: #4a4a48;
+    font-size: 10pt;
+  }
+
+  /* El contenido lleva su propio margen lateral, porque la pagina no
+     tiene margen izquierdo ni derecho (para que el encabezado y el pie
+     ocupen todo el ancho). */
+  /* Sin padding vertical: el aire superior lo da el margen de @page,
+     que si se aplica en todas las hojas. El padding del cuerpo solo
+     funcionaba en la primera. */
+  .cuerpo { padding: 0 14mm; }
+
+  #encabezado {
+    position: running(encabezado);
+    background: #ffffff;
+    border-bottom: 3px solid #4CAF50;
+    height: 38mm;
+    padding: 4mm 14mm;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .datos-encabezado { font-size: 10.5pt; line-height: 1.55; }
+  .datos-encabezado .etiqueta {
+    color: #6D5C4D;
+    font-weight: bold;
+    letter-spacing: 0.4px;
+  }
+  .datos-encabezado .valor { color: #1E8B3C; font-weight: bold; }
+  /* El logo se limita por ALTURA. Es casi cuadrado (proporcion 1.6),
+     asi que necesita un encabezado alto. Con 38mm de encabezado menos
+     8mm de padding quedan 30mm utiles; se piden 26mm para dejar aire.
+     Fijar el ancho o pedir mas altura corta las hojitas de arriba y el
+     circulo de acuarela de abajo. */
+  .logo { max-height: 26mm; width: auto; }
+
+  #pie {
+    position: running(pie);
+    background: #1E8B3C;
+    color: #ffffff;
+    height: 16mm;
+    padding: 0 14mm;
+    font-size: 7.5pt;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  #pie .nombre { font-weight: bold; font-size: 8.5pt; }
+  #pie .contacto { text-align: right; line-height: 1.4; }
+
+  /* Cada seccion es una tabla sin apariencia de tabla. El motivo: el
+     <thead> de una tabla se repite automaticamente cuando el contenido
+     se parte entre hojas, que es justo lo que queremos para el titulo.
+     Con un div normal, el titulo se queda en la primera hoja y las
+     opciones continuadas aparecen huerfanas, sin contexto. */
+  table.seccion {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 7mm;
+  }
+  table.seccion thead { display: table-header-group; }
+  table.seccion td, table.seccion th {
+    padding: 0;
+    border: none;
+    text-align: left;
+  }
+
+  /* El aviso de continuacion solo se ve en las repeticiones del
+     encabezado, nunca en la primera. */
+  .continua { display: none; }
+
+  .seccion-vieja {
+    margin-bottom: 7mm;
+    /* Sin break-inside: avoid. Si el bloque entero no cabe, es preferible
+       que se parta de forma limpia a dejar un tercio de hoja vacio. Lo que
+       si se protege es que un renglon no se corte, y que el titulo no
+       quede huerfano al final de una hoja. */
+  }
+
+  h2 {
+    color: #1E8B3C;
+    font-size: 12.5pt;
+    margin: 0 0 3mm 0;
+    letter-spacing: 0.3px;
+    break-after: avoid;
+  }
+
+  .tarjeta {
+    background: #ffffff;
+    border-radius: 3mm;
+    padding: 5mm 6mm;
+    /* Al partirse entre hojas, la parte continuada conserva el mismo
+       padding superior. Sin esto, el texto quedaria pegado al borde
+       de la tarjeta en la segunda hoja. */
+    /* Si la tarjeta se parte entre hojas, deja al menos 3 lineas de cada
+       lado. Evita que quede un renglon suelto. */
+    orphans: 3;
+    widows: 3;
+  }
+
+  .instruccion {
+    color: #6D5C4D;
+    font-size: 9pt;
+    font-style: italic;
+    margin: 0 0 3.5mm 0;
+  }
+
+  ul.opciones { margin: 0; padding: 0; list-style: none; }
+  ul.opciones li {
+    padding: 3mm 0;
+    border-bottom: 1px solid #eeeeee;
+    line-height: 1.5;
+    break-inside: avoid;
+  }
+  ul.opciones li:last-child { border-bottom: none; padding-bottom: 0; }
+  ul.opciones li:first-child { padding-top: 0; }
+
+  .num {
+    display: inline-block;
+    background: #e8f5e9;
+    color: #1E8B3C;
+    font-weight: bold;
+    font-size: 8.5pt;
+    width: 5.5mm;
+    height: 5.5mm;
+    line-height: 5.5mm;
+    text-align: center;
+    border-radius: 50%;
+    margin-right: 2mm;
+  }
+
+  ul.lista { margin: 0; padding-left: 6mm; }
+  ul.lista li {
+    line-height: 1.55;
+    margin-bottom: 2.5mm;
+    break-inside: avoid;
+  }
+  ul.lista li:last-child { margin-bottom: 0; }
+
+  .cierre { line-height: 1.55; margin: 0; }
+</style>
+</head>
+<body>
+
+<div id="encabezado">
+  <div class="datos-encabezado">
+    <div><span class="etiqueta">NOMBRE:</span> <span class="valor">{{ paciente }}</span></div>
+    <div><span class="etiqueta">FECHA:</span> <span class="valor">{{ fecha }}</span></div>
+    {% if proxima_cita %}
+    <div><span class="etiqueta">PRÓXIMA CITA:</span> <span class="valor">{{ proxima_cita }}</span></div>
+    {% endif %}
+  </div>
+  {% if logo %}<img class="logo" src="{{ logo }}">{% endif %}
+</div>
+
+<div id="pie">
+  <div class="nombre">{{ pie_nombre }}</div>
+  <div class="contacto">
+    {{ pie_titulo }}<br>
+    {{ pie_telefono }}
+  </div>
+</div>
+
+<div class="cuerpo">
+{% for bloque in bloques %}
+
+  {% if bloque.tipo == 'menu' %}
+  <table class="seccion">
+    <thead><tr><th><h2>{{ bloque.titulo }}</h2></th></tr></thead>
+    <tbody><tr><td>
+      <div class="tarjeta">
+        {% if bloque.instruccion %}
+        <p class="instruccion">{{ bloque.instruccion }}</p>
+        {% endif %}
+        <ul class="opciones">
+          {% for op in bloque.opciones %}
+          <li><span class="num">{{ loop.index }}</span>{{ op }}</li>
+          {% endfor %}
+        </ul>
+      </div>
+    </td></tr></tbody>
+  </table>
+
+  {% elif bloque.tipo == 'lista' %}
+  <table class="seccion">
+    <thead><tr><th><h2>{{ bloque.titulo }}</h2></th></tr></thead>
+    <tbody><tr><td>
+      <div class="tarjeta">
+        <ul class="lista">
+          {% for item in bloque.elementos %}
+          <li>{{ item }}</li>
+          {% endfor %}
+        </ul>
+      </div>
+    </td></tr></tbody>
+  </table>
+
+  {% elif bloque.tipo == 'texto' %}
+  <table class="seccion">
+    <thead><tr><th><h2>{{ bloque.titulo }}</h2></th></tr></thead>
+    <tbody><tr><td>
+      <div class="tarjeta">
+        <p class="cierre">{{ bloque.texto }}</p>
+      </div>
+    </td></tr></tbody>
+  </table>
+  {% endif %}
+
+{% endfor %}
+</div>
+
+</body>
+</html>
