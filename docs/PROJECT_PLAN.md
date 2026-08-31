@@ -1,6 +1,6 @@
 # Sistema Integral de Nutrición, Documento Maestro del Proyecto
 
-**Versión:** 4.9
+**Versión:** 5.0
 **Fecha:** 30 de agosto de 2026
 **Estado:** Fase 0 completa. Infraestructura lista. Guía de estilo cerrada. Recolección de material en curso.
 
@@ -191,6 +191,13 @@ Stack, servidor, IA, base de alimentos, alcance, identidad visual y guía de est
 - **Gráficas de progreso** (peso, porcentaje de grasa, masa muscular en el tiempo, con o sin InBody)
 - **Carta al médico referente** (informe breve de evolución para el doctor que refirió, la redacta Claude)
 
+- [x] **Sistema de login, IMPLEMENTADO Y VERIFICADO (1 sep 2026).** Hueco de seguridad detectado y cerrado: hasta hoy, cualquiera con la IP podía ver expedientes de pacientes reales
+  - Un solo usuario, una sola contraseña, sin roles ni registro. `auth.py` (hash con PBKDF2 y sal, sin dependencias externas) más middleware de sesión en `main.py`
+  - **La contraseña nunca pasó por el chat.** Se generó directo en el servidor con `python auth.py` (pide la contraseña sin mostrarla en pantalla) y el hash resultante se guardó en `.env` como `MARIFER_PASSWORD_HASH`
+  - Toda la aplicación queda bloqueada salvo `/login` hasta iniciar sesión, vía un middleware que revisa la sesión en cada petición
+  - **Error de orden de middleware, corregido:** en Starlette, el último middleware agregado es el que se ejecuta primero. `SessionMiddleware` debe ir al final (para ser la capa más externa) y prepararse antes de que el middleware de login intente leer la sesión. El orden inverso produce un `AssertionError` en cada petición
+  - Verificado: bloqueo sin sesión, rechazo de contraseña incorrecta, sesión persistente entre pantallas
+
 ### Fase 5, Plataforma pulida
 - Interfaz unificada, responsiva, tablet first
 - **Respaldo diario cifrado de la base de datos a Google Drive** (tarea nocturna)
@@ -340,3 +347,4 @@ Las API keys nunca van al repo. Viven en un archivo `.env` local, ya cubierto po
 | 2026-08-31 | v4.7, capa de redacción con Claude funcionando. **La Fase 3 queda funcionalmente completa:** Gemini analiza, el sistema verifica contra la BAM y el USDA, y Claude redacta con la voz de Marifer. El documento resultante ya incluye nombres de platillo, sazón, bebidas de acompañamiento y las construcciones propias de ella, respetando las cantidades verificadas |
 | 2026-08-31 | v4.8, generador de PDF funcionando con la identidad visual de Marifer. Paginación nativa de WeasyPrint para que el encabezado y el pie se repitan correctamente en cada hoja, títulos que se repiten cuando una sección se parte entre páginas, y logo en SVG tras descartar varios PNG por calidad y por traer el tagline antiguo |
 | 2026-08-31 | v4.9, pantalla de revisión y aprobación funcionando de extremo a extremo desde el navegador. Se corrige un hallazgo de infraestructura importante: el servicio de systemd no leía el `.env`, así que la aplicación en producción nunca tuvo las claves de API hasta hoy. Se verifica que el ajuste en lenguaje natural cambia solo lo pedido y que una versión ajustada nunca hereda el estado verificado de la anterior |
+| 2026-09-01 | v5.0, sistema de login implementado y verificado. Cierra el hueco de seguridad más urgente del proyecto: hasta ahora cualquiera con la IP podía ver expedientes reales. La contraseña se generó directo en el servidor, nunca pasó por el chat. Se documenta un error de orden de middleware en Starlette (el último agregado se ejecuta primero) que causaba un fallo en cada petición hasta corregirlo |

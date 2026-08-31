@@ -1,6 +1,8 @@
 import json
 import os
 from fastapi import FastAPI, Request, Form, Depends, HTTPException
+from starlette.middleware.sessions import SessionMiddleware
+from starlette.middleware.base import BaseHTTPMiddleware
 from fastapi.responses import HTMLResponse, RedirectResponse, FileResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
@@ -9,6 +11,7 @@ from typing import Optional
 
 from database import get_db, engine
 import models
+import auth
 import plan_generador as plan_gen
 import redactor
 import pdf as pdf_gen
@@ -17,6 +20,65 @@ models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
 templates = Jinja2Templates(directory="templates")
+
+app.add_middleware(
+    SessionMiddleware,
+    secret_key=os.environ["SESSION_SECRET_KEY"],
+    max_age=60 * 60 * 12,  # 12 horas
+)
+
+RUTAS_PUBLICAS = {"/login"}
+
+
+class RequiereLoginMiddleware(BaseHTTPMiddleware):
+    """
+    Bloquea toda la aplicacion salvo /login hasta que la sesion tenga
+    la marca de autenticado. Es deliberadamente simple: un solo
+    operador, una sola contraseña, sin roles ni permisos distintos.
+    """
+    async def dispatch(self, request: Request, call_next):
+        if request.url.path in RUTAS_PUBLICAS:
+            return await call_next(request)
+
+        if not request.session.get("autenticado"):
+            return RedirectResponse(url="/login", status_code=303)
+
+        return await call_next(request)
+
+
+app.add_middleware(RequiereLoginMiddleware)
+
+
+@app.get("/login", response_class=HTMLResponse)
+def formulario_login(request: Request):
+    if request.session.get("autenticado"):
+        return RedirectResponse(url="/pacientes", status_code=303)
+    return templates.TemplateResponse(request, "login.html")
+
+
+@app.post("/login", response_class=HTMLResponse)
+def procesar_login(request: Request, password: str = Form(...)):
+    hash_guardado = os.environ.get("MARIFER_PASSWORD_HASH")
+
+    if not hash_guardado:
+        return templates.TemplateResponse(
+            request, "login.html",
+            {"error": "El sistema no tiene una contraseña configurada. Revisa el archivo .env."},
+        )
+
+    if auth.verificar_password(password, hash_guardado):
+        request.session["autenticado"] = True
+        return RedirectResponse(url="/pacientes", status_code=303)
+
+    return templates.TemplateResponse(
+        request, "login.html", {"error": "Contraseña incorrecta."}
+    )
+
+
+@app.get("/logout")
+def cerrar_sesion(request: Request):
+    request.session.clear()
+    return RedirectResponse(url="/login", status_code=303)
 
 
 def obtener_paciente(db: Session, paciente_id: int):

@@ -212,6 +212,16 @@ Archivos en `/opt/sistema-nutricion/`: `alimentos.py` (orquestador, 109 líneas)
 
 Arquitectura de tres fuentes con jerarquía, detallada en `docs/FUENTES_ALIMENTOS.md`: BAM local para alimentos mexicanos, USDA para genéricos internacionales, OpenFoodFacts restringido a productos de marca con verificación humana.
 
+**Sistema de login, agregado el 1 sep 2026:**
+
+`auth.py` (72 líneas, hash PBKDF2 sin dependencias externas) más middleware de sesión en `main.py`. Requiere `itsdangerous` instalado (`pip install itsdangerous`).
+
+**Variables nuevas en `.env`:** `SESSION_SECRET_KEY` y `MARIFER_PASSWORD_HASH`. Ninguna de las dos se generó ni compartió por chat.
+
+**Para cambiar la contraseña:** `python auth.py` en el servidor, pega el hash resultante en `.env`, reinicia el servicio.
+
+**ADVERTENCIA sobre orden de middleware en Starlette:** el último middleware agregado con `app.add_middleware()` es el que se ejecuta PRIMERO en cada petición. `SessionMiddleware` debe agregarse DESPUÉS de `RequiereLoginMiddleware` en el código, para quedar como capa más externa y preparar la sesión antes de que el middleware de login la lea. El orden inverso produce `AssertionError: SessionMiddleware must be installed`.
+
 **Pantalla de revisión y aprobación, agregada el 31 ago 2026:**
 
 `templates/ver_dieta.html` (114 líneas) y rutas nuevas en `main.py`: `/pacientes/{id}/dieta/nueva`, `/pacientes/{id}/dieta/{id}` (ver), `/pacientes/{id}/dieta/{id}/aprobar`, `/pacientes/{id}/dieta/{id}/ajustar`, `/pacientes/{id}/dieta/{id}/pdf`.
@@ -338,6 +348,7 @@ Verificado con dos casos: paciente de 85 kg con GLP-1 (objetivo 105 g, detectó 
 | 2026-08-29 | Vista de expediente del paciente construida y verificada. Combina en una sola pantalla los datos del paciente, sus citas (con etiqueta de estado por color) y el estado de su historia clínica, leyendo de tres tablas distintas |
 | 2026-08-29 | Formulario de Historia Clínica completo (10 secciones, ~50 campos) construido y verificado: guardar, redirigir al expediente, y editar recuperando los datos. **El sistema ya es utilizable en la vida real** para dar de alta pacientes, agendar citas y capturar historias clínicas |
 | 2026-08-29 | Gestión de citas completa desde el expediente: agendar, reagendar, cancelar, marcar completada o no asistió. El reagendado cancela la cita anterior y crea una nueva, dejando el rastro visible (cita anterior tachada con etiqueta "cancelada"), conforme a la política acordada de no sobreescribir nada |
+| 2026-09-01 | Sistema de login implementado y verificado. Cierra el hueco de seguridad de acceso sin contraseña |
 | 2026-08-31 | Pantalla de revisión y aprobación funcionando end-to-end. Se corrige que systemd no leía .env, un hallazgo que afectaba a la aplicación en producción desde que se agregaron las claves |
 | 2026-08-31 | Generador de PDF funcionando con la identidad visual de la marca. Fase 4 arrancada |
 | 2026-08-31 | Capa de redacción con Claude funcionando. Fase 3 funcionalmente completa |
