@@ -212,6 +212,21 @@ Archivos en `/opt/sistema-nutricion/`: `alimentos.py` (orquestador, 109 líneas)
 
 Arquitectura de tres fuentes con jerarquía, detallada en `docs/FUENTES_ALIMENTOS.md`: BAM local para alimentos mexicanos, USDA para genéricos internacionales, OpenFoodFacts restringido a productos de marca con verificación humana.
 
+**Capa de redacción con Claude, agregada el 31 ago 2026:**
+
+`claude_api.py` (174 líneas) y `redactor.py` (216 líneas). Modelo: `claude-sonnet-4-5`.
+
+**Variable de entorno nueva:** `ANTHROPIC_API_KEY` en `.env`, junto a `USDA_API_KEY` y `GEMINI_API_KEY`.
+
+**Archivo nuevo:** `datos/estilo/STYLE_SPEC.md` (195 líneas), el contrato de estilo derivado de los 24 documentos reales de Marifer. Se inyecta en el campo `system` de la API.
+
+**Prueba rápida:**
+```
+python -c "import claude_api, json; print(json.dumps(claude_api.probar_conexion(), indent=2))"
+```
+
+**Cadena completa funcionando:** Gemini analiza, el sistema verifica, Claude redacta.
+
 **Verificación nutricional, agregada el 31 ago 2026:**
 
 `verificador.py` (406 líneas) y `validar_tabla.py` (123 líneas).
@@ -280,6 +295,7 @@ Verificado con dos casos: paciente de 85 kg con GLP-1 (objetivo 105 g, detectó 
 | 2026-08-29 | Vista de expediente del paciente construida y verificada. Combina en una sola pantalla los datos del paciente, sus citas (con etiqueta de estado por color) y el estado de su historia clínica, leyendo de tres tablas distintas |
 | 2026-08-29 | Formulario de Historia Clínica completo (10 secciones, ~50 campos) construido y verificado: guardar, redirigir al expediente, y editar recuperando los datos. **El sistema ya es utilizable en la vida real** para dar de alta pacientes, agendar citas y capturar historias clínicas |
 | 2026-08-29 | Gestión de citas completa desde el expediente: agendar, reagendar, cancelar, marcar completada o no asistió. El reagendado cancela la cita anterior y crea una nueva, dejando el rastro visible (cita anterior tachada con etiqueta "cancelada"), conforme a la política acordada de no sobreescribir nada |
+| 2026-08-31 | Capa de redacción con Claude funcionando. Fase 3 funcionalmente completa |
 | 2026-08-31 | Verificación nutricional implementada. El sistema calcula la proteína real y corrige lo que estima la IA. Tabla ampliada a 171 alimentos con 100% de cobertura |
 | 2026-08-30 | **Fase 3 arrancada**: capa de análisis con Gemini funcionando, primer plan técnico generado y verificado |
 | 2026-08-30 | Knowledgebase clínica cargada e indexada. **Fase 2 completa** |
