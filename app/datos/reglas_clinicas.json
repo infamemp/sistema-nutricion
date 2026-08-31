@@ -1,12 +1,11 @@
 {
   "_meta": {
-    "version": "1.0",
+    "version": "1.1",
     "fecha": "2026-08-30",
     "fuente": "Criterios clinicos de Marifer Utrilla Lack, recabados directamente",
     "nota": "Este archivo define COMO decide la nutriologa que prescribir. Es editable sin tocar codigo. Si ella cambia un criterio, se ajusta aqui.",
     "referencia_clinica": "EASO para los rangos de proteina en pacientes con GLP-1"
   },
-
   "proteina": {
     "descripcion": "El nutriente rector del plan. Marifer construye la dieta alrededor de la proteina.",
     "con_glp1": {
@@ -28,17 +27,18 @@
       "nota": "Puede haber una colacion adicional con proteina si el objetivo diario lo requiere"
     }
   },
-
   "verdura": {
     "tazas_minimas_dia": 2,
     "distribuir_en_el_dia": true,
     "nota": "Minimo no negociable, se reparte entre las comidas"
   },
-
   "fruta": {
     "piezas_max_dia": 2,
     "piezas_max_dia_casos_especiales": 3,
-    "casos_especiales": ["deportista", "embarazo"],
+    "casos_especiales": [
+      "deportista",
+      "embarazo"
+    ],
     "preferir_bajo_indice_glucemico": true,
     "preferidas": [
       "frutos rojos",
@@ -52,7 +52,6 @@
     "prohibidas": [],
     "nota": "No hay frutas prohibidas, solo se cuida la porcion"
   },
-
   "grasa": {
     "porciones_ideales_dia": 4,
     "unidad": "equivalente de grasa",
@@ -79,7 +78,6 @@
     ],
     "nota": "Marifer corrige al SMAE con criterio propio: aunque el sistema de equivalentes incluya margarina, mayonesa o crema como grasas, ella no las prescribe"
   },
-
   "carbohidrato": {
     "equivalentes_por_comida_min": 1,
     "equivalentes_por_comida_max": 2,
@@ -102,12 +100,10 @@
     ],
     "nota": "El rango se ajusta segun el caso clinico y el objetivo del paciente"
   },
-
   "calorias": {
     "contar": false,
     "nota": "Marifer no cuenta calorias. Saca un estimado pero no es estricto. Le interesa mas el punto de partida del paciente, el cambio de habitos y la calidad de los alimentos. El sistema NUNCA debe mostrar conteo calorico al paciente ni construir el plan a partir de un objetivo calorico."
   },
-
   "calidad_de_alimentos": {
     "principio": "Alimentos reales y naturales",
     "evitar_siempre": [
@@ -122,7 +118,6 @@
     ],
     "nota": "Esta regla tiene prioridad sobre cualquier calculo. Un alimento que cumple los numeros pero es ultraprocesado no se prescribe."
   },
-
   "jerarquia_de_decision": [
     "1. Calidad del alimento: real y natural, sin ultraprocesados",
     "2. Piso de proteina: 60 g diarios como minimo absoluto",
@@ -132,5 +127,56 @@
     "6. Grasas saludables, 4 porciones, solo de la lista preferida",
     "7. Carbohidratos, 1 a 2 equivalentes por comida segun el caso",
     "8. Preferencias y restricciones del paciente registradas en su historia clinica"
-  ]
+  ],
+  "practicidad": {
+    "descripcion": "Reglas de la vida real. Una cantidad correcta pero impracticable no sirve, el paciente la prepara en su cocina.",
+    "alimentos_enteros_no_se_fraccionan": {
+      "regla": "Los alimentos que vienen en unidades indivisibles se prescriben completos o no se prescriben",
+      "motivo": "Nadie parte un huevo a la mitad, ni guarda media lata de atun abierta, ni deja 1.5 tostadas en un paquete que se pone aguado",
+      "aplica_a": [
+        "huevos",
+        "latas de atun",
+        "paquetitos de salmas",
+        "piezas de fruta",
+        "filetes",
+        "tortillas",
+        "rebanadas de pan",
+        "scoops de proteina"
+      ],
+      "ejemplos_mal": [
+        "2.5 huevos",
+        "media lata de atun",
+        "1.5 tostadas salmas"
+      ],
+      "ejemplos_bien": [
+        "3 huevos",
+        "1 lata de atun",
+        "1 paquetito de salmas"
+      ],
+      "si_el_calculo_da_fraccion": "Redondear a la unidad entera mas cercana y ajustar el resto de la comida para compensar"
+    },
+    "doble_referencia_en_lo_que_se_sirve_a_ojo": {
+      "regla": "Medida casera mas gramaje aproximado entre parentesis",
+      "motivo": "Nadie mide la tinga o un bistec con taza medidora, pero con una referencia visual mas el gramaje si puede calcular",
+      "aplica_a": [
+        "guisados",
+        "carnes",
+        "cereales cocidos",
+        "leguminosas",
+        "verduras cocidas",
+        "quesos"
+      ],
+      "ejemplo_mal": "3/4 de taza de tinga",
+      "ejemplo_bien": "3/4 de taza de tinga de pollo (120 g aprox)"
+    },
+    "fracciones_permitidas": {
+      "regla": "Solo en alimentos que se dividen bien sin desperdicio",
+      "ejemplos": [
+        "1/3 de aguacate",
+        "1/2 taza de arroz",
+        "1/2 platano",
+        "1/4 de taza de frutos secos"
+      ]
+    }
+  }
 }

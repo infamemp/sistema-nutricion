@@ -62,7 +62,47 @@ Es un ejemplo claro de que el criterio clínico manda sobre la tabla: el sistema
 
 ---
 
-## 5. Lo que el sistema NO debe hacer
+## 5. Practicidad, tan importante como la exactitud
+
+**Añadido el 30 de agosto de 2026, tras revisión de Marifer sobre las primeras dietas generadas.**
+
+El paciente prepara la comida en su cocina, no en un laboratorio. Una cantidad correcta pero impracticable no sirve.
+
+### 5.1 Toda cantidad debe estar especificada
+
+No basta con nombrar los alimentos. "Tinga de pechuga con nopales y tostadas" es inservible: el paciente no sabe cuánta tinga, cuántos nopales, cuántas tostadas.
+
+### 5.2 Los alimentos enteros no se fraccionan
+
+Los que vienen en unidades indivisibles se prescriben completos o no se prescriben. Nadie parte un huevo a la mitad, ni guarda media lata de atún abierta, ni deja 1.5 tostadas en un paquete que se pone aguado.
+
+| Mal | Bien |
+|---|---|
+| 2.5 huevos | 3 huevos |
+| media lata de atún | 1 lata de atún |
+| 1.5 tostadas salmas | 1 paquetito de salmas |
+
+Aplica a huevos, latas, paquetitos de salmas, piezas de fruta, filetes, tortillas, rebanadas de pan y scoops de proteína.
+
+Si el cálculo da una fracción, se redondea a la unidad entera más cercana y se ajusta el resto de la comida para compensar.
+
+### 5.3 Doble referencia en lo que se sirve a ojo
+
+Nadie mide la tinga o un bistec con taza medidora. Pero con una referencia visual más el gramaje aproximado, el paciente sí puede calcular.
+
+| Mal | Bien |
+|---|---|
+| 3/4 de taza de tinga | 3/4 de taza de tinga de pollo (120 g aprox) |
+
+Aplica a guisados, carnes, cereales cocidos, leguminosas, verduras cocidas y quesos.
+
+### 5.4 Fracciones que sí funcionan
+
+Solo en alimentos que se dividen bien sin desperdicio: ⅓ de aguacate, ½ taza de arroz, ½ plátano, ¼ de taza de frutos secos.
+
+---
+
+## 6. Lo que el sistema NO debe hacer
 
 **No contar calorías.** Marifer saca un estimado mental pero no es estricta. Le interesa más el punto de partida del paciente, el cambio de hábitos y la calidad de los alimentos.
 
@@ -70,7 +110,7 @@ El sistema nunca debe mostrar conteo calórico al paciente ni construir el plan 
 
 ---
 
-## 6. Hallazgo sobre el uso del SMAE
+## 7. Hallazgo sobre el uso del SMAE
 
 Al recabar estos criterios se aclaró algo que estaba ambiguo: **Marifer sí piensa en equivalentes, pero prescribe en medidas caseras.** Dijo textualmente "porción de grasas según SMAE" y "carbohidratos 1-2 equivalentes según SMAE por comida".
 
@@ -80,7 +120,7 @@ Es decir, traduce mentalmente de equivalentes a tazas y piezas antes de escribir
 
 ---
 
-## 7. Jerarquía de decisión
+## 8. Jerarquía de decisión
 
 Orden de prioridad cuando las reglas compiten entre sí:
 
@@ -95,7 +135,7 @@ Orden de prioridad cuando las reglas compiten entre sí:
 
 ---
 
-## 8. Funciones disponibles
+## 9. Funciones disponibles
 
 | Función | Qué hace |
 |---|---|
@@ -107,7 +147,7 @@ Orden de prioridad cuando las reglas compiten entre sí:
 
 ---
 
-## 9. Verificación realizada
+## 10. Verificación realizada
 
 Prueba ejecutada en el servidor el 30 de agosto de 2026:
 
@@ -119,8 +159,9 @@ Ambas alertas automáticas funcionaron como se diseñó.
 
 ---
 
-## 10. Bitácora
+## 11. Bitácora
 
 | Fecha | Cambio |
 |---|---|
 | 2026-08-30 | v1.0. Criterios recabados directamente de la nutrióloga e implementados como archivo de configuración editable más motor de cálculo |
+| 2026-08-30 | v1.1. Marifer revisó las primeras dietas generadas y señaló tres problemas de practicidad: faltaban las cantidades de cada alimento, se fraccionaban alimentos indivisibles (2.5 huevos, media lata de atún), y las porciones servidas a ojo necesitaban gramaje de referencia. Reglas añadidas y verificadas |
