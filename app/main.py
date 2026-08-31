@@ -1,5 +1,7 @@
+import json
+import os
 from fastapi import FastAPI, Request, Form, Depends, HTTPException
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, RedirectResponse, FileResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 from datetime import datetime, date
@@ -7,6 +9,9 @@ from typing import Optional
 
 from database import get_db, engine
 import models
+import plan_generador as plan_gen
+import redactor
+import pdf as pdf_gen
 
 models.Base.metadata.create_all(bind=engine)
 
@@ -357,3 +362,195 @@ async def guardar_followup(paciente_id: int, request: Request, db: Session = Dep
     db.commit()
 
     return RedirectResponse(url="/pacientes/" + str(paciente_id), status_code=303)
+
+
+def _cargar_contenido(dieta):
+    """El campo contenido de DietaVersion guarda un JSON con el
+    documento redactado mas el resumen de verificacion."""
+    return json.loads(dieta.contenido)
+
+
+@app.get("/pacientes/{paciente_id}/dieta/nueva")
+def generar_dieta(paciente_id: int, db: Session = Depends(get_db)):
+    paciente = obtener_paciente(db, paciente_id)
+
+    historia_obj = (
+        db.query(models.HistoriaClinica)
+        .filter(models.HistoriaClinica.paciente_id == paciente_id)
+        .first()
+    )
+    if not historia_obj:
+        raise HTTPException(
+            status_code=400,
+            detail="El paciente no tiene historia clinica. Llenala antes de generar una dieta.",
+        )
+
+    medicion_obj = (
+        db.query(models.MedicionInBody)
+        .filter(models.MedicionInBody.paciente_id == paciente_id)
+        .order_by(models.MedicionInBody.fecha_medicion.desc())
+        .first()
+    )
+    if not medicion_obj:
+        raise HTTPException(
+            status_code=400,
+            detail="El paciente no tiene ninguna medicion registrada (se necesita el peso). Agrega una desde un follow-up.",
+        )
+
+    paciente_dict = {"sexo": paciente.sexo}
+    historia_dict = {c.name: getattr(historia_obj, c.name) for c in historia_obj.__table__.columns}
+    medicion_dict = {c.name: getattr(medicion_obj, c.name) for c in medicion_obj.__table__.columns}
+
+    padecimientos = []
+    if historia_dict.get("padecimientos_diagnosticados"):
+        padecimientos.append(historia_dict["padecimientos_diagnosticados"])
+
+    resultado_plan = plan_gen.generar_plan(paciente_dict, historia_dict, medicion_dict, padecimientos=padecimientos)
+    resultado_doc = redactor.redactar(resultado_plan["plan"], nombre_paciente=paciente.nombre_completo)
+
+    ultima = (
+        db.query(models.DietaVersion)
+        .filter(models.DietaVersion.paciente_id == paciente_id)
+        .order_by(models.DietaVersion.version.desc())
+        .first()
+    )
+    numero_version = (ultima.version + 1) if ultima else 1
+
+    guardado = {
+        "documento": resultado_doc["documento"],
+        "confiable": resultado_plan["verificacion"]["resumen"]["confiable"],
+        "cobertura": resultado_plan["verificacion"]["resumen"]["cobertura_promedio"],
+    }
+
+    dieta = models.DietaVersion(
+        paciente_id=paciente_id,
+        version=numero_version,
+        contenido=json.dumps(guardado, ensure_ascii=False),
+        estado="borrador_ia",
+        creado_por="ia",
+        version_anterior_id=ultima.id if ultima else None,
+    )
+    db.add(dieta)
+    db.commit()
+    db.refresh(dieta)
+
+    return RedirectResponse(url="/pacientes/" + str(paciente_id) + "/dieta/" + str(dieta.id), status_code=303)
+
+
+@app.get("/pacientes/{paciente_id}/dieta/{dieta_id}", response_class=HTMLResponse)
+def ver_dieta(paciente_id: int, dieta_id: int, request: Request, db: Session = Depends(get_db)):
+    paciente = obtener_paciente(db, paciente_id)
+    dieta = db.query(models.DietaVersion).filter(models.DietaVersion.id == dieta_id).first()
+    if not dieta:
+        raise HTTPException(status_code=404, detail="Version de dieta no encontrada")
+
+    guardado = _cargar_contenido(dieta)
+
+    return templates.TemplateResponse(
+        request,
+        "ver_dieta.html",
+        {
+            "paciente": paciente,
+            "dieta": dieta,
+            "doc": guardado["documento"],
+            "menu": guardado["documento"].get("menu", {}),
+            "confiable": guardado.get("confiable", False),
+        },
+    )
+
+
+@app.post("/pacientes/{paciente_id}/dieta/{dieta_id}/aprobar")
+def aprobar_dieta(paciente_id: int, dieta_id: int, db: Session = Depends(get_db)):
+    dieta = db.query(models.DietaVersion).filter(models.DietaVersion.id == dieta_id).first()
+    if not dieta:
+        raise HTTPException(status_code=404, detail="Version de dieta no encontrada")
+
+    dieta.estado = "aprobada"
+    db.commit()
+
+    return RedirectResponse(url="/pacientes/" + str(paciente_id), status_code=303)
+
+
+@app.post("/pacientes/{paciente_id}/dieta/{dieta_id}/ajustar")
+def ajustar_dieta(
+    paciente_id: int,
+    dieta_id: int,
+    instruccion: str = Form(...),
+    db: Session = Depends(get_db),
+):
+    anterior = db.query(models.DietaVersion).filter(models.DietaVersion.id == dieta_id).first()
+    if not anterior:
+        raise HTTPException(status_code=404, detail="Version de dieta no encontrada")
+
+    anterior.estado = "reemplazada"
+    guardado_anterior = _cargar_contenido(anterior)
+
+    paciente = obtener_paciente(db, paciente_id)
+
+    prompt_ajuste = (
+        "Ajusta este documento de dieta segun la siguiente instruccion de la "
+        "nutriologa. Cambia SOLO lo que se pide, deja todo lo demas exactamente "
+        "igual.\n\n"
+        "INSTRUCCION: " + instruccion + "\n\n"
+        "DOCUMENTO ACTUAL:\n" + json.dumps(guardado_anterior["documento"], ensure_ascii=False) +
+        "\n\nIMPORTANTE: tu respuesta debe tener EXACTAMENTE la misma estructura "
+        "de JSON que el documento actual (las mismas claves de primer nivel: "
+        "objetivos_clave, suplementacion, menu, recomendaciones, cierre; y dentro "
+        "de menu, las mismas claves de tiempo de comida: desayuno, colacion, "
+        "comida, cena, cada una con encabezado y opciones). No la reorganices, "
+        "no muevas 'cena' o cualquier tiempo de comida fuera de 'menu'."
+    )
+
+    import claude_api
+    nuevo_documento = claude_api.generar_json(
+        prompt_ajuste,
+        sistema=redactor._sistema(),
+        temperatura=0.5,
+    )
+
+    # Salvaguarda: si a pesar de la instruccion Claude devuelve el menu
+    # reorganizado fuera de "menu", lo reacomodamos antes de guardar.
+    if "menu" not in nuevo_documento:
+        tiempos = ["desayuno", "colacion", "comida", "cena"]
+        menu_reconstruido = {}
+        for tiempo in tiempos:
+            if tiempo in nuevo_documento:
+                menu_reconstruido[tiempo] = nuevo_documento.pop(tiempo)
+        if menu_reconstruido:
+            nuevo_documento["menu"] = menu_reconstruido
+
+    numero_version = anterior.version + 1
+    guardado = {
+        "documento": nuevo_documento,
+        "confiable": False,
+        "cobertura": 0,
+        "nota": "Ajustada manualmente, las cantidades no se volvieron a verificar contra la base de datos nutricional.",
+    }
+
+    dieta = models.DietaVersion(
+        paciente_id=paciente_id,
+        version=numero_version,
+        contenido=json.dumps(guardado, ensure_ascii=False),
+        estado="borrador_ia",
+        creado_por="ia",
+        instruccion_ajuste=instruccion,
+        version_anterior_id=anterior.id,
+    )
+    db.add(dieta)
+    db.commit()
+    db.refresh(dieta)
+
+    return RedirectResponse(url="/pacientes/" + str(paciente_id) + "/dieta/" + str(dieta.id), status_code=303)
+
+
+@app.get("/pacientes/{paciente_id}/dieta/{dieta_id}/pdf")
+def descargar_pdf(paciente_id: int, dieta_id: int, db: Session = Depends(get_db)):
+    paciente = obtener_paciente(db, paciente_id)
+    dieta = db.query(models.DietaVersion).filter(models.DietaVersion.id == dieta_id).first()
+    if not dieta:
+        raise HTTPException(status_code=404, detail="Version de dieta no encontrada")
+
+    guardado = _cargar_contenido(dieta)
+    ruta_pdf = pdf_gen.generar(guardado["documento"], paciente.nombre_completo)
+
+    return FileResponse(ruta_pdf, media_type="application/pdf", filename=os.path.basename(ruta_pdf))

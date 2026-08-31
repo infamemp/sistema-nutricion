@@ -1,6 +1,6 @@
 # Sistema Integral de Nutrición, Documento Maestro del Proyecto
 
-**Versión:** 4.8
+**Versión:** 4.9
 **Fecha:** 30 de agosto de 2026
 **Estado:** Fase 0 completa. Infraestructura lista. Guía de estilo cerrada. Recolección de material en curso.
 
@@ -160,6 +160,15 @@ Stack, servidor, IA, base de alimentos, alcance, identidad visual y guía de est
   - **Continuidad al partirse:** cada sección va envuelta en una tabla cuyo `<thead>` lleva el título. Los motores de renderizado repiten el encabezado de tabla en cada página, así que si el desayuno se parte, el título reaparece arriba en la hoja siguiente en lugar de dejar opciones huérfanas sin contexto
   - **Logo en SVG.** Se probaron varios PNG y todos se veían pobres: `Mafer_Logo_Grande.png` trae el tagline antiguo, `Marifer_Inicio.png` es de baja resolución, y una conversión propia del archivo de Illustrator salió mal. La solución fue el SVG, que WeasyPrint dibuja vectorialmente: nítido a cualquier tamaño y sin conversión de por medio. Vive en `assets/logo/logo_marifer.svg`
   - **Encabezado de 38 mm** con el logo limitado por altura a 26 mm. Fijar el ancho hacía que la altura desbordara y cortara las hojitas del logo
+
+- [x] **Pantalla de revisión y aprobación, FUNCIONANDO.** Conecta por primera vez todo el ciclo desde el navegador, no desde la terminal: generar, ver, ajustar, aprobar, descargar
+  - **Botón "Generar con IA"** en el expediente, dispara Gemini + verificación + Claude, guarda la versión en `dietas_versiones` y redirige a verla
+  - **Pantalla de borrador** (`ver_dieta.html`) con insignia verde "Verificado" o naranja "Revisar cifras" según el resultado de la verificación
+  - **Pedir ajuste en lenguaje natural:** el cuadro de texto llama a Claude con la instrucción y el documento completo, exigiéndole conservar la estructura exacta y **cambiar solo lo pedido**. Verificado con un caso real: se pidió quitar el aguacate del desayuno, y colación/comida/cena quedaron idénticas
+  - **Corrección importante:** una versión ajustada nunca hereda el estado "Verificado" de la anterior, siempre se marca como no verificada (las cantidades no se vuelven a comprobar contra la BAM tras un ajuste manual de texto)
+  - **Aprobar y Descargar PDF**, ambos verificados
+  - **Hallazgo de infraestructura:** el servicio de systemd no leía el archivo `.env`, así que las claves de API nunca llegaban a la aplicación en producción, solo a las pruebas manuales por terminal. Se corrigió agregando `EnvironmentFile=/opt/sistema-nutricion/.env` al archivo de servicio
+  - *Pendiente menor:* revisar por qué en una prueba se generaron 4 versiones en vez de 3, posiblemente al recargar la pantalla del borrador se dispara una generación nueva sin querer
 
 - **Control total de la nutrióloga sobre la dieta (decisión aprobada, 31 ago 2026).** Marifer nunca queda atrapada en lo que decidió la IA. Tres caminos disponibles al momento de revisar, sin tener que elegir un modo por adelantado:
   1. **Aprobar** el borrador tal cual
@@ -330,3 +339,4 @@ Las API keys nunca van al repo. Viven en un archivo `.env` local, ya cubierto po
 | 2026-08-31 | v4.6, porciones ajustadas al rango de Marifer. El máximo de proteína por comida bajó de 56.9 a 32.9 g tras agregar instrucciones concretas al prompt con ejemplos numéricos. Se acepta una variación natural de más o menos 3 g |
 | 2026-08-31 | v4.7, capa de redacción con Claude funcionando. **La Fase 3 queda funcionalmente completa:** Gemini analiza, el sistema verifica contra la BAM y el USDA, y Claude redacta con la voz de Marifer. El documento resultante ya incluye nombres de platillo, sazón, bebidas de acompañamiento y las construcciones propias de ella, respetando las cantidades verificadas |
 | 2026-08-31 | v4.8, generador de PDF funcionando con la identidad visual de Marifer. Paginación nativa de WeasyPrint para que el encabezado y el pie se repitan correctamente en cada hoja, títulos que se repiten cuando una sección se parte entre páginas, y logo en SVG tras descartar varios PNG por calidad y por traer el tagline antiguo |
+| 2026-08-31 | v4.9, pantalla de revisión y aprobación funcionando de extremo a extremo desde el navegador. Se corrige un hallazgo de infraestructura importante: el servicio de systemd no leía el `.env`, así que la aplicación en producción nunca tuvo las claves de API hasta hoy. Se verifica que el ajuste en lenguaje natural cambia solo lo pedido y que una versión ajustada nunca hereda el estado verificado de la anterior |
