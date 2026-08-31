@@ -1,6 +1,6 @@
 # Sistema Integral de Nutrición, Documento Maestro del Proyecto
 
-**Versión:** 4.4
+**Versión:** 4.5
 **Fecha:** 30 de agosto de 2026
 **Estado:** Fase 0 completa. Infraestructura lista. Guía de estilo cerrada. Recolección de material en curso.
 
@@ -146,6 +146,14 @@ Stack, servidor, IA, base de alimentos, alcance, identidad visual y guía de est
   - Salida: lista de advertencias accionables desde nutrición, visible solo para la nutrióloga, nunca para el paciente
 
 ### Fase 4, Aprobación, PDF y envío
+
+- **Control total de la nutrióloga sobre la dieta (decisión aprobada, 31 ago 2026).** Marifer nunca queda atrapada en lo que decidió la IA. Tres caminos disponibles al momento de revisar, sin tener que elegir un modo por adelantado:
+  1. **Aprobar** el borrador tal cual
+  2. **Pedir un ajuste en lenguaje natural** con el botón "Modificar propuesta" (ej. "quita el aguacate del desayuno", "cambia las colaciones por opciones frías")
+  3. **Editar directamente** cualquier campo, como si fuera un documento suyo
+- **Crear plan en blanco.** Botón junto al de "Generar con IA", para armar una dieta desde cero sin asistencia. No es un interruptor de configuración, es simplemente otra forma de empezar
+  - *Por qué no un interruptor previo de manual contra automático:* obligaría a decidir a ciegas, antes de ver qué tan buena salió la propuesta. La libertad debe estar disponible al revisar, no configurada de antemano
+- **Recálculo al vuelo.** Si Marifer edita una cantidad a mano, el sistema recalcula la proteína y avisa si se sale del rango. Mantiene su libertad sin perder la verificación
 - Flujo de un clic: revisar, aprobar, PDF, correo
 - **Botón "Modificar propuesta".** Campo de texto simple en la pantalla de revisión (por ejemplo "quita el aguacate y cambia las colaciones por opciones frías") y la IA regenera. Ingeniería: el ajuste se aplica siempre sobre la última versión guardada en el historial, no sobre un hilo de conversación libre. Se envía versión actual más instrucción de ajuste, y el resultado se guarda como nueva versión. System prompt con regla explícita de devolver únicamente la dieta modificada, cero saludos, cero disculpas, cero relleno
 - **Motor de maquetación de flujo.** La caja se dibuja alrededor del texto, no al revés. El motor mide el contenido, dibuja la tarjeta del tamaño exacto, y si no cabe corta limpio y continúa en la siguiente lámina con su encabezado. El desbordamiento deja de ser posible por construcción
@@ -304,3 +312,4 @@ Las API keys nunca van al repo. Viven en un archivo `.env` local, ya cubierto po
 | 2026-08-30 | v4.2, **Fase 3 arrancada**: capa de análisis con Gemini funcionando. Modelo `gemini-3.7-flash` (se descartó la generación 2.5 por descontinuación en octubre). El generador de planes junta expediente, reglas clínicas, knowledgebase y opciones previas, y produce un plan técnico estructurado en JSON. Verificado con un caso de SOP: razonó sobre el caso concreto (conectó el desayuno con la fatiga vespertina), detectó banderas clínicas no obvias (metformina y B12), respetó restricciones, y generó opciones en estilo mexicano real |
 | 2026-08-30 | v4.3, tres correcciones al generador tras la revisión de Marifer: cantidades obligatorias por alimento, reglas de practicidad de la vida real (alimentos enteros no se fraccionan, doble referencia en lo servido a ojo, carnes frías con criterio bajo el principio de practicidad sobre pureza), y conexión de la tabla de pesos al prompt para que la IA deje de estimar gramajes de memoria. Este último era un error silencioso que inflaba la proteína al doble |
 | 2026-08-31 | v4.4, verificación nutricional implementada. Se detectó que los números de proteína de la IA no correspondían a la realidad (una cena declarada en 31 g tenía 60.8). El sistema ahora calcula desde la BAM y el USDA y sobrescribe la estimación del modelo. Se agregó guardarraíl contra alimentos mal identificados (buscar 'pimiento' devolvía 'queso pimiento' con 22 g de proteína), se amplió la tabla a 171 alimentos con los documentos reales de Marifer, y se creó `validar_tabla.py` para prevenir términos de búsqueda inventados. Cobertura de la tabla: 100%. Generación verificada: CONFIABLE |
+| 2026-08-31 | v4.5, se define el control de la nutrióloga sobre la dieta. En lugar de un interruptor previo de modo manual o automático, la libertad está siempre disponible al revisar: aprobar, pedir ajuste en lenguaje natural, o editar directamente. Más un botón de plan en blanco para empezar sin IA. Si edita cantidades a mano, el sistema recalcula y avisa si sale del rango |
