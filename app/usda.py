@@ -115,5 +115,19 @@ def obtener_por_id(fdc_id):
 
 
 def tiene_datos_completos(alimento):
-    esenciales = ["energia_kcal", "proteina_g", "carbohidratos_g", "grasa_g"]
+    """
+    Verifica que el alimento traiga los macronutrientes.
+
+    La energia NO se exige: algunos registros Foundation del USDA la
+    dejan en null aunque si traigan proteina, carbohidratos y grasa. Un
+    caso real: las pepitas de calabaza. Exigirla descartaba datos
+    perfectamente utiles para verificar la proteina, que es lo que nos
+    importa.
+    """
+    esenciales = ["proteina_g", "carbohidratos_g", "grasa_g"]
     return all(alimento.get(c) is not None for c in esenciales)
+
+
+def tiene_energia(alimento):
+    """Para cuando si se necesita el dato calorico."""
+    return alimento.get("energia_kcal") is not None

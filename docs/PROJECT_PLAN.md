@@ -1,6 +1,6 @@
 # Sistema Integral de Nutrición, Documento Maestro del Proyecto
 
-**Versión:** 4.1
+**Versión:** 4.4
 **Fecha:** 30 de agosto de 2026
 **Estado:** Fase 0 completa. Infraestructura lista. Guía de estilo cerrada. Recolección de material en curso.
 
@@ -114,7 +114,26 @@ Stack, servidor, IA, base de alimentos, alcance, identidad visual y guía de est
 **CON ESTO LA FASE 2 QUEDA COMPLETA.**
 - Lista blanca de fuentes web permitidas
 
-### Fase 3, Motor de IA
+### Fase 3, Motor de IA 🔵 EN CURSO (arrancada 30 ago 2026)
+
+- [x] **Capa de análisis con Gemini, FUNCIONANDO.** `gemini.py` (cliente de la API) y `plan_generador.py` (el generador de planes técnicos)
+  - **Modelo elegido: `gemini-3.7-flash`**, con 1M de tokens de contexto. Se descartó la generación 2.5 porque Google la descontinúa el 16 de octubre de 2026. El módulo incluye `listar_modelos()` para verificar qué hay disponible sin adivinar nombres
+  - **Qué hace:** junta el expediente del paciente, las reglas clínicas de Marifer, la knowledgebase del caso y las opciones ya prescritas, y produce un plan técnico en JSON con esquema fijo: resumen del caso, banderas clínicas, objetivo y distribución de proteína, estructura diaria, opciones por tiempo de comida, recomendaciones, suplementación y advertencias
+  - **Selección automática de knowledgebase:** traduce los padecimientos del paciente a temas y carga solo las fuentes pertinentes
+  - **Verificado con un caso real (mujer de 34 años, SOP con resistencia a la insulina, metformina, intolerancia a la lactosa):** el sistema conectó el pan dulce del desayuno con la fatiga vespertina y lo identificó como hipoglucemia reactiva, sin que nadie se lo indicara. Detectó la bandera de metformina y vitamina B12. Respetó todas las restricciones. Calculó 120 g de proteína (1.53 g/kg, dentro del rango) y agregó la colación proteica al exceder 30 g por comida, tal como marcan las reglas. Las opciones salieron en estilo mexicano real: huevos a la mexicana, tinga de pechuga, salpicón de res, nopales, salmas
+  - Tiempo de generación: 44 segundos. Tamaño del prompt: 292 KB
+  - **Tres correcciones de Marifer tras revisar las primeras dietas generadas:**
+    1. *Faltaban las cantidades.* "Tinga de pechuga con nopales" es inservible, el paciente no sabe cuánto comer. Ahora toda opción lleva cantidad por alimento
+    2. *Practicidad de la vida real.* No se fraccionan alimentos indivisibles (nada de 2.5 huevos ni media lata de atún), y lo que se sirve a ojo lleva doble referencia (medida casera más gramaje). Además, la regla de evitar embutidos era demasiado gruesa: ella sí prescribe pechuga de pavo **natural**, y poner al paciente a rebanar una pechuga entera es impracticable. Se distinguió entre embutidos ultraprocesados y carnes frías mínimamente procesadas, con el principio de **practicidad sobre pureza**
+    3. *La IA estimaba los gramajes de memoria.* Decía que 2 rebanadas de pavo pesan 60 g cuando pesan 24, inflando la proteína al doble. La causa era de arquitectura: la tabla de pesos existía pero no estaba conectada al generador. Se inyectó en el prompt como referencia autoritativa
+- [x] **Verificación nutricional, IMPLEMENTADA.** `verificador.py` más `validar_tabla.py`. Documentado en `docs/VERIFICACION_NUTRICIONAL.md`
+  - **El problema:** los números de proteína que declaraba la IA nadie los comprobaba. Al medirlos, una cena declarada en 31 g tenía 60.8 g y una comida de 36 g tenía 20.9 g. Casi el doble y casi la mitad
+  - **La solución:** el sistema calcula la proteína real desde la BAM y el USDA, y **sobrescribe** el número que estimó la IA. Los modelos de lenguaje no son confiables sumando; eligen bien los alimentos, pero la aritmética la hace Python
+  - **Guardarraíl:** buscar "pimiento" en la BAM devolvía "QUESO PIMIENTO" con 22 g de proteína. Se agregaron techos por categoría de alimento para rechazar datos imposibles
+  - **Tabla ampliada a 171 alimentos**, extraídos de los 24 documentos reales de Marifer. Es una tabla viva que crece con la práctica
+  - **`validar_tabla.py`:** herramienta que prueba los 171 alimentos contra las fuentes reales. Existe porque se registraron cinco términos que no existían en la BAM ("jitomate saladette" cuando la BAM dice "JITOMATE SALADET"), y el síntoma era silencioso
+  - **Estado: cobertura de la tabla 100%.** Prueba de generación completa: 97% de cobertura de verificación, cero alertas, veredicto CONFIABLE, 9 correcciones aplicadas automáticamente
+  - *Pendiente:* la IA elige porciones de 45 a 57 g de proteína cuando la regla de Marifer indica 25 a 30 g por comida. Los números son correctos, las porciones son generosas. Ajuste de prompt pendiente
 - **Arquitectura de dos motores:** Gemini analiza (expediente, KB completa en contexto, PDFs) y produce el plan técnico estructurado. Claude redacta los documentos finales para humanos. La frontera entre ambos es un documento estructurado: Gemini nunca escribe para el paciente, Claude nunca calcula ni decide clínicamente
 - **`STYLE_SPEC.md` se inyecta en el prompt de redacción** como contrato de estilo
 - **Regla de individualización:** la biblioteca guarda el qué, la IA decide el cómo y el cuánto. Dos pacientes con la misma condición reciben el mismo criterio clínico y distinta redacción
@@ -222,6 +241,7 @@ sistema-nutricion/
     ├── TABLA_DE_EQUIVALENCIAS.md
     ├── FUENTES_ALIMENTOS.md
     ├── REGLAS_CLINICAS.md
+    ├── VERIFICACION_NUTRICIONAL.md
     ├── APRENDIZAJE_CONTINUO.md
     ├── MEDIDAS_CASERAS.md
     ├── Aviso_de_Privacidad.docx
@@ -281,3 +301,6 @@ Las API keys nunca van al repo. Viven en un archivo `.env` local, ya cubierto po
 | 2026-08-30 | v3.9, se documenta el diseño de aprendizaje continuo en `docs/APRENDIZAJE_CONTINUO.md`. Se aclara que la IA no aprende sola entre casos, pero el sistema puede volverse más listo sobre qué contexto darle. Tres niveles diseñados: registro de correcciones (recomendado, la base de datos ya está preparada con el campo `instruccion_ajuste`), banco de dietas aprobadas (**riesgo alto de volver el sistema repetitivo, no implementar por ahora**) y análisis periódico asistido (para cuando haya 50 a 100 dietas reales). Se eleva a principio no negociable que el sistema razona y no repite |
 | 2026-08-30 | v4.0, tabla de conversión de medidas caseras implementada (62 alimentos). Se detectaron y corrigieron dos errores silenciosos que habrían producido dietas mal calculadas sin señal de alerta: el arroz se tomaba crudo en lugar de cocido (287 kcal contra 97 reales en media taza) y la pechuga de pollo con piel en lugar de sin piel (4 veces la grasa). Resueltos con el campo `buscar_como`, más un chequeo de sensatez sobre cada porción calculada |
 | 2026-08-30 | v4.1, **Fase 2 completa**. Knowledgebase clínica cargada al servidor: 19 archivos separados por libro, indexados por tema y nivel de autoridad. El sistema selecciona solo las fuentes relevantes a cada caso (verificado: SOP más resistencia a la insulina devuelve 4 fuentes de 19, 338 KB de contexto). Con esto el sistema tiene ya las cuatro capas de conocimiento listas para la Fase 3: fuentes de alimentos, reglas clínicas, conversión de medidas y knowledgebase |
+| 2026-08-30 | v4.2, **Fase 3 arrancada**: capa de análisis con Gemini funcionando. Modelo `gemini-3.7-flash` (se descartó la generación 2.5 por descontinuación en octubre). El generador de planes junta expediente, reglas clínicas, knowledgebase y opciones previas, y produce un plan técnico estructurado en JSON. Verificado con un caso de SOP: razonó sobre el caso concreto (conectó el desayuno con la fatiga vespertina), detectó banderas clínicas no obvias (metformina y B12), respetó restricciones, y generó opciones en estilo mexicano real |
+| 2026-08-30 | v4.3, tres correcciones al generador tras la revisión de Marifer: cantidades obligatorias por alimento, reglas de practicidad de la vida real (alimentos enteros no se fraccionan, doble referencia en lo servido a ojo, carnes frías con criterio bajo el principio de practicidad sobre pureza), y conexión de la tabla de pesos al prompt para que la IA deje de estimar gramajes de memoria. Este último era un error silencioso que inflaba la proteína al doble |
+| 2026-08-31 | v4.4, verificación nutricional implementada. Se detectó que los números de proteína de la IA no correspondían a la realidad (una cena declarada en 31 g tenía 60.8). El sistema ahora calcula desde la BAM y el USDA y sobrescribe la estimación del modelo. Se agregó guardarraíl contra alimentos mal identificados (buscar 'pimiento' devolvía 'queso pimiento' con 22 g de proteína), se amplió la tabla a 171 alimentos con los documentos reales de Marifer, y se creó `validar_tabla.py` para prevenir términos de búsqueda inventados. Cobertura de la tabla: 100%. Generación verificada: CONFIABLE |

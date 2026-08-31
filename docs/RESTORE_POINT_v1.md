@@ -212,6 +212,35 @@ Archivos en `/opt/sistema-nutricion/`: `alimentos.py` (orquestador, 109 líneas)
 
 Arquitectura de tres fuentes con jerarquía, detallada en `docs/FUENTES_ALIMENTOS.md`: BAM local para alimentos mexicanos, USDA para genéricos internacionales, OpenFoodFacts restringido a productos de marca con verificación humana.
 
+**Verificación nutricional, agregada el 31 ago 2026:**
+
+`verificador.py` (406 líneas) y `validar_tabla.py` (123 líneas).
+
+**Qué hace:** calcula la proteína real de cada opción desde la BAM y el USDA, y sobrescribe el número que estimó la IA. Los modelos no son confiables sumando.
+
+**Comando útil tras cualquier cambio a la tabla de medidas:**
+```
+python validar_tabla.py
+```
+Prueba los 171 alimentos contra las fuentes reales. Debe dar 100% de cobertura.
+
+**Advertencia para quien retome:** al registrar un término en `buscar_como`, verificarlo primero con `bam.buscar_palabras()`. Se registraron cinco términos inventados que no existían y dejaban alimentos sin verificar en silencio.
+
+**Capa de análisis con Gemini, agregada el 30 ago 2026 (Fase 3):**
+
+`gemini.py` (174 líneas, cliente de la API) y `plan_generador.py` (296 líneas, generador de planes técnicos).
+
+**Modelo en uso: `gemini-3.7-flash`.** Importante: la generación 2.5 de Gemini se descontinúa el 16 de octubre de 2026, no usarla. Si el modelo deja de funcionar, correr `gemini.listar_modelos()` para ver qué hay disponible con la clave actual y ajustar la constante `MODELO_ANALISIS` en `gemini.py`.
+
+**Variable de entorno nueva:** `GEMINI_API_KEY` en `.env`, junto a `USDA_API_KEY`.
+
+**Prueba rápida de que todo funciona:**
+```
+python -c "import gemini, json; print(json.dumps(gemini.probar_conexion(), indent=2))"
+```
+
+Verificado con un caso de SOP con resistencia a la insulina: 44 segundos, prompt de 285 KB, plan técnico completo y coherente. Detalle en `docs/PROJECT_PLAN.md` Fase 3.
+
 **Knowledgebase clínica, cargada el 30 ago 2026:**
 
 19 archivos de extracciones de libros y guías clínicas en `datos/knowledgebase/` (1.4 MB), indexados en `datos/kb_indice.json` y accesibles vía `knowledgebase.py` (152 líneas).
@@ -251,6 +280,8 @@ Verificado con dos casos: paciente de 85 kg con GLP-1 (objetivo 105 g, detectó 
 | 2026-08-29 | Vista de expediente del paciente construida y verificada. Combina en una sola pantalla los datos del paciente, sus citas (con etiqueta de estado por color) y el estado de su historia clínica, leyendo de tres tablas distintas |
 | 2026-08-29 | Formulario de Historia Clínica completo (10 secciones, ~50 campos) construido y verificado: guardar, redirigir al expediente, y editar recuperando los datos. **El sistema ya es utilizable en la vida real** para dar de alta pacientes, agendar citas y capturar historias clínicas |
 | 2026-08-29 | Gestión de citas completa desde el expediente: agendar, reagendar, cancelar, marcar completada o no asistió. El reagendado cancela la cita anterior y crea una nueva, dejando el rastro visible (cita anterior tachada con etiqueta "cancelada"), conforme a la política acordada de no sobreescribir nada |
+| 2026-08-31 | Verificación nutricional implementada. El sistema calcula la proteína real y corrige lo que estima la IA. Tabla ampliada a 171 alimentos con 100% de cobertura |
+| 2026-08-30 | **Fase 3 arrancada**: capa de análisis con Gemini funcionando, primer plan técnico generado y verificado |
 | 2026-08-30 | Knowledgebase clínica cargada e indexada. **Fase 2 completa** |
 | 2026-08-30 | Tabla de conversión de medidas caseras implementada. Se detectaron dos errores silenciosos de cálculo (arroz crudo contra cocido, pollo con piel contra sin piel) y se resolvieron con el campo `buscar_como` |
 | 2026-08-30 | Motor de reglas clínicas implementado y verificado. Los criterios de prescripción de la nutrióloga quedan codificados y editables sin tocar código |

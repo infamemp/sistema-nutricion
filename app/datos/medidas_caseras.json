@@ -1,11 +1,16 @@
 {
   "_meta": {
-    "version": "1.1",
+    "version": "2.1",
     "fecha": "2026-08-30",
     "proposito": "Traducir entre las medidas caseras que usa Marifer en sus dietas y los gramos que necesita el sistema para consultar la BAM. Sin esta tabla el sistema no puede verificar si una dieta cumple el objetivo de proteina.",
     "nota": "Los pesos son aproximados y sirven para calculo interno. El paciente siempre ve la medida casera, nunca los gramos.",
     "fuentes": "Medidas observadas en las 24 dietas reales de la nutriologa, complementadas con equivalencias de uso comun en Mexico",
-    "advertencia_crudo_cocido": "CRITICO: muchos alimentos cambian su densidad nutricional al cocerse. El arroz crudo tiene 363 kcal por 100 g y cocido 123. Los cereales, leguminosas y pastas absorben agua y triplican su peso. Al consultar la BAM hay que usar el alimento en el MISMO estado que la medida casera. El campo 'buscar_como' de cada alimento indica el termino correcto para la BAM."
+    "advertencia_crudo_cocido": "CRITICO: muchos alimentos cambian su densidad nutricional al cocerse. El arroz crudo tiene 363 kcal por 100 g y cocido 123. Los cereales, leguminosas y pastas absorben agua y triplican su peso. Al consultar la BAM hay que usar el alimento en el MISMO estado que la medida casera. El campo 'buscar_como' de cada alimento indica el termino correcto para la BAM.",
+    "nota_pesos": "Los pesos de este archivo son la referencia autoritativa del sistema. La IA NO debe estimar gramajes de memoria, debe usar estos valores.",
+    "nota_fuentes": "Campo 'buscar_como': termino para la BAM. Campo 'buscar_como_usda' mas 'buscar_en': usar cuando el alimento no existe en la BAM (quinoa, pistaches, pepitas, pan de masa madre y otros no tradicionales en Mexico). El verificador prueba BAM primero y USDA como respaldo.",
+    "nota_terminos": "REGLA: todo termino de 'buscar_como' debe verificarse contra la BAM real antes de registrarlo, con bam.buscar_palabras(). En la version 1.5 se registraron cinco terminos inventados (jitomate saladette, pepino crudo, champinon crudo, tortilla de maiz nixtamalizada, aceite de aguacate) que no existian y dejaban esos alimentos sin verificar. El nombre correcto suele diferir: la BAM dice 'JITOMATE SALADET' sin doble t, y 'CHAMPINONES NATURALES' en plural.",
+    "origen": "Alimentos extraidos de los 24 documentos reales de Marifer, mas los de uso comun en Mexico. Cubre el universo de lo que ella prescribe, no el universo completo de alimentos mexicanos.",
+    "tabla_viva": "Esta tabla crece con la practica. Cuando el verificador reporte un alimento desconocido, se agrega aqui. Correr validar_tabla.py despues de cada cambio para confirmar que los terminos existen en las fuentes."
   },
   "volumen_a_ml": {
     "taza": 240,
@@ -34,7 +39,8 @@
       "porciones_usuales": {
         "1 tortilla": 30,
         "2 tortillas": 60
-      }
+      },
+      "buscar_como": "tortilla masa maiz blanco"
     },
     "tortilla de harina": {
       "pieza_g": 42
@@ -44,28 +50,36 @@
       "porciones_usuales": {
         "2 tostadas": 24,
         "3 tostadas": 36
-      }
+      },
+      "buscar_como": "tostada"
     },
     "salmas": {
       "paquetito_g": 30,
       "pieza_g": 6,
-      "nota": "El paquetito individual trae aproximadamente 5 piezas"
+      "nota": "El paquetito individual trae aproximadamente 5 piezas",
+      "buscar_como": "galleta salada no grasosa"
     },
     "tortita de arroz inflado": {
       "pieza_g": 9,
       "porciones_usuales": {
         "1 tortita": 9,
         "2 tortitas": 18
-      }
+      },
+      "buscar_en": "usda",
+      "buscar_como_usda": "rice cakes"
     },
     "pan de caja": {
       "rebanada_g": 28
     },
     "pan thin": {
-      "pieza_g": 45
+      "pieza_g": 45,
+      "buscar_en": "usda",
+      "buscar_como_usda": "bread flat thin"
     },
     "pan de masa madre": {
-      "rebanada_g": 40
+      "rebanada_g": 40,
+      "buscar_en": "usda",
+      "buscar_como_usda": "bread sourdough"
     },
     "arroz cocido": {
       "taza_g": 158,
@@ -82,7 +96,9 @@
         "1/2 taza": 93
       },
       "buscar_como": "quinoa cocida",
-      "estado": "cocido"
+      "estado": "cocido",
+      "buscar_en": "usda",
+      "buscar_como_usda": "quinoa cooked"
     },
     "avena cruda": {
       "taza_g": 80,
@@ -91,7 +107,7 @@
         "1/3 taza": 27,
         "2 cucharadas": 16
       },
-      "buscar_como": "avena cruda",
+      "buscar_como": "avena hojuela",
       "estado": "crudo"
     },
     "pasta cocida": {
@@ -175,7 +191,13 @@
     "atun en agua": {
       "lata_grande_g": 140,
       "lata_chica_g": 80,
-      "medallon_g": 100
+      "medallon_g": 100,
+      "porciones_usuales": {
+        "1 lata": 140,
+        "1 lata grande": 140,
+        "1 lata chica": 80
+      },
+      "buscar_como": "atun agua"
     },
     "huevo": {
       "pieza_g": 50,
@@ -202,7 +224,9 @@
       "porciones_usuales": {
         "1/2 taza": 113,
         "1 taza": 226
-      }
+      },
+      "buscar_en": "usda",
+      "buscar_como_usda": "cheese cottage"
     },
     "queso oaxaca": {
       "porciones_usuales": {
@@ -215,14 +239,24 @@
         "1/2 taza": 123,
         "3/4 taza": 184,
         "1 cucharada": 15
-      }
+      },
+      "buscar_en": "usda",
+      "buscar_como_usda": "yogurt greek plain"
     },
     "leche de almendras": {
-      "taza_ml": 240
+      "taza_ml": 240,
+      "buscar_en": "usda",
+      "buscar_como_usda": "almond milk unsweetened",
+      "taza_g": 240
     },
     "proteina en polvo": {
       "scoop_g": 30,
-      "nota": "Varia por marca, 30 g es el promedio"
+      "nota": "Varia por marca, 30 g es el promedio",
+      "buscar_en": "usda",
+      "buscar_como_usda": "whey protein powder",
+      "porciones_usuales": {
+        "1 scoop": 30
+      }
     },
     "almendras": {
       "pieza_g": 1.2,
@@ -243,7 +277,9 @@
       "pieza_g": 0.7,
       "porciones_usuales": {
         "15 pistaches": 10
-      }
+      },
+      "buscar_en": "usda",
+      "buscar_como_usda": "pistachio nuts"
     },
     "cacahuates": {
       "porciones_usuales": {
@@ -251,30 +287,49 @@
       }
     },
     "crema de almendras": {
-      "cucharada_g": 16
+      "cucharada_g": 16,
+      "buscar_en": "usda",
+      "buscar_como_usda": "almond butter"
     },
     "crema de cacahuate": {
-      "cucharada_g": 16
+      "cucharada_g": 16,
+      "buscar_en": "usda",
+      "buscar_como_usda": "peanut butter"
     },
     "chia": {
-      "cucharada_g": 12
+      "cucharada_g": 12,
+      "buscar_en": "usda",
+      "buscar_como_usda": "chia seeds"
     },
     "linaza": {
-      "cucharada_g": 10
+      "cucharada_g": 10,
+      "buscar_en": "usda",
+      "buscar_como_usda": "flaxseed"
     },
     "pepitas": {
-      "cucharada_g": 10,
+      "cucharada_g": 8,
       "porciones_usuales": {
-        "2 cucharadas": 20
-      }
+        "2 cucharadas": 16,
+        "1/4 taza": 32
+      },
+      "buscar_en": "usda",
+      "buscar_como_usda": "pumpkin seeds"
     },
     "aceite de oliva": {
       "cucharada_g": 14,
-      "cucharadita_g": 4.5
+      "cucharadita_g": 4.5,
+      "porciones_usuales": {
+        "1 cdita": 4.5,
+        "1 cucharadita": 4.5,
+        "1 cda": 14,
+        "1 cucharada": 14
+      }
     },
     "hummus": {
       "cucharada_g": 15,
-      "cucharadita_g": 5
+      "cucharadita_g": 5,
+      "buscar_en": "usda",
+      "buscar_como_usda": "hummus"
     },
     "guacamole": {
       "cucharada_g": 30
@@ -286,11 +341,13 @@
         "2 nopales asados": 80
       },
       "buscar_como": "nopales cocidos",
-      "estado": "cocido"
+      "estado": "cocido",
+      "nota": "En la practica mexicana se cuentan por pieza (2 nopales asados), no por taza"
     },
     "verdura cruda": {
       "taza_g": 80,
-      "nota": "Hojas verdes y ensaladas, promedio"
+      "nota": "Hojas verdes y ensaladas, promedio",
+      "buscar_como": "lechuga"
     },
     "verdura cocida": {
       "taza_g": 150,
@@ -299,19 +356,24 @@
       "estado": "cocido"
     },
     "espinaca cruda": {
-      "taza_g": 30
+      "taza_g": 30,
+      "buscar_como": "espinaca"
     },
     "jitomate": {
-      "pieza_g": 120
+      "pieza_g": 120,
+      "buscar_como": "jitomate saladet"
     },
     "pepino": {
-      "pieza_g": 200
+      "pieza_g": 200,
+      "buscar_como": "pepino con cascara"
     },
     "calabacita": {
-      "pieza_g": 100
+      "pieza_g": 100,
+      "buscar_como": "calabacita italiana"
     },
     "zanahoria": {
-      "pieza_g": 60
+      "pieza_g": 60,
+      "buscar_como": "zanahoria"
     },
     "jicama": {
       "taza_g": 130
@@ -332,7 +394,8 @@
       "taza_g": 145,
       "porciones_usuales": {
         "1/2 taza": 73
-      }
+      },
+      "buscar_como": "papaya"
     },
     "fresas": {
       "pieza_g": 12,
@@ -346,14 +409,17 @@
       "taza_g": 148,
       "porciones_usuales": {
         "1/3 taza": 49
-      }
+      },
+      "buscar_en": "usda",
+      "buscar_como_usda": "blueberries raw"
     },
     "uvas": {
       "pieza_g": 5,
       "porciones_usuales": {
         "10 uvas": 50,
         "1/2 taza": 75
-      }
+      },
+      "buscar_como": "uva todos tipos"
     },
     "pera": {
       "pieza_g": 180
@@ -362,13 +428,699 @@
       "pieza_g": 150
     },
     "mandarina": {
-      "pieza_g": 90
+      "pieza_g": 90,
+      "buscar_como": "mandarina comun"
     },
     "fruta picada": {
       "taza_g": 150,
       "porciones_usuales": {
         "1/2 taza": 75
+      },
+      "nota": "Generico. Usar la fruta especifica cuando se conozca.",
+      "buscar_como": "papaya"
+    },
+    "pechuga de pavo natural": {
+      "rebanada_g": 12,
+      "porciones_usuales": {
+        "2 rebanadas": 24,
+        "3 rebanadas": 36,
+        "30 g": 30,
+        "80 g": 80
+      },
+      "buscar_como": "pavo pechuga",
+      "estado": "cocido",
+      "nota": "Una rebanada de pechuga de pavo natural pesa entre 10 y 15 g. NO confundir con pechuga fresca."
+    },
+    "carne molida guisada": {
+      "taza_g": 200,
+      "nota": "Si el guisado lleva verdura, la medida en taza es de la mezcla completa. Especificar aparte los gramos de la carne sola.",
+      "buscar_como": "carne molida res",
+      "estado": "cocido"
+    },
+    "guisado con verdura": {
+      "taza_g": 200,
+      "nota": "Medida de la mezcla completa. Los gramos de proteina se cuentan aparte."
+    },
+    "sabana de res": {
+      "pieza_g": 120,
+      "porciones_usuales": {
+        "1 sabana": 120
+      },
+      "buscar_como": "res bistec",
+      "estado": "cocido"
+    },
+    "bistec de res": {
+      "pieza_g": 120,
+      "porciones_usuales": {
+        "1 bistec": 120
+      },
+      "buscar_como": "res bistec",
+      "estado": "cocido"
+    },
+    "carne molida de res": {
+      "taza_g": 200,
+      "porciones_usuales": {
+        "120 g": 120,
+        "1/2 taza": 100
+      },
+      "buscar_como": "carne molida res",
+      "estado": "cocido"
+    },
+    "falda de res": {
+      "taza_g": 140,
+      "porciones_usuales": {
+        "3/4 taza deshebrada": 105
+      },
+      "buscar_como": "res falda",
+      "estado": "cocido"
+    },
+    "cecina": {
+      "pieza_g": 100,
+      "buscar_como": "cecina",
+      "estado": "cocido"
+    },
+    "tinga de pollo": {
+      "taza_g": 160,
+      "porciones_usuales": {
+        "3/4 taza": 120
+      },
+      "buscar_como": "tinga pollo",
+      "estado": "cocido",
+      "nota": "Preparacion con pollo deshebrado, jitomate y chipotle"
+    },
+    "picadillo": {
+      "taza_g": 200,
+      "porciones_usuales": {
+        "3/4 taza": 150
+      },
+      "buscar_como": "picadillo",
+      "estado": "cocido"
+    },
+    "salpicon de res": {
+      "taza_g": 130,
+      "buscar_como": "res falda",
+      "estado": "cocido"
+    },
+    "atun fresco": {
+      "filete_g": 130,
+      "buscar_como": "atun fresco",
+      "estado": "cocido"
+    },
+    "tilapia": {
+      "filete_g": 130,
+      "buscar_como": "tilapia",
+      "estado": "cocido"
+    },
+    "camaron": {
+      "taza_g": 145,
+      "buscar_como": "camaron",
+      "estado": "cocido"
+    },
+    "clara de huevo": {
+      "pieza_g": 33,
+      "taza_g": 240,
+      "porciones_usuales": {
+        "1/2 taza de claras": 120,
+        "2 claras": 66,
+        "3 claras": 99
+      },
+      "buscar_como": "huevo clara",
+      "estado": "cocido"
+    },
+    "cebolla": {
+      "pieza_g": 110,
+      "taza_g": 160,
+      "porciones_usuales": {
+        "1/4 taza": 40
+      },
+      "buscar_como": "cebolla blanca"
+    },
+    "chile poblano": {
+      "pieza_g": 45,
+      "buscar_como": "chile poblano"
+    },
+    "pimiento": {
+      "pieza_g": 120,
+      "taza_g": 150,
+      "buscar_como": "pimiento morron rojo"
+    },
+    "champinones": {
+      "taza_g": 70,
+      "buscar_como": "champinones naturales"
+    },
+    "ejotes": {
+      "taza_g": 125,
+      "buscar_como": "ejotes",
+      "estado": "cocido"
+    },
+    "esparragos": {
+      "pieza_g": 15,
+      "taza_g": 134,
+      "porciones_usuales": {
+        "6 esparragos": 90
+      },
+      "estado": "cocido"
+    },
+    "chayote": {
+      "pieza_g": 200,
+      "taza_g": 160,
+      "estado": "cocido"
+    },
+    "acelga": {
+      "taza_g": 36,
+      "buscar_como": "acelga"
+    },
+    "kale": {
+      "taza_g": 21,
+      "buscar_como": "kale",
+      "buscar_en": "usda",
+      "buscar_como_usda": "kale raw"
+    },
+    "arugula": {
+      "taza_g": 20,
+      "buscar_como": "arugula",
+      "buscar_en": "usda",
+      "buscar_como_usda": "arugula raw"
+    },
+    "lechuga": {
+      "taza_g": 36,
+      "buscar_como": "lechuga romana"
+    },
+    "col": {
+      "taza_g": 89,
+      "buscar_como": "col"
+    },
+    "coliflor": {
+      "taza_g": 100,
+      "estado": "cocido"
+    },
+    "betabel": {
+      "taza_g": 136,
+      "porciones_usuales": {
+        "1/2 taza": 68
+      },
+      "estado": "cocido"
+    },
+    "salsa verde": {
+      "cucharada_g": 16,
+      "taza_g": 240,
+      "porciones_usuales": {
+        "2 cucharadas": 32
+      },
+      "buscar_como": "salsa verde"
+    },
+    "salsa roja": {
+      "cucharada_g": 16,
+      "taza_g": 240,
+      "buscar_como": "salsa roja"
+    },
+    "pico de gallo": {
+      "taza_g": 130,
+      "porciones_usuales": {
+        "1/2 taza": 65
       }
+    },
+    "vinagreta": {
+      "cucharadita_g": 5,
+      "cucharada_g": 15,
+      "porciones_usuales": {
+        "2 cditas": 10
+      },
+      "nota": "Compuesto de aceite y vinagre. Contar el aceite por separado.",
+      "sin_aporte_nutricional": false,
+      "buscar_en": "usda",
+      "buscar_como_usda": "salad dressing vinegar and oil"
+    },
+    "mostaza": {
+      "cucharadita_g": 5,
+      "porciones_usuales": {
+        "1 cdita": 5
+      },
+      "buscar_en": "usda",
+      "buscar_como_usda": "mustard prepared"
+    },
+    "amaranto": {
+      "taza_g": 30,
+      "cucharada_g": 8,
+      "buscar_en": "usda",
+      "buscar_como_usda": "amaranth grain"
+    },
+    "granola": {
+      "cucharada_g": 12,
+      "porciones_usuales": {
+        "1 cda": 12
+      }
+    },
+    "pan integral": {
+      "rebanada_g": 30
+    },
+    "pan artesanal": {
+      "rebanada_g": 45,
+      "buscar_como": "pan blanco bolillo telera"
+    },
+    "sope": {
+      "pieza_g": 60
+    },
+    "tortita de arroz": {
+      "pieza_g": 9,
+      "porciones_usuales": {
+        "1 tortita": 9,
+        "2 tortitas": 18
+      },
+      "buscar_en": "usda",
+      "buscar_como_usda": "rice cakes"
+    },
+    "mandarina mini": {
+      "pieza_g": 50,
+      "buscar_como": "mandarina comun"
+    },
+    "guayaba": {
+      "pieza_g": 55
+    },
+    "kiwi": {
+      "pieza_g": 75
+    },
+    "melon": {
+      "taza_g": 160
+    },
+    "sandia": {
+      "taza_g": 152
+    },
+    "durazno": {
+      "pieza_g": 150
+    },
+    "ciruela": {
+      "pieza_g": 66
+    },
+    "frambuesas": {
+      "taza_g": 123,
+      "porciones_usuales": {
+        "1/3 taza": 41
+      },
+      "buscar_en": "usda",
+      "buscar_como_usda": "raspberries raw"
+    },
+    "moras": {
+      "taza_g": 144,
+      "buscar_en": "usda",
+      "buscar_como_usda": "blackberries raw"
+    },
+    "nuez de la india": {
+      "pieza_g": 1.5,
+      "porciones_usuales": {
+        "10 nueces de la india": 15
+      },
+      "buscar_en": "usda",
+      "buscar_como_usda": "cashew nuts"
+    },
+    "semillas de girasol": {
+      "cucharada_g": 9,
+      "buscar_en": "usda",
+      "buscar_como_usda": "sunflower seed kernels"
+    },
+    "ajonjoli": {
+      "cucharada_g": 9
+    },
+    "aceite de aguacate": {
+      "cucharada_g": 14,
+      "cucharadita_g": 4.5,
+      "porciones_usuales": {
+        "1 cdita": 4.5,
+        "1 cucharadita": 4.5,
+        "1 cda": 14,
+        "1 cucharada": 14
+      },
+      "buscar_en": "usda",
+      "buscar_como_usda": "oil avocado"
+    },
+    "mayonesa de aguacate": {
+      "cucharadita_g": 5,
+      "cucharada_g": 14,
+      "buscar_como": "mayonesa"
+    },
+    "leche de coco": {
+      "taza_ml": 240,
+      "buscar_en": "usda",
+      "buscar_como_usda": "coconut milk beverage",
+      "taza_g": 240
+    },
+    "bebida vegetal": {
+      "taza_ml": 240,
+      "taza_g": 240,
+      "buscar_en": "usda",
+      "buscar_como_usda": "almond milk unsweetened"
+    },
+    "queso fresco": {
+      "porciones_usuales": {
+        "30 g": 30,
+        "60 g": 60
+      },
+      "buscar_como": "queso fresco"
+    },
+    "queso mozzarella": {
+      "porciones_usuales": {
+        "40 g": 40
+      },
+      "buscar_como": "queso mozzarella"
+    },
+    "requeson": {
+      "taza_g": 226,
+      "porciones_usuales": {
+        "1/2 taza": 113
+      },
+      "buscar_como": "requeson"
+    },
+    "pollo desmenuzado": {
+      "taza_g": 140,
+      "porciones_usuales": {
+        "3/4 taza": 105,
+        "1/2 taza": 70
+      },
+      "buscar_como": "pollo pechuga sin piel",
+      "estado": "cocido"
+    },
+    "pollo rostizado": {
+      "porciones_usuales": {
+        "120 g": 120
+      },
+      "buscar_como": "pollo rostizado pechuga",
+      "estado": "cocido"
+    },
+    "medallon de atun": {
+      "pieza_g": 100,
+      "buscar_como": "atun fresco",
+      "estado": "cocido"
+    },
+    "salmon ahumado": {
+      "porciones_usuales": {
+        "30 g": 30,
+        "60 g": 60
+      },
+      "buscar_en": "usda",
+      "buscar_como_usda": "salmon smoked"
+    },
+    "carne de res deshebrada": {
+      "taza_g": 140,
+      "porciones_usuales": {
+        "3/4 taza": 105
+      },
+      "buscar_como": "res falda",
+      "estado": "cocido"
+    },
+    "carne para asar": {
+      "porciones_usuales": {
+        "120 g": 120
+      },
+      "buscar_como": "res bistec",
+      "estado": "cocido"
+    },
+    "lomo de cerdo": {
+      "porciones_usuales": {
+        "120 g": 120
+      },
+      "estado": "cocido",
+      "buscar_en": "usda",
+      "buscar_como_usda": "pork loin cooked"
+    },
+    "huevo duro": {
+      "pieza_g": 50,
+      "porciones_usuales": {
+        "2 huevos duros": 100
+      },
+      "buscar_como": "huevo duro",
+      "estado": "cocido"
+    },
+    "huevo estrellado": {
+      "pieza_g": 50,
+      "porciones_usuales": {
+        "2 huevos": 100,
+        "3 huevos": 150
+      },
+      "buscar_como": "huevo entero",
+      "estado": "cocido"
+    },
+    "enfrijoladas": {
+      "pieza_g": 80,
+      "porciones_usuales": {
+        "2 enfrijoladas": 160
+      },
+      "buscar_como": "enfrijoladas",
+      "estado": "cocido"
+    },
+    "sincronizadas": {
+      "pieza_g": 90,
+      "buscar_como": "sincronizada",
+      "estado": "cocido"
+    },
+    "sopes de nopal": {
+      "pieza_g": 70,
+      "buscar_como": "sope",
+      "estado": "cocido"
+    },
+    "caldo de pollo con verduras": {
+      "taza_g": 240,
+      "buscar_como": "sopa verduras",
+      "estado": "cocido",
+      "nota": "Caldo casero. La BAM solo tiene la version industrializada, que no corresponde."
+    },
+    "sopa de verdura": {
+      "taza_g": 240,
+      "buscar_como": "sopa verduras",
+      "estado": "cocido"
+    },
+    "crema de verdura": {
+      "taza_g": 240,
+      "buscar_como": "crema verduras",
+      "estado": "cocido"
+    },
+    "calabacita a la mexicana": {
+      "taza_g": 160,
+      "buscar_como": "calabacita",
+      "estado": "cocido"
+    },
+    "ejotes a la mexicana": {
+      "taza_g": 125,
+      "buscar_como": "ejotes",
+      "estado": "cocido"
+    },
+    "frijoles refritos": {
+      "taza_g": 240,
+      "porciones_usuales": {
+        "1/3 taza": 80,
+        "1 cucharada": 20,
+        "2 cucharadas": 40
+      },
+      "buscar_como": "frijol refrito",
+      "estado": "cocido"
+    },
+    "frijoles molidos": {
+      "taza_g": 240,
+      "porciones_usuales": {
+        "1/3 taza": 80,
+        "1 cucharada": 20
+      },
+      "buscar_como": "frijol refrito",
+      "estado": "cocido"
+    },
+    "pan integral cero cero": {
+      "rebanada_g": 30,
+      "buscar_en": "usda",
+      "buscar_como_usda": "bread whole wheat"
+    },
+    "hot cakes de avena": {
+      "pieza_g": 60,
+      "buscar_en": "usda",
+      "buscar_como_usda": "pancakes"
+    },
+    "tortirregias": {
+      "pieza_g": 25,
+      "buscar_como": "tortilla masa maiz blanco"
+    },
+    "arroz integral": {
+      "taza_g": 195,
+      "porciones_usuales": {
+        "1/2 taza": 98
+      },
+      "buscar_como": "arroz integral cocido",
+      "estado": "cocido"
+    },
+    "pasta integral": {
+      "taza_g": 140,
+      "porciones_usuales": {
+        "1/2 taza": 70
+      },
+      "buscar_en": "usda",
+      "buscar_como_usda": "pasta whole wheat cooked"
+    },
+    "fusili": {
+      "taza_g": 140,
+      "buscar_en": "usda",
+      "buscar_como_usda": "pasta cooked"
+    },
+    "kefir": {
+      "taza_g": 245,
+      "buscar_en": "usda",
+      "buscar_como_usda": "kefir"
+    },
+    "yogurt natural": {
+      "taza_g": 245,
+      "porciones_usuales": {
+        "1/2 taza": 123
+      },
+      "buscar_en": "usda",
+      "buscar_como_usda": "yogurt plain whole milk"
+    },
+    "nopal": {
+      "pieza_g": 40,
+      "porciones_usuales": {
+        "2 nopales": 80
+      },
+      "buscar_como": "nopales",
+      "estado": "cocido"
+    },
+    "chilito verde": {
+      "pieza_g": 8,
+      "buscar_como": "chile serrano"
+    },
+    "cebolla morada": {
+      "pieza_g": 110,
+      "porciones_usuales": {
+        "1/4 taza": 40
+      },
+      "buscar_como": "cebolla morada"
+    },
+    "tomate cherry": {
+      "pieza_g": 17,
+      "taza_g": 149,
+      "porciones_usuales": {
+        "1/2 taza": 75
+      },
+      "buscar_como": "jitomate cherry"
+    },
+    "espinaca cocida": {
+      "taza_g": 180,
+      "buscar_como": "espinaca cocida",
+      "estado": "cocido"
+    },
+    "verduras asadas": {
+      "taza_g": 150,
+      "porciones_usuales": {
+        "1.5 tazas": 225
+      },
+      "buscar_como": "verduras mixtas",
+      "estado": "cocido"
+    },
+    "berries": {
+      "taza_g": 145,
+      "porciones_usuales": {
+        "1/2 taza": 73
+      },
+      "buscar_en": "usda",
+      "buscar_como_usda": "blueberries raw"
+    },
+    "arandanos": {
+      "taza_g": 148,
+      "buscar_en": "usda",
+      "buscar_como_usda": "blueberries raw"
+    },
+    "granada": {
+      "taza_g": 174,
+      "buscar_en": "usda",
+      "buscar_como_usda": "pomegranate raw"
+    },
+    "datiles": {
+      "pieza_g": 7,
+      "porciones_usuales": {
+        "3 datiles": 21,
+        "4 datiles": 28
+      },
+      "buscar_en": "usda",
+      "buscar_como_usda": "dates medjool"
+    },
+    "almendra": {
+      "pieza_g": 1.2,
+      "porciones_usuales": {
+        "10 almendras": 12
+      },
+      "buscar_en": "usda",
+      "buscar_como_usda": "almonds raw"
+    },
+    "nuez": {
+      "mitad_g": 2,
+      "porciones_usuales": {
+        "5 mitades": 10,
+        "10 nueces": 20
+      },
+      "buscar_en": "usda",
+      "buscar_como_usda": "walnuts english"
+    },
+    "frutos secos": {
+      "taza_g": 140,
+      "porciones_usuales": {
+        "1/4 taza": 35,
+        "1/3 taza": 47
+      },
+      "buscar_en": "usda",
+      "buscar_como_usda": "nuts mixed"
+    },
+    "salsa macha": {
+      "cucharadita_g": 5,
+      "cucharada_g": 15,
+      "buscar_en": "usda",
+      "buscar_como_usda": "oil chili"
+    },
+    "vinagre de manzana": {
+      "cucharada_g": 15,
+      "cucharadita_g": 5,
+      "buscar_en": "usda",
+      "buscar_como_usda": "vinegar cider"
+    },
+    "vinagre balsamico": {
+      "cucharada_g": 16,
+      "buscar_en": "usda",
+      "buscar_como_usda": "vinegar balsamic"
+    },
+    "creatina": {
+      "porciones_usuales": {
+        "5 g": 5
+      },
+      "nota": "Suplemento, sin aporte nutricional relevante",
+      "sin_aporte_nutricional": true
+    },
+    "jugo verde": {
+      "taza_ml": 240,
+      "porciones_usuales": {
+        "240 ml": 240
+      },
+      "nota": "Preparacion con pepino, apio, espinaca, limon",
+      "sin_aporte_nutricional": true
+    },
+    "te de canela": {
+      "taza_ml": 240,
+      "nota": "Sin aporte calorico",
+      "sin_aporte_nutricional": true
+    },
+    "te verde": {
+      "taza_ml": 240,
+      "nota": "Sin aporte calorico",
+      "sin_aporte_nutricional": true
+    },
+    "agua de jamaica": {
+      "taza_ml": 240,
+      "nota": "Sin azucar, sin aporte calorico",
+      "sin_aporte_nutricional": true
+    },
+    "cafe": {
+      "taza_ml": 240,
+      "nota": "Sin aporte calorico si es sin azucar",
+      "sin_aporte_nutricional": true
+    },
+    "electrolitos": {
+      "porciones_usuales": {
+        "1 sobre": 1
+      },
+      "nota": "Suplemento de hidratacion",
+      "sin_aporte_nutricional": true
     }
   }
 }

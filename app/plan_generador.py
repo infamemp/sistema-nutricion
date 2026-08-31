@@ -22,6 +22,8 @@ import json
 
 import gemini
 import reglas
+import medidas
+import verificador
 import knowledgebase as kb
 
 
@@ -62,6 +64,85 @@ def temas_del_caso(padecimientos, usa_glp1=False):
         temas.append("glp1")
 
     return temas or ["obesidad"]
+
+
+def _tabla_de_pesos():
+    """
+    Arma la tabla de pesos reales para inyectar en el prompt.
+
+    Sin esto, la IA estima los gramajes de memoria y se equivoca. Un caso
+    real detectado: dijo que 2 rebanadas de pechuga de pavo pesan 60 g,
+    cuando pesan 24 g. Eso inflaba la proteina al doble.
+    """
+    tabla = medidas.cargar()["alimentos"]
+    lineas = []
+
+    for nombre in sorted(tabla.keys()):
+        entrada = tabla[nombre]
+        partes_alimento = []
+
+        usuales = entrada.get("porciones_usuales", {})
+        for texto, gramos in usuales.items():
+            partes_alimento.append(texto + " = " + str(gramos) + " g")
+
+        for campo, etiqueta in [
+            ("taza_g", "1 taza"),
+            ("pieza_g", "1 pieza"),
+            ("rebanada_g", "1 rebanada"),
+            ("cucharada_g", "1 cda"),
+            ("cucharadita_g", "1 cdita"),
+            ("filete_g", "1 filete"),
+            ("scoop_g", "1 scoop"),
+            ("paquetito_g", "1 paquetito"),
+        ]:
+            if campo in entrada:
+                texto = etiqueta + " = " + str(entrada[campo]) + " g"
+                if texto not in partes_alimento:
+                    partes_alimento.append(texto)
+
+        if partes_alimento:
+            linea = "  " + nombre + ": " + " | ".join(partes_alimento)
+            if entrada.get("nota"):
+                linea += "  [" + entrada["nota"] + "]"
+            lineas.append(linea)
+
+    return "\n".join(lineas)
+
+
+def verificar_cantidades(plan):
+    """
+    Revisa las cantidades del plan contra la tabla de pesos y devuelve
+    una lista de discrepancias.
+
+    No corrige nada, solo reporta. La correccion es decision humana o
+    de una regeneracion.
+    """
+    problemas = []
+    tabla = medidas.cargar()["alimentos"]
+
+    opciones = plan.get("opciones_por_tiempo", {})
+    for tiempo, lista in opciones.items():
+        for i, opcion in enumerate(lista or []):
+            for al in opcion.get("alimentos", []) or []:
+                nombre = al.get("alimento", "")
+                cantidad = al.get("cantidad", "")
+                if not nombre or not cantidad:
+                    continue
+
+                gramos, exacto = medidas.a_gramos(nombre, cantidad)
+                if gramos is None:
+                    entrada = medidas.buscar_alimento(nombre)
+                    if entrada is None:
+                        problemas.append({
+                            "tiempo": tiempo,
+                            "opcion": i + 1,
+                            "alimento": nombre,
+                            "cantidad": cantidad,
+                            "tipo": "alimento_no_en_tabla",
+                            "detalle": "No esta en la tabla de pesos, no se pudo verificar",
+                        })
+
+    return problemas
 
 
 def _seccion_expediente(paciente, historia, medicion):
@@ -228,6 +309,19 @@ def construir_prompt(paciente, historia, medicion, padecimientos=None,
     partes.append("\nFRUTAS PREFERIDAS: " + ", ".join(r["fruta"]["preferidas"]))
     partes.append("\nCARBOHIDRATOS PREFERIDOS: " + ", ".join(r["carbohidrato"]["preferidos"]))
 
+    if "carnes_frias" in r:
+        cf = r["carnes_frias"]
+        partes.append("\n\nCARNES FRIAS, distincion con criterio:")
+        partes.append("\n  Evitar: " + ", ".join(cf["evitar"]["alimentos"]))
+        partes.append("\n  Aceptables: " + ", ".join(cf["aceptables_con_criterio"]["alimentos"]))
+        partes.append("\n  " + cf["regla"])
+
+    if "principio_de_practicidad_sobre_pureza" in r:
+        pp = r["principio_de_practicidad_sobre_pureza"]
+        partes.append("\n\nPRINCIPIO DE PRACTICIDAD SOBRE PUREZA:\n  " + pp["regla"])
+        partes.append("\n  " + pp["motivo"])
+        partes.append("\n  " + pp["aplicacion"])
+
     if opciones_previas:
         partes.append("\n\n" + ("=" * 70) + "\n")
         partes.append("OPCIONES YA PRESCRITAS A ESTE PACIENTE\n")
@@ -265,7 +359,18 @@ def construir_prompt(paciente, historia, medicion, padecimientos=None,
         "asados, 3 tostadas horneadas y 1/3 de aguacate'\n\n"
         "Cada alimento del campo 'alimentos' debe repetir esa cantidad en su "
         "campo 'cantidad'. La descripcion y la lista de alimentos deben coincidir.\n\n"
-        "\nPRACTICIDAD, TAN IMPORTANTE COMO LA EXACTITUD:\n"
+        "\nPESOS REALES, NO LOS ESTIMES:\n"
+        "Abajo tienes la tabla de pesos del sistema. Es la referencia "
+        "autoritativa. NO calcules gramajes de memoria: un error tipico es "
+        "decir que 2 rebanadas de pechuga de pavo pesan 60 g cuando pesan 24. "
+        "\nSI UN ALIMENTO NO ESTA EN LA TABLA:\n"
+        "Preferentemente elige otro que si este, porque el sistema solo puede "
+        "verificar los que conoce. Si de verdad necesitas usarlo, hazlo pero "
+        "avisa en notas_para_la_nutriologa con esta forma: 'El alimento X no "
+        "esta en la tabla de pesos del sistema, su gramaje es estimado y "
+        "conviene verificarlo.' Nunca inventes un peso sin avisar.\n\n"
+        + _tabla_de_pesos() +
+        "\n\nPRACTICIDAD, TAN IMPORTANTE COMO LA EXACTITUD:\n"
         "El paciente va a preparar esto en su cocina, no en un laboratorio. "
         "Una cantidad correcta pero impracticable no sirve.\n\n"
         "1) ALIMENTOS ENTEROS NO SE FRACCIONAN. Los que vienen en unidades "
@@ -324,8 +429,18 @@ def generar_plan(paciente, historia, medicion, padecimientos=None,
 
     plan = gemini.generar_json(prompt)
 
+    # La aritmetica la hace el sistema, no la IA. Se recalcula la proteina
+    # de cada opcion desde la BAM y el USDA, y se sobrescribe lo que estimo
+    # el modelo. La estimacion original queda guardada para auditoria.
+    correcciones = verificador.recalcular_plan(plan)
+
+    objetivo = plan.get("objetivo_proteina_g")
+    reporte = verificador.verificar_plan(plan, objetivo_proteina_g=objetivo)
+    reporte["correcciones_aplicadas"] = correcciones
+
     return {
         "plan": plan,
+        "verificacion": reporte,
         "meta": {
             "modelo": gemini.MODELO_ANALISIS,
             "tamano_prompt_kb": len(prompt) // 1024,

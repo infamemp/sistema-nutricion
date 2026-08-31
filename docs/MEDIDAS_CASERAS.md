@@ -84,7 +84,28 @@ Detecta:
 
 ---
 
-## 7. Nota para la Fase 3
+## 7. Tercer hallazgo, la IA estimaba los pesos de memoria
+
+**Detectado el 30 de agosto de 2026, por Marifer al revisar una dieta generada.**
+
+El generador de planes producía cantidades con gramajes inventados. El caso que lo delató: **"2 rebanadas de pechuga de pavo (60 g aprox)"**, cuando 2 rebanadas pesan unos 24 g. El error inflaba la proteína al doble.
+
+Al revisar aparecieron más inconsistencias en la misma dieta: nopales medidos en taza cuando en la práctica mexicana se cuentan por pieza, pepitas a 20 g cuando 2 cucharadas son 16, y guisados donde no quedaba claro si la taza incluía la verdura o solo la carne.
+
+**La causa era de arquitectura, no del modelo.** Habíamos construido esta tabla de pesos pero **nunca la conectamos al generador**. La IA estaba adivinando cuando tenía la respuesta disponible.
+
+**Corrección aplicada:**
+1. La tabla completa de pesos se inyecta ahora en el prompt, marcada como referencia autoritativa, con la instrucción explícita de no estimar de memoria
+2. Se agregó `verificar_cantidades()` en `plan_generador.py`, que revisa cada cantidad del plan contra la tabla y reporta discrepancias
+3. Se completó la tabla con los alimentos faltantes (pechuga de pavo natural, guisados) y se corrigieron pesos (pepitas)
+
+**Verificación posterior:** todos los gramajes del plan generado coincidieron exactamente con la tabla (⅓ de aguacate 67 g, ½ taza de frijoles 86 g, ¾ taza de pollo desmenuzado 105 g, 1 cdita de aceite 4.5 g). Cero discrepancias detectadas.
+
+**Lección que aplica a todo el proyecto:** cuando el sistema tiene un dato disponible, hay que dárselo a la IA explícitamente. Dejar que lo infiera produce errores silenciosos, del mismo tipo que el de OpenFoodFacts devolviendo Takis por tortilla y el del arroz crudo por cocido.
+
+---
+
+## 8. Nota para la Fase 3
 
 **La IA tendrá que aprender los nombres de la BAM**, que no siempre coinciden con el lenguaje coloquial. La BAM llama "ARROZ PROMEDIO" a lo que Marifer llamaría "arroz", y "POLLO, PECHUGA SIN PIEL" a lo que ella escribe como "pechuga de pollo".
 
@@ -92,7 +113,7 @@ La tabla de medidas ya resuelve esto para los 62 alimentos registrados vía `bus
 
 ---
 
-## 8. Verificación realizada
+## 9. Verificación realizada
 
 Pruebas ejecutadas en el servidor el 30 de agosto de 2026:
 
@@ -107,9 +128,10 @@ Los 27 g de proteína de la pechuga encajan con la regla de Marifer de 25 a 30 g
 
 ---
 
-## 9. Bitácora
+## 10. Bitácora
 
 | Fecha | Cambio |
 |---|---|
 | 2026-08-30 | v1.0. Tabla inicial con 62 alimentos y módulo de conversión |
 | 2026-08-30 | v1.1. Se detecta y corrige el problema crudo/cocido (arroz daba el triple de calorías) mediante el campo `buscar_como`. Se corrige también pechuga con piel a sin piel. Se agrega el chequeo de sensatez |
+| 2026-08-30 | v1.2. Marifer detectó que la IA estimaba gramajes de memoria (2 rebanadas de pavo como 60 g cuando son 24). La causa: la tabla existía pero no estaba conectada al generador. Se inyectó en el prompt, se agregó verificación automática de cantidades, y se completaron alimentos faltantes. Verificado: cero discrepancias |

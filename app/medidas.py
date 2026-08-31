@@ -33,10 +33,34 @@ def cargar():
     return _tabla
 
 
+# Palabras que no aportan a la identificacion del alimento.
+# Sin esto, "espinaca cruda" no encuentra "espinaca cruda" si la IA
+# escribe "espinacas crudas" o "espinaca fresca".
+PALABRAS_IGNORABLES = {
+    "de", "del", "la", "el", "los", "las", "con", "sin", "al", "a",
+    "en", "y", "o", "un", "una", "fresco", "fresca", "frescos", "frescas",
+    "natural", "naturales", "picado", "picada", "picados", "picadas",
+    "rebanado", "rebanada", "rebanadas", "entero", "entera", "enteros",
+    "enteras", "grande", "chico", "chica", "mediano", "mediana",
+    "asado", "asada", "asados", "asadas", "plancha", "vapor",
+    "salteado", "salteada", "salteados", "salteadas", "hervido", "hervida",
+    "tostado", "tostada", "tostados", "tostadas", "molido", "molida",
+    "deshebrado", "deshebrada", "desmenuzado", "desmenuzada",
+}
+
+
+def _palabras_clave(texto):
+    """Extrae las palabras que si identifican al alimento."""
+    palabras = _normalizar(texto).replace(",", " ").split()
+    return [p.rstrip("s") for p in palabras if p not in PALABRAS_IGNORABLES and len(p) > 2]
+
+
 def buscar_alimento(nombre):
     """
     Busca un alimento en la tabla de medidas. Devuelve su entrada o None.
-    Tolera variaciones: "pechuga de pollo a la plancha" encuentra
+
+    Tolera variaciones de la IA: "espinacas crudas frescas" encuentra
+    "espinaca cruda", y "pechuga de pollo a la plancha" encuentra
     "pechuga de pollo".
     """
     tabla = cargar()["alimentos"]
@@ -53,7 +77,34 @@ def buscar_alimento(nombre):
         if consulta in _normalizar(clave):
             return tabla[clave]
 
-    return None
+    # Busqueda por palabras clave, ignorando plurales y preparaciones.
+    # Se queda con la coincidencia mas especifica, es decir, la que
+    # comparte mas palabras con la consulta.
+    palabras_consulta = set(_palabras_clave(nombre))
+    if not palabras_consulta:
+        return None
+
+    mejor = None
+    mejor_puntaje = 0
+
+    for clave in tabla:
+        palabras_clave_tabla = set(_palabras_clave(clave))
+        if not palabras_clave_tabla:
+            continue
+
+        comunes = palabras_consulta & palabras_clave_tabla
+        if not comunes:
+            continue
+
+        # Todas las palabras de la entrada deben estar en la consulta,
+        # para no confundir "aceite de oliva" con "aceite de aguacate".
+        if palabras_clave_tabla.issubset(palabras_consulta):
+            puntaje = len(palabras_clave_tabla) * 10 + len(comunes)
+            if puntaje > mejor_puntaje:
+                mejor = tabla[clave]
+                mejor_puntaje = puntaje
+
+    return mejor
 
 
 def a_gramos(nombre_alimento, medida):

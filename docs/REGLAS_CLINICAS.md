@@ -102,6 +102,29 @@ Solo en alimentos que se dividen bien sin desperdicio: ⅓ de aguacate, ½ taza 
 
 ---
 
+### 5.5 Practicidad sobre pureza, el caso de las carnes frías
+
+**Añadido el 30 de agosto de 2026, tras observación de Marifer.**
+
+Al revisar una dieta generada apareció "2 rebanadas de pechuga de pavo". Técnicamente es un embutido, que estaba en la lista de evitar. Pero Marifer señaló algo importante: **no va a poner a un paciente a conseguir una pechuga de pavo entera y rebanarla**, eso es poco común y poco práctico.
+
+Y de hecho sus propias dietas ya lo resuelven: ella prescribe "30 g de pechuga de pavo natural" y "80 g de pechuga de pavo natural". La palabra **natural** es la distinción que importa.
+
+**La regla quedó así:**
+
+| Se evitan | Aceptables con criterio |
+|---|---|
+| Salchicha, chorizo, jamón, tocino, salami, mortadela | Pechuga de pavo natural, pechuga de pollo natural |
+| Ultraprocesados, alta grasa, sodio y nitritos | Mínimamente procesadas, preferentemente sin nitritos añadidos |
+
+Siempre se especifica "natural" para distinguirlas del embutido.
+
+**El principio general detrás:** la practicidad y la adherencia importan tanto como la pureza del criterio nutricional. Un plan que el paciente no puede seguir no funciona, aunque sea nutricionalmente impecable.
+
+Cuando un alimento esté en zona gris entre lo ideal y lo práctico, el sistema elige lo práctico **y lo señala en las notas para la nutrióloga**, para que ella lo vea al revisar y decida.
+
+---
+
 ## 6. Lo que el sistema NO debe hacer
 
 **No contar calorías.** Marifer saca un estimado mental pero no es estricta. Le interesa más el punto de partida del paciente, el cambio de hábitos y la calidad de los alimentos.
@@ -165,3 +188,4 @@ Ambas alertas automáticas funcionaron como se diseñó.
 |---|---|
 | 2026-08-30 | v1.0. Criterios recabados directamente de la nutrióloga e implementados como archivo de configuración editable más motor de cálculo |
 | 2026-08-30 | v1.1. Marifer revisó las primeras dietas generadas y señaló tres problemas de practicidad: faltaban las cantidades de cada alimento, se fraccionaban alimentos indivisibles (2.5 huevos, media lata de atún), y las porciones servidas a ojo necesitaban gramaje de referencia. Reglas añadidas y verificadas |
+| 2026-08-30 | v1.2. Marifer observó que la regla de evitar embutidos era demasiado gruesa: ella sí prescribe pechuga de pavo natural, y poner al paciente a rebanar una pechuga entera es impracticable. Se distinguió entre embutidos ultraprocesados (se evitan) y carnes frías mínimamente procesadas (aceptables, siempre especificando "natural"). Se estableció el principio de practicidad sobre pureza |

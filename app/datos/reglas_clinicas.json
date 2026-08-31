@@ -1,6 +1,6 @@
 {
   "_meta": {
-    "version": "1.1",
+    "version": "1.2",
     "fecha": "2026-08-30",
     "fuente": "Criterios clinicos de Marifer Utrilla Lack, recabados directamente",
     "nota": "Este archivo define COMO decide la nutriologa que prescribir. Es editable sin tocar codigo. Si ella cambia un criterio, se ajusta aqui.",
@@ -113,7 +113,6 @@
       "bebidas azucaradas",
       "harinas refinadas",
       "azucar refinada",
-      "embutidos",
       "grasas trans"
     ],
     "nota": "Esta regla tiene prioridad sobre cualquier calculo. Un alimento que cumple los numeros pero es ultraprocesado no se prescribe."
@@ -178,5 +177,34 @@
         "1/4 de taza de frutos secos"
       ]
     }
+  },
+  "carnes_frias": {
+    "descripcion": "Distincion con criterio, no regla absoluta. Marifer si prescribe pechuga de pavo natural en sus dietas reales.",
+    "evitar": {
+      "alimentos": [
+        "salchicha",
+        "chorizo",
+        "jamon",
+        "tocino",
+        "salami",
+        "mortadela",
+        "salchichon"
+      ],
+      "motivo": "Ultraprocesados con alta grasa, sodio y nitritos"
+    },
+    "aceptables_con_criterio": {
+      "alimentos": [
+        "pechuga de pavo natural",
+        "pechuga de pollo natural"
+      ],
+      "preferencia": "Sin nitritos anadidos cuando sea posible",
+      "motivo": "Minimamente procesadas. Poner al paciente a conseguir una pechuga entera y rebanarla es poco practico y afecta la adherencia. Marifer ya las prescribe en sus dietas reales"
+    },
+    "regla": "Siempre especificar 'natural' para distinguirlas del embutido"
+  },
+  "principio_de_practicidad_sobre_pureza": {
+    "regla": "La practicidad y la adherencia importan tanto como la pureza del criterio nutricional",
+    "motivo": "Un plan que el paciente no puede seguir no funciona, aunque sea nutricionalmente impecable",
+    "aplicacion": "Cuando un alimento este en zona gris entre lo ideal y lo practico, elegir lo practico y senalarlo en notas_para_la_nutriologa para que ella decida al revisar"
   }
 }

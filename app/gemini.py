@@ -32,7 +32,7 @@ import urllib.error
 BASE = "https://generativelanguage.googleapis.com/v1beta"
 
 # Modelo para el analisis. Cambiar aqui si Google descontinua o mejora.
-MODELO_ANALISIS = "gemini-flash-latest"
+MODELO_ANALISIS = "gemini-3.7-flash"
 
 # Alternativas conocidas, por si el alias deja de funcionar.
 MODELOS_ALTERNATIVOS = [
@@ -104,7 +104,7 @@ def generar(prompt, modelo=None, json_estricto=False, temperatura=0.4):
         "contents": [{"parts": [{"text": prompt}]}],
         "generationConfig": {
             "temperature": temperatura,
-            "maxOutputTokens": 8192,
+            "maxOutputTokens": 32768,
         },
     }
 
@@ -136,10 +136,20 @@ def generar_json(prompt, modelo=None, temperatura=0.4):
         texto = generar(prompt, modelo=modelo, json_estricto=True, temperatura=temperatura)
         try:
             return json.loads(texto)
-        except json.JSONDecodeError:
+        except json.JSONDecodeError as e:
             if intento == 0:
                 continue
-            raise RuntimeError("Gemini devolvio JSON invalido dos veces: " + texto[:500])
+            pista = ""
+            if "Unterminated" in str(e) or "Expecting" in str(e):
+                pista = (
+                    " PISTA: el JSON parece cortado a la mitad. Probablemente "
+                    "la respuesta excedio maxOutputTokens. Subir ese valor en "
+                    "gemini.py (el modelo admite hasta 65536)."
+                )
+            raise RuntimeError(
+                "Gemini devolvio JSON invalido dos veces." + pista
+                + " Inicio de la respuesta: " + texto[:300]
+            )
 
 
 def probar_conexion():
