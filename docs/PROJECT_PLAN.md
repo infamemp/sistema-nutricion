@@ -1,6 +1,6 @@
 # Sistema Integral de Nutrición, Documento Maestro del Proyecto
 
-**Versión:** 4.5
+**Versión:** 4.6
 **Fecha:** 30 de agosto de 2026
 **Estado:** Fase 0 completa. Infraestructura lista. Guía de estilo cerrada. Recolección de material en curso.
 
@@ -133,7 +133,7 @@ Stack, servidor, IA, base de alimentos, alcance, identidad visual y guía de est
   - **Tabla ampliada a 171 alimentos**, extraídos de los 24 documentos reales de Marifer. Es una tabla viva que crece con la práctica
   - **`validar_tabla.py`:** herramienta que prueba los 171 alimentos contra las fuentes reales. Existe porque se registraron cinco términos que no existían en la BAM ("jitomate saladette" cuando la BAM dice "JITOMATE SALADET"), y el síntoma era silencioso
   - **Estado: cobertura de la tabla 100%.** Prueba de generación completa: 97% de cobertura de verificación, cero alertas, veredicto CONFIABLE, 9 correcciones aplicadas automáticamente
-  - *Pendiente:* la IA elige porciones de 45 a 57 g de proteína cuando la regla de Marifer indica 25 a 30 g por comida. Los números son correctos, las porciones son generosas. Ajuste de prompt pendiente
+  - **Porciones ajustadas (31 ago 2026).** La IA proponía comidas de 45 a 57 g de proteína cuando la regla indica 25 a 30. Se agregaron al prompt instrucciones concretas con ejemplos numéricos (120 g de pechuga dan 27 g de proteína, 3 huevos dan 19) y una regla práctica: si una comida lleva dos fuentes de proteína animal, probablemente se pasó. **Resultado: el máximo bajó de 56.9 a 32.9 g.** La variación de más o menos 3 g se acepta como natural en porciones caseras; forzar más precisión haría las dietas rígidas
 - **Arquitectura de dos motores:** Gemini analiza (expediente, KB completa en contexto, PDFs) y produce el plan técnico estructurado. Claude redacta los documentos finales para humanos. La frontera entre ambos es un documento estructurado: Gemini nunca escribe para el paciente, Claude nunca calcula ni decide clínicamente
 - **`STYLE_SPEC.md` se inyecta en el prompt de redacción** como contrato de estilo
 - **Regla de individualización:** la biblioteca guarda el qué, la IA decide el cómo y el cuánto. Dos pacientes con la misma condición reciben el mismo criterio clínico y distinta redacción
@@ -313,3 +313,4 @@ Las API keys nunca van al repo. Viven en un archivo `.env` local, ya cubierto po
 | 2026-08-30 | v4.3, tres correcciones al generador tras la revisión de Marifer: cantidades obligatorias por alimento, reglas de practicidad de la vida real (alimentos enteros no se fraccionan, doble referencia en lo servido a ojo, carnes frías con criterio bajo el principio de practicidad sobre pureza), y conexión de la tabla de pesos al prompt para que la IA deje de estimar gramajes de memoria. Este último era un error silencioso que inflaba la proteína al doble |
 | 2026-08-31 | v4.4, verificación nutricional implementada. Se detectó que los números de proteína de la IA no correspondían a la realidad (una cena declarada en 31 g tenía 60.8). El sistema ahora calcula desde la BAM y el USDA y sobrescribe la estimación del modelo. Se agregó guardarraíl contra alimentos mal identificados (buscar 'pimiento' devolvía 'queso pimiento' con 22 g de proteína), se amplió la tabla a 171 alimentos con los documentos reales de Marifer, y se creó `validar_tabla.py` para prevenir términos de búsqueda inventados. Cobertura de la tabla: 100%. Generación verificada: CONFIABLE |
 | 2026-08-31 | v4.5, se define el control de la nutrióloga sobre la dieta. En lugar de un interruptor previo de modo manual o automático, la libertad está siempre disponible al revisar: aprobar, pedir ajuste en lenguaje natural, o editar directamente. Más un botón de plan en blanco para empezar sin IA. Si edita cantidades a mano, el sistema recalcula y avisa si sale del rango |
+| 2026-08-31 | v4.6, porciones ajustadas al rango de Marifer. El máximo de proteína por comida bajó de 56.9 a 32.9 g tras agregar instrucciones concretas al prompt con ejemplos numéricos. Se acepta una variación natural de más o menos 3 g |
