@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
+    <link rel="apple-touch-icon" href="/static/apple-touch-icon.png">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Confirmar reporte InBody</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-green-50 min-h-screen">
+
+    <div class="max-w-2xl mx-auto p-6">
+
+        <div class="mb-4">
+            <a href="/pacientes/{{ paciente.id }}" class="text-sm text-green-700 hover:underline">&larr; Volver al expediente</a>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-sm p-6 mb-6">
+            <h1 class="text-xl font-medium text-green-800 mb-1">Confirmar reporte InBody</h1>
+            <p class="text-sm text-gray-500">Paciente: {{ paciente.nombre_completo }}</p>
+        </div>
+
+        {% if advertencias %}
+        <div class="bg-orange-50 border border-orange-300 text-orange-800 rounded-lg p-4 mb-6">
+            <p class="font-medium mb-2">Revisa antes de guardar:</p>
+            <ul class="list-disc list-inside space-y-1 text-sm">
+                {% for a in advertencias %}
+                <li>{{ a }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+
+        <div class="bg-white rounded-xl shadow-sm p-6 mb-6">
+            <h2 class="text-lg font-medium text-green-700 border-b-2 border-blue-500 pb-2 mb-4">Datos leídos del reporte</h2>
+            <dl class="grid grid-cols-2 gap-x-6 gap-y-3 text-sm">
+                <div>
+                    <dt class="text-gray-500">ID de InBody</dt>
+                    <dd class="text-gray-800 mt-0.5">{{ resultado.id_inbody or 'No detectado' }}</dd>
+                </div>
+                <div>
+                    <dt class="text-gray-500">Nombre impreso en el reporte</dt>
+                    <dd class="text-gray-800 mt-0.5">{{ resultado.nombre_impreso or 'No detectado' }}</dd>
+                </div>
+                <div>
+                    <dt class="text-gray-500">Edad (reporte)</dt>
+                    <dd class="text-gray-800 mt-0.5">{{ resultado.edad if resultado.edad is not none else 'No detectada' }}</dd>
+                </div>
+                <div>
+                    <dt class="text-gray-500">Sexo (reporte)</dt>
+                    <dd class="text-gray-800 mt-0.5">{{ resultado.sexo or 'No detectado' }}</dd>
+                </div>
+                <div>
+                    <dt class="text-gray-500">Estatura (reporte)</dt>
+                    <dd class="text-gray-800 mt-0.5">{{ (resultado.estatura_cm ~ ' cm') if resultado.estatura_cm else 'No detectada' }}</dd>
+                </div>
+            </dl>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-sm p-6 mb-6">
+            <h2 class="text-lg font-medium text-green-700 border-b-2 border-blue-500 pb-2 mb-4">Mediciones a guardar</h2>
+
+            {% if resultado.historial %}
+            <div class="overflow-x-auto">
+                <table class="w-full text-xs">
+                    <thead class="bg-green-100 text-green-800 border-b-2 border-blue-500">
+                        <tr>
+                            <th class="text-left px-2 py-2">Fecha</th>
+                            <th class="text-left px-2 py-2">Peso</th>
+                            <th class="text-left px-2 py-2">IMC</th>
+                            <th class="text-left px-2 py-2">% Grasa</th>
+                            <th class="text-left px-2 py-2">Masa grasa</th>
+                            <th class="text-left px-2 py-2">MME</th>
+                            <th class="text-left px-2 py-2">G. Visceral</th>
+                            <th class="text-left px-2 py-2">TMB</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for p in resultado.historial %}
+                        <tr class="border-t border-gray-100">
+                            <td class="px-2 py-2">{{ p.fecha or '—' }}</td>
+                            <td class="px-2 py-2">{{ p.peso if p.peso is not none else '—' }}</td>
+                            <td class="px-2 py-2">{{ p.imc if p.imc is not none else '—' }}</td>
+                            <td class="px-2 py-2">{{ p.porcentaje_grasa if p.porcentaje_grasa is not none else '—' }}</td>
+                            <td class="px-2 py-2">{{ p.masa_grasa_kg if p.masa_grasa_kg is not none else '—' }}</td>
+                            <td class="px-2 py-2">{{ p.mme if p.mme is not none else '—' }}</td>
+                            <td class="px-2 py-2">{{ p.grasa_visceral if p.grasa_visceral is not none else '—' }}</td>
+                            <td class="px-2 py-2">{{ p.tasa_metabolica_basal if p.tasa_metabolica_basal is not none else '—' }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <p class="text-sm text-gray-500">No se detectó ningún punto de medición en la imagen.</p>
+            {% endif %}
+        </div>
+
+        <form method="post" action="/pacientes/{{ paciente.id }}/inbody/confirmar">
+            <input type="hidden" name="datos_json" value='{{ datos_json }}'>
+            <div class="flex gap-3">
+                <a href="/pacientes/{{ paciente.id }}"
+                   class="flex-1 text-center border border-gray-300 text-gray-700 font-medium py-3 rounded-lg hover:bg-gray-50 transition">
+                    Cancelar
+                </a>
+                <button type="submit"
+                        class="flex-1 bg-green-600 hover:bg-green-700 text-white font-medium py-3 rounded-lg transition">
+                    Confirmar y guardar
+                </button>
+            </div>
+        </form>
+
+    </div>
+
+</body>
+</html>

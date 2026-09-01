@@ -1,6 +1,6 @@
 import json
 import os
-from fastapi import FastAPI, Request, Form, Depends, HTTPException
+from fastapi import FastAPI, Request, Form, Depends, HTTPException, File, UploadFile
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -15,6 +15,7 @@ import models
 import auth
 import correo
 import calendario
+import inbody
 import plan_generador as plan_gen
 import redactor
 import pdf as pdf_gen
@@ -269,6 +270,13 @@ def lista_pacientes(request: Request, db: Session = Depends(get_db)):
 def ver_expediente(paciente_id: int, request: Request, db: Session = Depends(get_db)):
     paciente = obtener_paciente(db, paciente_id)
 
+    mensaje = None
+    if request.query_params.get("error") == "inbody_fallo":
+        mensaje = (
+            "No se pudo leer el reporte de InBody con inteligencia artificial. "
+            "Intenta con una foto mas clara, o captura los datos manualmente en un follow-up."
+        )
+
     citas = (
         db.query(models.Cita)
         .filter(models.Cita.paciente_id == paciente_id)
@@ -330,6 +338,7 @@ def ver_expediente(paciente_id: int, request: Request, db: Session = Depends(get
             "dietas": dietas,
             "mediciones": mediciones,
             "mediciones_json": mediciones_json,
+            "mensaje": mensaje,
         },
     )
 
@@ -363,6 +372,134 @@ def guardar_edicion_paciente(
     paciente.motivo_consulta = motivo_consulta
     paciente.referido_por = referido_por
     paciente.origen_consulta = origen_consulta
+
+    db.commit()
+
+    return RedirectResponse(url="/pacientes/" + str(paciente_id), status_code=303)
+
+
+def _calcular_edad(fecha_nacimiento):
+    hoy = date.today()
+    return hoy.year - fecha_nacimiento.year - (
+        (hoy.month, hoy.day) < (fecha_nacimiento.month, fecha_nacimiento.day)
+    )
+
+
+@app.post("/pacientes/{paciente_id}/inbody/procesar", response_class=HTMLResponse)
+async def procesar_inbody(
+    paciente_id: int,
+    request: Request,
+    archivo: UploadFile = File(...),
+    db: Session = Depends(get_db),
+):
+    paciente = obtener_paciente(db, paciente_id)
+
+    imagen_bytes = await archivo.read()
+    mime_type = archivo.content_type or "image/jpeg"
+
+    try:
+        resultado = inbody.procesar_reporte(imagen_bytes, mime_type)
+    except Exception:
+        return RedirectResponse(
+            url="/pacientes/" + str(paciente_id) + "?error=inbody_fallo", status_code=303
+        )
+
+    advertencias = []
+
+    id_inbody = resultado.get("id_inbody")
+    if id_inbody:
+        conflicto = (
+            db.query(models.IdInBodyConocido)
+            .filter(models.IdInBodyConocido.id_inbody == id_inbody)
+            .filter(models.IdInBodyConocido.paciente_id != paciente_id)
+            .first()
+        )
+        if conflicto:
+            advertencias.append(
+                "El ID de InBody '" + id_inbody + "' ya esta registrado a nombre de OTRO "
+                "paciente. Verifica que este es el reporte correcto antes de continuar."
+            )
+
+    if resultado.get("edad") is not None and paciente.fecha_nacimiento:
+        edad_calculada = _calcular_edad(paciente.fecha_nacimiento)
+        if abs(edad_calculada - resultado["edad"]) > 1:
+            advertencias.append(
+                "La edad del reporte (" + str(resultado["edad"]) + ") no coincide con la "
+                "edad calculada del paciente (" + str(edad_calculada) + ")."
+            )
+
+    if resultado.get("sexo") and paciente.sexo and resultado["sexo"] != paciente.sexo:
+        advertencias.append(
+            "El sexo del reporte (" + resultado["sexo"] + ") no coincide con el "
+            "registrado en el expediente (" + paciente.sexo + ")."
+        )
+
+    if resultado.get("estatura_cm") and paciente.estatura:
+        if abs(resultado["estatura_cm"] - paciente.estatura) > 3:
+            advertencias.append(
+                "La estatura del reporte (" + str(resultado["estatura_cm"]) + " cm) no "
+                "coincide con la registrada (" + str(paciente.estatura) + " cm)."
+            )
+
+    return templates.TemplateResponse(
+        request,
+        "inbody_confirmar.html",
+        {
+            "paciente": paciente,
+            "resultado": resultado,
+            "advertencias": advertencias,
+            "datos_json": json.dumps(resultado, ensure_ascii=False),
+        },
+    )
+
+
+@app.post("/pacientes/{paciente_id}/inbody/confirmar")
+def confirmar_inbody(
+    paciente_id: int,
+    datos_json: str = Form(...),
+    db: Session = Depends(get_db),
+):
+    paciente = obtener_paciente(db, paciente_id)
+    resultado = json.loads(datos_json)
+
+    id_inbody = resultado.get("id_inbody")
+
+    for punto in resultado.get("historial", []):
+        if not punto.get("fecha"):
+            continue
+        medicion = models.MedicionInBody(
+            paciente_id=paciente_id,
+            fecha_medicion=datetime.fromisoformat(punto["fecha"]),
+            peso=punto.get("peso"),
+            imc=punto.get("imc"),
+            porcentaje_grasa=punto.get("porcentaje_grasa"),
+            masa_grasa_kg=punto.get("masa_grasa_kg"),
+            mme=punto.get("mme"),
+            grasa_visceral=punto.get("grasa_visceral"),
+            tasa_metabolica_basal=punto.get("tasa_metabolica_basal"),
+            origen="inbody",
+            id_inbody_reporte=id_inbody,
+        )
+        db.add(medicion)
+
+    if id_inbody:
+        ya_conocido = (
+            db.query(models.IdInBodyConocido)
+            .filter(models.IdInBodyConocido.paciente_id == paciente_id)
+            .filter(models.IdInBodyConocido.id_inbody == id_inbody)
+            .first()
+        )
+        if not ya_conocido:
+            db.add(models.IdInBodyConocido(
+                paciente_id=paciente_id,
+                id_inbody=id_inbody,
+                clinica="UniDO",
+            ))
+
+    if not paciente.sexo and resultado.get("sexo"):
+        paciente.sexo = resultado["sexo"]
+    if not paciente.estatura and resultado.get("estatura_cm"):
+        paciente.estatura = resultado["estatura_cm"]
 
     db.commit()
 

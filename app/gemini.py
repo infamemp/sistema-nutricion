@@ -12,20 +12,24 @@ Gemini nunca escribe para el paciente; Claude nunca calcula ni decide
 clinicamente.
 
 Por que Gemini para el analisis: ventana de contexto de 1M tokens en
-todos sus modelos, lectura nativa de PDFs, y costo bajo. Eso permite
-inyectar la knowledgebase completa del caso sin fragmentarla.
+todos sus modelos, lectura nativa de PDFs e imagenes, y costo bajo. Eso
+permite inyectar la knowledgebase completa del caso sin fragmentarla,
+y tambien leer reportes de InBody adjuntos como imagen.
 
 NOTA SOBRE MODELOS (verificado ago 2026):
 - Gemini 2.5 Flash se descontinua el 16 de octubre de 2026. No usar.
 - La generacion vigente es la 3.x. El modelo se define en MODELO_ANALISIS
   y se puede cambiar sin tocar el resto del codigo.
 - Usar listar_modelos() para ver que hay disponible con la clave actual.
+- gemini-3.7-flash es multimodal (texto + imagen en la misma peticion),
+  se reutiliza el mismo modelo para leer reportes de InBody.
 
 La API key se lee de GEMINI_API_KEY en el archivo .env, nunca del codigo.
 """
 
 import os
 import json
+import base64
 import urllib.request
 import urllib.error
 
@@ -89,19 +93,17 @@ def listar_modelos():
     return modelos
 
 
-def generar(prompt, modelo=None, json_estricto=False, temperatura=0.4):
+def _generar_parts(parts, modelo=None, json_estricto=False, temperatura=0.4):
     """
-    Envia un prompt a Gemini y devuelve el texto de la respuesta.
-
-    json_estricto: fuerza a que la respuesta sea JSON valido. Es lo que
-    usamos para el plan tecnico, porque ese documento lo consume Claude
-    despues, no un humano.
+    Version de bajo nivel: envia una lista de "parts" ya armada (texto,
+    imagen, o ambos) y devuelve el texto de la respuesta. generar() y
+    generar_con_imagen() son atajos sobre esta funcion.
     """
     modelo = modelo or MODELO_ANALISIS
     url = BASE + "/models/" + modelo + ":generateContent"
 
     cuerpo = {
-        "contents": [{"parts": [{"text": prompt}]}],
+        "contents": [{"parts": parts}],
         "generationConfig": {
             "temperature": temperatura,
             "maxOutputTokens": 32768,
@@ -127,13 +129,44 @@ def generar(prompt, modelo=None, json_estricto=False, temperatura=0.4):
     return texto
 
 
-def generar_json(prompt, modelo=None, temperatura=0.4):
+def generar(prompt, modelo=None, json_estricto=False, temperatura=0.4):
     """
-    Como generar(), pero devuelve el resultado ya parseado como
-    diccionario. Si el JSON viene malformado, reintenta una vez.
+    Envia un prompt de solo texto a Gemini y devuelve el texto de la
+    respuesta.
+
+    json_estricto: fuerza a que la respuesta sea JSON valido. Es lo que
+    usamos para el plan tecnico, porque ese documento lo consume Claude
+    despues, no un humano.
+    """
+    return _generar_parts(
+        [{"text": prompt}], modelo=modelo, json_estricto=json_estricto, temperatura=temperatura
+    )
+
+
+def generar_con_imagen(prompt, imagen_bytes, mime_type, modelo=None, json_estricto=False, temperatura=0.2):
+    """
+    Como generar(), pero adjunta una imagen junto con el prompt de texto.
+    Se usa para leer reportes de InBody (fotografia o captura de pantalla).
+
+    imagen_bytes: contenido crudo del archivo, sin decodificar.
+    mime_type: ej. "image/jpeg", "image/png".
+    """
+    imagen_b64 = base64.b64encode(imagen_bytes).decode("ascii")
+    parts = [
+        {"text": prompt},
+        {"inline_data": {"mime_type": mime_type, "data": imagen_b64}},
+    ]
+    return _generar_parts(parts, modelo=modelo, json_estricto=json_estricto, temperatura=temperatura)
+
+
+def _parsear_json_con_reintento(generador_texto):
+    """
+    Corre generador_texto() (una funcion sin argumentos que ya trae el
+    prompt/imagen aplicados) y parsea el resultado como JSON. Si viene
+    malformado, reintenta una vez mas antes de rendirse.
     """
     for intento in range(2):
-        texto = generar(prompt, modelo=modelo, json_estricto=True, temperatura=temperatura)
+        texto = generador_texto()
         try:
             return json.loads(texto)
         except json.JSONDecodeError as e:
@@ -150,6 +183,28 @@ def generar_json(prompt, modelo=None, temperatura=0.4):
                 "Gemini devolvio JSON invalido dos veces." + pista
                 + " Inicio de la respuesta: " + texto[:300]
             )
+
+
+def generar_json(prompt, modelo=None, temperatura=0.4):
+    """
+    Como generar(), pero devuelve el resultado ya parseado como
+    diccionario. Si el JSON viene malformado, reintenta una vez.
+    """
+    return _parsear_json_con_reintento(
+        lambda: generar(prompt, modelo=modelo, json_estricto=True, temperatura=temperatura)
+    )
+
+
+def generar_json_con_imagen(prompt, imagen_bytes, mime_type, modelo=None, temperatura=0.2):
+    """
+    Como generar_json(), pero adjuntando una imagen (ej. reporte de
+    InBody). Si el JSON viene malformado, reintenta una vez.
+    """
+    return _parsear_json_con_reintento(
+        lambda: generar_con_imagen(
+            prompt, imagen_bytes, mime_type, modelo=modelo, json_estricto=True, temperatura=temperatura
+        )
+    )
 
 
 def probar_conexion():

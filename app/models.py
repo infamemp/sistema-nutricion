@@ -19,6 +19,7 @@ class Paciente(Base):
     fecha_alta = Column(DateTime, default=datetime.utcnow)
     activo = Column(Integer, default=1)
     origen_consulta = Column(String, default="privado")
+    estatura = Column(Float)
 
     historia_clinica = relationship("HistoriaClinica", back_populates="paciente", uselist=False)
     mediciones_inbody = relationship("MedicionInBody", back_populates="paciente")
