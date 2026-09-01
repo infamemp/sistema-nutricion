@@ -24,7 +24,7 @@
         </div>
 
         {% if anterior %}
-        <div class="bg-white border-l-4 border-green-400 rounded-lg p-4 mb-6 shadow-sm">
+        <div class="bg-white border-l-4 border-blue-500 rounded-lg p-4 mb-6 shadow-sm">
             <p class="text-xs font-medium text-green-700 mb-2">
                 De la consulta anterior ({{ anterior.fecha_consulta.strftime('%d/%m/%Y') }})
             </p>
@@ -43,7 +43,7 @@
         <form method="post" action="/pacientes/{{ paciente.id }}/followup" class="space-y-6">
 
             <div class="bg-white rounded-xl shadow-sm p-6">
-                <h2 class="text-lg font-medium text-green-700 border-b border-green-200 pb-2 mb-4">Datos de la consulta</h2>
+                <h2 class="text-lg font-medium text-green-700 border-b-2 border-blue-500 pb-2 mb-4">Datos de la consulta</h2>
                 <div class="grid grid-cols-2 gap-4">
                     <div>
                         <label class="block text-sm text-gray-700 mb-1">Fecha de esta consulta</label>
@@ -59,7 +59,7 @@
             </div>
 
             <div class="bg-white rounded-xl shadow-sm p-6">
-                <h2 class="text-lg font-medium text-green-700 border-b border-green-200 pb-2 mb-4">Continuidad del plan anterior</h2>
+                <h2 class="text-lg font-medium text-green-700 border-b-2 border-blue-500 pb-2 mb-4">Continuidad del plan anterior</h2>
                 <div class="space-y-4">
                     <div class="grid grid-cols-2 gap-4">
                         <div>
@@ -93,7 +93,7 @@
             </div>
 
             <div class="bg-white rounded-xl shadow-sm p-6">
-                <h2 class="text-lg font-medium text-green-700 border-b border-green-200 pb-2 mb-4">Estatus médico</h2>
+                <h2 class="text-lg font-medium text-green-700 border-b-2 border-blue-500 pb-2 mb-4">Estatus médico</h2>
                 <div>
                     <label class="block text-sm text-gray-700 mb-1">Tratamiento médico (medicamentos, dosis, cambios)</label>
                     <textarea name="estatus_tratamiento_medico" rows="3" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400"></textarea>
@@ -101,7 +101,7 @@
             </div>
 
             <div class="bg-white rounded-xl shadow-sm p-6">
-                <h2 class="text-lg font-medium text-green-700 border-b border-green-200 pb-2 mb-4">Medición de hoy</h2>
+                <h2 class="text-lg font-medium text-green-700 border-b-2 border-blue-500 pb-2 mb-4">Medición de hoy</h2>
                 <p class="text-xs text-gray-500 mb-4">Si no se hizo medición, deja los campos vacíos.</p>
                 <div class="grid grid-cols-3 gap-4">
                     <div>
@@ -138,7 +138,7 @@
             </div>
 
             <div class="bg-white rounded-xl shadow-sm p-6">
-                <h2 class="text-lg font-medium text-green-700 border-b border-green-200 pb-2 mb-4">Notas y ajustes</h2>
+                <h2 class="text-lg font-medium text-green-700 border-b-2 border-blue-500 pb-2 mb-4">Notas y ajustes</h2>
                 <div class="space-y-4">
                     <div>
                         <label class="block text-sm text-gray-700 mb-1">Notas libres</label>

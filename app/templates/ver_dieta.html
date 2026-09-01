@@ -35,7 +35,7 @@
 
         {% if doc.objetivos_clave %}
         <div class="bg-white rounded-xl shadow-sm p-6 mb-6">
-            <h2 class="text-lg font-medium text-green-700 border-b border-green-200 pb-2 mb-4">Objetivos clave</h2>
+            <h2 class="text-lg font-medium text-green-700 border-b-2 border-blue-500 pb-2 mb-4">Objetivos clave</h2>
             <ul class="space-y-2 text-sm text-gray-700 list-disc pl-4">
                 {% for o in doc.objetivos_clave %}<li>{{ o }}</li>{% endfor %}
             </ul>
@@ -44,7 +44,7 @@
 
         {% if doc.suplementacion %}
         <div class="bg-white rounded-xl shadow-sm p-6 mb-6">
-            <h2 class="text-lg font-medium text-green-700 border-b border-green-200 pb-2 mb-4">Suplementación</h2>
+            <h2 class="text-lg font-medium text-green-700 border-b-2 border-blue-500 pb-2 mb-4">Suplementación</h2>
             <ul class="space-y-2 text-sm text-gray-700 list-disc pl-4">
                 {% for s in doc.suplementacion %}<li>{{ s }}</li>{% endfor %}
             </ul>
@@ -54,7 +54,7 @@
         {% for tiempo, datos in menu.items() %}
         {% if datos.opciones %}
         <div class="bg-white rounded-xl shadow-sm p-6 mb-6">
-            <h2 class="text-lg font-medium text-green-700 border-b border-green-200 pb-2 mb-1">{{ tiempo|upper }}</h2>
+            <h2 class="text-lg font-medium text-green-700 border-b-2 border-blue-500 pb-2 mb-1">{{ tiempo|upper }}</h2>
             {% if datos.encabezado %}
             <p class="text-xs text-gray-500 italic mb-4">{{ datos.encabezado }}</p>
             {% endif %}
@@ -72,7 +72,7 @@
 
         {% if doc.recomendaciones %}
         <div class="bg-white rounded-xl shadow-sm p-6 mb-6">
-            <h2 class="text-lg font-medium text-green-700 border-b border-green-200 pb-2 mb-4">Recomendaciones</h2>
+            <h2 class="text-lg font-medium text-green-700 border-b-2 border-blue-500 pb-2 mb-4">Recomendaciones</h2>
             <ul class="space-y-2 text-sm text-gray-700 list-disc pl-4">
                 {% for r in doc.recomendaciones %}<li>{{ r }}</li>{% endfor %}
             </ul>
@@ -86,7 +86,7 @@
         {% endif %}
 
         <div class="bg-white rounded-xl shadow-sm p-6">
-            <h2 class="text-lg font-medium text-green-700 border-b border-green-200 pb-2 mb-4">Pedir un ajuste</h2>
+            <h2 class="text-lg font-medium text-green-700 border-b-2 border-blue-500 pb-2 mb-4">Pedir un ajuste</h2>
             <form method="post" action="/pacientes/{{ paciente.id }}/dieta/{{ dieta.id }}/ajustar" class="space-y-3">
                 <textarea name="instruccion" rows="2" placeholder="Ej. quita el aguacate del desayuno, o cambia las colaciones por opciones frías"
                           class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-400"></textarea>
