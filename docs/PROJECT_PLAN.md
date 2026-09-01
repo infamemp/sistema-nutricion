@@ -1,6 +1,6 @@
 # Sistema Integral de Nutrición, Documento Maestro del Proyecto
 
-**Versión:** 5.1
+**Versión:** 5.2
 **Fecha:** 30 de agosto de 2026
 **Estado:** Fase 0 completa. Infraestructura lista. Guía de estilo cerrada. Recolección de material en curso.
 
@@ -206,6 +206,11 @@ Stack, servidor, IA, base de alimentos, alcance, identidad visual y guía de est
   - Nivel gratuito de Resend (3,000 correos al mes, 100 al día) más que suficiente para el volumen de la clínica, y soporta adjuntar PDF, que se usará para el envío de dietas
   - **Error de middleware repetido, con lección aprendida:** al agregar las rutas de recuperar contraseña se reescribió `main.py` y sin querer se revirtió el orden correcto de middleware (documentado apenas ayer), causando el mismo `AssertionError` de antes. Queda anotado con más peso en el punto de restauración para que no se repita una tercera vez
 
+- [x] **Envío de dieta por correo, IMPLEMENTADO Y VERIFICADO.** Botón "Enviar por correo" en la pantalla de revisión, genera el PDF y lo adjunta vía Resend al correo del paciente
+- [x] **Editar datos del paciente, IMPLEMENTADO.** Hueco detectado por Michel: no había forma de corregir un teléfono o correo mal capturado. Formulario de edición accesible desde el expediente
+- [x] **Historial de dietas visible en el expediente, IMPLEMENTADO.** Hueco detectado por Michel: al aprobar una dieta, se perdía el acceso a ella, sin poder reenviarla ni consultarla de nuevo. Ahora el expediente lista todas las versiones (borrador, aprobada, reemplazada) con enlace directo, y cada una sigue siendo descargable, reenviable y ajustable sin importar su estado. Resuelve dos escenarios reales: el paciente pide un ajuste después de recibir la dieta, o falla el envío por WhatsApp y hay que mandarla por correo desde una versión ya aprobada
+- **Regla de middleware reforzada con comentario en el propio código** (`main.py`), tras repetirse el mismo error de orden tres veces al reescribir el archivo sin conservar la corrección
+
 ### Fase 5, Plataforma pulida
 - Interfaz unificada, responsiva, tablet first
 - **Respaldo diario cifrado de la base de datos a Google Drive** (tarea nocturna)
@@ -357,3 +362,4 @@ Las API keys nunca van al repo. Viven en un archivo `.env` local, ya cubierto po
 | 2026-08-31 | v4.9, pantalla de revisión y aprobación funcionando de extremo a extremo desde el navegador. Se corrige un hallazgo de infraestructura importante: el servicio de systemd no leía el `.env`, así que la aplicación en producción nunca tuvo las claves de API hasta hoy. Se verifica que el ajuste en lenguaje natural cambia solo lo pedido y que una versión ajustada nunca hereda el estado verificado de la anterior |
 | 2026-09-01 | v5.0, sistema de login implementado y verificado. Cierra el hueco de seguridad más urgente del proyecto: hasta ahora cualquiera con la IP podía ver expedientes reales. La contraseña se generó directo en el servidor, nunca pasó por el chat. Se documenta un error de orden de middleware en Starlette (el último agregado se ejecuta primero) que causaba un fallo en cada petición hasta corregirlo |
 | 2026-09-01 | v5.1, logout, recuperación de contraseña por correo, y cambio de proveedor de correo de SMTP a Resend (DigitalOcean bloquea los puertos SMTP por política de toda la plataforma). Dominio mafernut.com verificado en Resend. Se repite y se corrige el error de orden de middleware documentado el día anterior |
+| 2026-09-01 | v5.2, envío de dieta por correo funcionando (PDF adjunto vía Resend), edición de datos del paciente, e historial de dietas visible en el expediente. Estos dos últimos fueron huecos señalados por Michel: no se podía corregir un dato mal capturado, y una dieta aprobada se volvía inaccesible. Con esto, el ciclo completo del sistema (capturar, generar, verificar, redactar, revisar, ajustar, aprobar, descargar, enviar, y volver a consultar) queda cerrado de extremo a extremo |

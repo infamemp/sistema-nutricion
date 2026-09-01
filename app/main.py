@@ -22,12 +22,6 @@ models.Base.metadata.create_all(bind=engine)
 app = FastAPI()
 templates = Jinja2Templates(directory="templates")
 
-app.add_middleware(
-    SessionMiddleware,
-    secret_key=os.environ["SESSION_SECRET_KEY"],
-    max_age=60 * 60 * 12,  # 12 horas
-)
-
 RUTAS_PUBLICAS = {"/login", "/olvide-password", "/restablecer-password"}
 
 
@@ -48,6 +42,17 @@ class RequiereLoginMiddleware(BaseHTTPMiddleware):
 
 
 app.add_middleware(RequiereLoginMiddleware)
+
+# SessionMiddleware va AL FINAL a proposito: en Starlette, el ultimo
+# middleware agregado con add_middleware() es el que se ejecuta PRIMERO
+# en cada peticion. Debe preparar la sesion antes de que
+# RequiereLoginMiddleware intente leerla. Este orden ya causo el mismo
+# error tres veces al reescribir este archivo sin conservarlo. NO MOVER.
+app.add_middleware(
+    SessionMiddleware,
+    secret_key=os.environ["SESSION_SECRET_KEY"],
+    max_age=60 * 60 * 12,  # 12 horas
+)
 
 
 @app.get("/login", response_class=HTMLResponse)
@@ -277,11 +282,51 @@ def ver_expediente(paciente_id: int, request: Request, db: Session = Depends(get
         .all()
     )
 
+    dietas = (
+        db.query(models.DietaVersion)
+        .filter(models.DietaVersion.paciente_id == paciente_id)
+        .order_by(models.DietaVersion.version.desc())
+        .all()
+    )
+
     return templates.TemplateResponse(
         request,
         "expediente.html",
-        {"paciente": paciente, "citas": citas, "historia": historia, "followups": followups},
+        {"paciente": paciente, "citas": citas, "historia": historia, "followups": followups, "dietas": dietas},
     )
+
+
+@app.get("/pacientes/{paciente_id}/editar", response_class=HTMLResponse)
+def formulario_editar_paciente(paciente_id: int, request: Request, db: Session = Depends(get_db)):
+    paciente = obtener_paciente(db, paciente_id)
+    return templates.TemplateResponse(request, "editar_paciente.html", {"paciente": paciente})
+
+
+@app.post("/pacientes/{paciente_id}/editar")
+def guardar_edicion_paciente(
+    paciente_id: int,
+    nombre_completo: str = Form(...),
+    celular: Optional[str] = Form(None),
+    correo_electronico: Optional[str] = Form(None),
+    fecha_nacimiento: Optional[str] = Form(None),
+    sexo: Optional[str] = Form(None),
+    motivo_consulta: Optional[str] = Form(None),
+    referido_por: Optional[str] = Form(None),
+    db: Session = Depends(get_db),
+):
+    paciente = obtener_paciente(db, paciente_id)
+
+    paciente.nombre_completo = nombre_completo
+    paciente.celular = celular
+    paciente.correo_electronico = correo_electronico
+    paciente.fecha_nacimiento = date.fromisoformat(fecha_nacimiento) if fecha_nacimiento else None
+    paciente.sexo = sexo
+    paciente.motivo_consulta = motivo_consulta
+    paciente.referido_por = referido_por
+
+    db.commit()
+
+    return RedirectResponse(url="/pacientes/" + str(paciente_id), status_code=303)
 
 
 @app.get("/pacientes/{paciente_id}/historia", response_class=HTMLResponse)
@@ -602,6 +647,12 @@ def ver_dieta(paciente_id: int, dieta_id: int, request: Request, db: Session = D
 
     guardado = _cargar_contenido(dieta)
 
+    mensaje = None
+    if request.query_params.get("enviado"):
+        mensaje = "Dieta enviada por correo a " + (paciente.correo_electronico or "")
+    elif request.query_params.get("error") == "sin_correo":
+        mensaje = "Este paciente no tiene correo electronico registrado. Agregalo en sus datos de contacto."
+
     return templates.TemplateResponse(
         request,
         "ver_dieta.html",
@@ -611,6 +662,7 @@ def ver_dieta(paciente_id: int, dieta_id: int, request: Request, db: Session = D
             "doc": guardado["documento"],
             "menu": guardado["documento"].get("menu", {}),
             "confiable": guardado.get("confiable", False),
+            "mensaje": mensaje,
         },
     )
 
@@ -697,6 +749,31 @@ def ajustar_dieta(
     db.refresh(dieta)
 
     return RedirectResponse(url="/pacientes/" + str(paciente_id) + "/dieta/" + str(dieta.id), status_code=303)
+
+
+@app.post("/pacientes/{paciente_id}/dieta/{dieta_id}/enviar-correo")
+def enviar_dieta_por_correo(paciente_id: int, dieta_id: int, db: Session = Depends(get_db)):
+    paciente = obtener_paciente(db, paciente_id)
+
+    if not paciente.correo_electronico:
+        return RedirectResponse(
+            url="/pacientes/" + str(paciente_id) + "/dieta/" + str(dieta_id) + "?error=sin_correo",
+            status_code=303,
+        )
+
+    dieta = db.query(models.DietaVersion).filter(models.DietaVersion.id == dieta_id).first()
+    if not dieta:
+        raise HTTPException(status_code=404, detail="Version de dieta no encontrada")
+
+    guardado = _cargar_contenido(dieta)
+    ruta_pdf = pdf_gen.generar(guardado["documento"], paciente.nombre_completo)
+
+    correo.enviar_dieta(paciente.correo_electronico, paciente.nombre_completo, ruta_pdf)
+
+    return RedirectResponse(
+        url="/pacientes/" + str(paciente_id) + "/dieta/" + str(dieta_id) + "?enviado=1",
+        status_code=303,
+    )
 
 
 @app.get("/pacientes/{paciente_id}/dieta/{dieta_id}/pdf")

@@ -102,6 +102,11 @@
                class="flex-1 text-center bg-white border border-green-600 text-green-700 hover:bg-green-50 font-medium py-3 rounded-lg transition">
                 Descargar PDF
             </a>
+            <form method="post" action="/pacientes/{{ paciente.id }}/dieta/{{ dieta.id }}/enviar-correo" class="flex-1">
+                <button type="submit" class="w-full bg-white border border-green-600 text-green-700 hover:bg-green-50 font-medium py-3 rounded-lg transition">
+                    Enviar por correo
+                </button>
+            </form>
             <form method="post" action="/pacientes/{{ paciente.id }}/dieta/{{ dieta.id }}/aprobar" class="flex-1">
                 <button type="submit" class="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-3 rounded-lg transition">
                     Aprobar

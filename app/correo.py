@@ -112,3 +112,26 @@ def probar_conexion(destinatario_prueba=None):
 
     except Exception as e:
         return {"clave_presente": bool(os.environ.get("RESEND_API_KEY")), "error": str(e)[:300]}
+
+
+def enviar_dieta(destinatario, nombre_paciente, ruta_pdf):
+    """Envia el PDF de la dieta al paciente, con el plan adjunto."""
+    asunto = "Tu plan de alimentación, Marifer Utrilla"
+
+    primer_nombre = nombre_paciente.split()[0] if nombre_paciente else ""
+
+    texto = (
+        "Hola " + primer_nombre + ",\n\n"
+        "Aqui tienes tu plan de alimentacion, adjunto en PDF.\n\n"
+        "Cualquier duda, escribeme.\n\n"
+        "Saludos,\nMarifer"
+    )
+
+    html = (
+        "<p>Hola " + primer_nombre + ",</p>"
+        "<p>Aquí tienes tu plan de alimentación, adjunto en PDF.</p>"
+        "<p>Cualquier duda, escríbeme.</p>"
+        "<p>Saludos,<br>Marifer</p>"
+    )
+
+    return enviar(destinatario, asunto, html, cuerpo_texto=texto, adjunto_ruta=ruta_pdf)

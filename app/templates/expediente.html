@@ -14,11 +14,17 @@
             <a href="/pacientes" class="text-sm text-green-700 hover:underline">&larr; Volver a pacientes</a>
         </div>
 
-        <div class="bg-white rounded-xl shadow-sm p-6 mb-6">
-            <h1 class="text-2xl font-medium text-green-800">{{ paciente.nombre_completo }}</h1>
-            <p class="text-sm text-gray-500 mt-1">
-                Paciente desde {{ paciente.fecha_alta.strftime('%d/%m/%Y') if paciente.fecha_alta else 'fecha no registrada' }}
-            </p>
+        <div class="bg-white rounded-xl shadow-sm p-6 mb-6 flex justify-between items-start">
+            <div>
+                <h1 class="text-2xl font-medium text-green-800">{{ paciente.nombre_completo }}</h1>
+                <p class="text-sm text-gray-500 mt-1">
+                    Paciente desde {{ paciente.fecha_alta.strftime('%d/%m/%Y') if paciente.fecha_alta else 'fecha no registrada' }}
+                </p>
+            </div>
+            <a href="/pacientes/{{ paciente.id }}/editar"
+               class="text-sm text-green-700 hover:underline whitespace-nowrap">
+                Editar datos
+            </a>
         </div>
 
         {% if mensaje %}
@@ -198,7 +204,30 @@
                     Generar con IA
                 </a>
             </div>
+
+            {% if dietas %}
+            <ul class="space-y-2">
+                {% for d in dietas %}
+                <li>
+                    <a href="/pacientes/{{ paciente.id }}/dieta/{{ d.id }}"
+                       class="flex justify-between items-center text-sm p-2 rounded-lg hover:bg-green-50 transition">
+                        <span class="text-gray-700">
+                            Versión {{ d.version }}
+                            <span class="text-gray-400">&middot; {{ d.fecha_creacion.strftime('%d/%m/%Y') if d.fecha_creacion else '' }}</span>
+                        </span>
+                        <span class="text-xs px-2 py-1 rounded-full whitespace-nowrap
+                            {% if d.estado == 'aprobada' %}bg-green-100 text-green-700
+                            {% elif d.estado == 'reemplazada' %}bg-gray-100 text-gray-500
+                            {% else %}bg-blue-50 text-blue-700{% endif %}">
+                            {{ d.estado.replace('_', ' ') }}
+                        </span>
+                    </a>
+                </li>
+                {% endfor %}
+            </ul>
+            {% else %}
             <p class="text-sm text-gray-500">Genera un borrador con inteligencia artificial para revisar y aprobar.</p>
+            {% endif %}
         </div>
 
         <div class="bg-white rounded-xl shadow-sm p-6">
