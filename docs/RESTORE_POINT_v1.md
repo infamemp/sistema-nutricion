@@ -212,6 +212,27 @@ Archivos en `/opt/sistema-nutricion/`: `alimentos.py` (orquestador, 109 líneas)
 
 Arquitectura de tres fuentes con jerarquía, detallada en `docs/FUENTES_ALIMENTOS.md`: BAM local para alimentos mexicanos, USDA para genéricos internacionales, OpenFoodFacts restringido a productos de marca con verificación humana.
 
+## 🔵 EN PROCESO AHORA MISMO (1 sep 2026): dominio, HTTPS y favicon
+
+**Contexto:** Michel pidió una URL decente para que Marifer use el sistema, HTTPS, y un favicon, antes de agregar graficas de progreso.
+
+**Decision tomada:** el sistema vive en `app.mafernut.com`, NO en la raiz `mafernut.com`. La raiz y `www` quedan reservados para el futuro sitio publico de Marifer (paquetes de tratamiento, guias, videos, capacitaciones). Es un patron comun (como mail.google.com vs google.com).
+
+**Estado exacto al pausar:**
+- [ ] Registro DNS tipo A, `app` -> `165.22.7.251`, en Cloudflare, en modo **DNS only** (nube gris, no naranja). Michel lo estaba creando cuando se pauso la sesion, confirmar si ya quedo
+- [ ] Verificar que `app.mafernut.com` resuelve antes de seguir
+- [ ] Instalar nginx como proxy inverso (hoy uvicorn expone el puerto 8000 directo, hay que ponerlo detras de nginx)
+- [ ] Instalar certbot y generar certificado real de Let's Encrypt para `app.mafernut.com` (modo DNS only necesario para que el reto HTTP-01 de certbot llegue directo al droplet)
+- [ ] Cambiar `sistema-nutricion.service` para que uvicorn escuche solo en `127.0.0.1:8000` (no `0.0.0.0`), ya que nginx sera el que reciba trafico publico
+- [ ] Favicon: generar desde `assets/logo/logo_marifer.svg` (ya existe, vectorial), convertir a `.ico` y `.png`, servirlo desde la aplicacion
+- [ ] Verificar que el login y todo el flujo funcionan sobre `https://app.mafernut.com`
+
+**Por que no se eligio "Flexible SSL" de Cloudflare (mas facil):** cifra solo navegador-Cloudflare, no Cloudflare-servidor. Como el sistema mueve datos clinicos reales, se decidio instalar un certificado real en el origen (nginx + certbot), cifrado de extremo a extremo. El proxy de Cloudflare (nube naranja) se puede activar despues como mejora opcional, una vez que el certificado del origen ya funcione.
+
+**Pendiente ya identificado antes de esto (no se te olvide):** graficas de progreso, es lo que sigue una vez cerrado esto.
+
+---
+
 ## ⚠️ REGLA CRÍTICA, LEER ANTES DE TOCAR main.py
 
 **El orden de `app.add_middleware()` ya causó el mismo error DOS VECES.** En Starlette, el último middleware agregado es el que se ejecuta PRIMERO en cada petición. El orden correcto en este proyecto es:
