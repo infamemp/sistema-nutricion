@@ -212,6 +212,38 @@ Archivos en `/opt/sistema-nutricion/`: `alimentos.py` (orquestador, 109 líneas)
 
 Arquitectura de tres fuentes con jerarquía, detallada en `docs/FUENTES_ALIMENTOS.md`: BAM local para alimentos mexicanos, USDA para genéricos internacionales, OpenFoodFacts restringido a productos de marca con verificación humana.
 
+## ⚠️ REGLA CRÍTICA, LEER ANTES DE TOCAR main.py
+
+**El orden de `app.add_middleware()` ya causó el mismo error DOS VECES.** En Starlette, el último middleware agregado es el que se ejecuta PRIMERO en cada petición. El orden correcto en este proyecto es:
+
+```python
+app.add_middleware(RequiereLoginMiddleware)   # se agrega PRIMERO en el codigo
+app.add_middleware(SessionMiddleware, ...)    # se agrega DESPUES, para ser la capa mas externa
+```
+
+Si `SessionMiddleware` queda ANTES que `RequiereLoginMiddleware` en el código (aunque sea por reescribir el archivo completo y pegar en el orden "lógico" de arriba hacia abajo), toda la aplicación truena con `AssertionError: SessionMiddleware must be installed to access request.session` en cada petición.
+
+**Antes de cualquier cambio futuro a `main.py` que toque esta zona, verificar con:**
+```
+grep -n "app.add_middleware\|class RequiereLoginMiddleware" main.py
+```
+`RequiereLoginMiddleware` debe aparecer, y el `add_middleware(RequiereLoginMiddleware)` debe estar ANTES del `add_middleware(SessionMiddleware...)`.
+
+---
+
+**Correo, cambiado de SMTP a Resend el 1 sep 2026:**
+
+`correo.py` (114 líneas) usa la API de Resend, no SMTP directo. **Motivo del cambio:** DigitalOcean bloquea los puertos 25, 465 y 587 en todos sus droplets por política de la plataforma (para prevenir spam), documentado oficialmente. Se intentó primero SMTP con `contacto@mafernut.com` (Hostinger) y fallaba con "Network is unreachable" / "timed out" sin importar la configuración, porque el bloqueo es de infraestructura, no de código.
+
+**Variable de entorno:** `RESEND_API_KEY`. Dominio `mafernut.com` verificado en el panel de Resend (registros DKIM, SPF y MX en Cloudflare, apuntando al subdominio `send.mafernut.com`).
+
+**Prueba rápida:**
+```
+python -c "import correo, json; print(json.dumps(correo.probar_conexion('correo@ejemplo.com'), indent=2))"
+```
+
+---
+
 **Sistema de login, agregado el 1 sep 2026:**
 
 `auth.py` (72 líneas, hash PBKDF2 sin dependencias externas) más middleware de sesión en `main.py`. Requiere `itsdangerous` instalado (`pip install itsdangerous`).
@@ -348,6 +380,7 @@ Verificado con dos casos: paciente de 85 kg con GLP-1 (objetivo 105 g, detectó 
 | 2026-08-29 | Vista de expediente del paciente construida y verificada. Combina en una sola pantalla los datos del paciente, sus citas (con etiqueta de estado por color) y el estado de su historia clínica, leyendo de tres tablas distintas |
 | 2026-08-29 | Formulario de Historia Clínica completo (10 secciones, ~50 campos) construido y verificado: guardar, redirigir al expediente, y editar recuperando los datos. **El sistema ya es utilizable en la vida real** para dar de alta pacientes, agendar citas y capturar historias clínicas |
 | 2026-08-29 | Gestión de citas completa desde el expediente: agendar, reagendar, cancelar, marcar completada o no asistió. El reagendado cancela la cita anterior y crea una nueva, dejando el rastro visible (cita anterior tachada con etiqueta "cancelada"), conforme a la política acordada de no sobreescribir nada |
+| 2026-09-01 | Logout, recuperar contraseña por correo, y cambio de SMTP a Resend (DigitalOcean bloquea los puertos SMTP por política de plataforma). El error de orden de middleware se repitió una segunda vez al reescribir main.py; anotado como regla crítica al inicio de este documento |
 | 2026-09-01 | Sistema de login implementado y verificado. Cierra el hueco de seguridad de acceso sin contraseña |
 | 2026-08-31 | Pantalla de revisión y aprobación funcionando end-to-end. Se corrige que systemd no leía .env, un hallazgo que afectaba a la aplicación en producción desde que se agregaron las claves |
 | 2026-08-31 | Generador de PDF funcionando con la identidad visual de la marca. Fase 4 arrancada |

@@ -12,6 +12,7 @@ from typing import Optional
 from database import get_db, engine
 import models
 import auth
+import correo
 import plan_generador as plan_gen
 import redactor
 import pdf as pdf_gen
@@ -27,7 +28,7 @@ app.add_middleware(
     max_age=60 * 60 * 12,  # 12 horas
 )
 
-RUTAS_PUBLICAS = {"/login"}
+RUTAS_PUBLICAS = {"/login", "/olvide-password", "/restablecer-password"}
 
 
 class RequiereLoginMiddleware(BaseHTTPMiddleware):
@@ -79,6 +80,99 @@ def procesar_login(request: Request, password: str = Form(...)):
 def cerrar_sesion(request: Request):
     request.session.clear()
     return RedirectResponse(url="/login", status_code=303)
+
+@app.get("/olvide-password", response_class=HTMLResponse)
+def formulario_olvide(request: Request):
+    return templates.TemplateResponse(request, "olvide_password.html")
+
+
+@app.post("/olvide-password", response_class=HTMLResponse)
+def procesar_olvide(request: Request):
+    from itsdangerous import URLSafeTimedSerializer
+
+    serializador = URLSafeTimedSerializer(os.environ["SESSION_SECRET_KEY"])
+    token = serializador.dumps("recuperar_password")
+
+    enlace = str(request.base_url) + "restablecer-password?token=" + token
+
+    try:
+        correo.enviar_recuperacion(os.environ["CORREO_RECUPERACION"], enlace)
+        mensaje = "Se envio un enlace de recuperacion. Revisa el correo (y spam) en los proximos minutos."
+    except Exception as e:
+        mensaje = "No se pudo enviar el correo: " + str(e)[:200]
+
+    return templates.TemplateResponse(request, "olvide_password.html", {"mensaje": mensaje})
+
+
+@app.get("/restablecer-password", response_class=HTMLResponse)
+def formulario_restablecer(request: Request, token: str):
+    from itsdangerous import URLSafeTimedSerializer, SignatureExpired, BadSignature
+
+    serializador = URLSafeTimedSerializer(os.environ["SESSION_SECRET_KEY"])
+    try:
+        serializador.loads(token, max_age=1800)  # 30 minutos
+    except SignatureExpired:
+        return templates.TemplateResponse(
+            request, "olvide_password.html",
+            {"mensaje": "Ese enlace ya expiro. Solicita uno nuevo."},
+        )
+    except BadSignature:
+        raise HTTPException(status_code=400, detail="Enlace invalido")
+
+    return templates.TemplateResponse(request, "restablecer_password.html", {"token": token})
+
+
+@app.post("/restablecer-password", response_class=HTMLResponse)
+def procesar_restablecer(
+    request: Request,
+    token: str = Form(...),
+    password: str = Form(...),
+    password_confirmar: str = Form(...),
+):
+    from itsdangerous import URLSafeTimedSerializer, SignatureExpired, BadSignature
+
+    serializador = URLSafeTimedSerializer(os.environ["SESSION_SECRET_KEY"])
+    try:
+        serializador.loads(token, max_age=1800)
+    except (SignatureExpired, BadSignature):
+        raise HTTPException(status_code=400, detail="Enlace invalido o expirado")
+
+    if password != password_confirmar:
+        return templates.TemplateResponse(
+            request, "restablecer_password.html",
+            {"token": token, "error": "Las contraseñas no coinciden."},
+        )
+
+    if len(password) < 8:
+        return templates.TemplateResponse(
+            request, "restablecer_password.html",
+            {"token": token, "error": "Usa al menos 8 caracteres."},
+        )
+
+    nuevo_hash = auth.generar_hash(password)
+
+    ruta_env = os.path.join(os.path.dirname(__file__), ".env")
+    with open(ruta_env) as f:
+        lineas = f.readlines()
+
+    reemplazado = False
+    for i, linea in enumerate(lineas):
+        if linea.startswith("MARIFER_PASSWORD_HASH="):
+            lineas[i] = "MARIFER_PASSWORD_HASH=" + nuevo_hash + "\n"
+            reemplazado = True
+            break
+    if not reemplazado:
+        lineas.append("MARIFER_PASSWORD_HASH=" + nuevo_hash + "\n")
+
+    with open(ruta_env, "w") as f:
+        f.writelines(lineas)
+
+    os.environ["MARIFER_PASSWORD_HASH"] = nuevo_hash
+
+    return templates.TemplateResponse(
+        request, "login.html",
+        {"error": None, "mensaje": "Contraseña actualizada. Ya puedes iniciar sesion."},
+    )
 
 
 def obtener_paciente(db: Session, paciente_id: int):

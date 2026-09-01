@@ -1,6 +1,6 @@
 # Sistema Integral de Nutrición, Documento Maestro del Proyecto
 
-**Versión:** 5.0
+**Versión:** 5.1
 **Fecha:** 30 de agosto de 2026
 **Estado:** Fase 0 completa. Infraestructura lista. Guía de estilo cerrada. Recolección de material en curso.
 
@@ -198,6 +198,14 @@ Stack, servidor, IA, base de alimentos, alcance, identidad visual y guía de est
   - **Error de orden de middleware, corregido:** en Starlette, el último middleware agregado es el que se ejecuta primero. `SessionMiddleware` debe ir al final (para ser la capa más externa) y prepararse antes de que el middleware de login intente leer la sesión. El orden inverso produce un `AssertionError` en cada petición
   - Verificado: bloqueo sin sesión, rechazo de contraseña incorrecta, sesión persistente entre pantallas
 
+- [x] **Logout, recuperar contraseña, y envío de correo, IMPLEMENTADOS (1 sep 2026).**
+  - **Botón de cerrar sesión** visible en la lista de pacientes
+  - **Recuperar contraseña por correo.** Enlace de un solo uso, firmado con `itsdangerous`, válido 30 minutos. Llega al correo de recuperación configurado (no al de la clínica, para no depender de la misma cuenta que se intenta recuperar)
+  - **Cambio de proveedor de correo, de SMTP directo a Resend.** DigitalOcean bloquea por política los puertos 25, 465 y 587 en todos sus droplets para prevenir spam en su plataforma; es un bloqueo documentado, no un error de configuración nuestro. Resend evita el problema por completo: envía vía su API sobre HTTPS (puerto 443, siempre abierto)
+  - **Dominio `mafernut.com` verificado en Resend** en menos de 5 minutos (DKIM, SPF y MX agregados en Cloudflare). Ya se puede enviar como `contacto@mafernut.com`, no solo desde el dominio de pruebas
+  - Nivel gratuito de Resend (3,000 correos al mes, 100 al día) más que suficiente para el volumen de la clínica, y soporta adjuntar PDF, que se usará para el envío de dietas
+  - **Error de middleware repetido, con lección aprendida:** al agregar las rutas de recuperar contraseña se reescribió `main.py` y sin querer se revirtió el orden correcto de middleware (documentado apenas ayer), causando el mismo `AssertionError` de antes. Queda anotado con más peso en el punto de restauración para que no se repita una tercera vez
+
 ### Fase 5, Plataforma pulida
 - Interfaz unificada, responsiva, tablet first
 - **Respaldo diario cifrado de la base de datos a Google Drive** (tarea nocturna)
@@ -348,3 +356,4 @@ Las API keys nunca van al repo. Viven en un archivo `.env` local, ya cubierto po
 | 2026-08-31 | v4.8, generador de PDF funcionando con la identidad visual de Marifer. Paginación nativa de WeasyPrint para que el encabezado y el pie se repitan correctamente en cada hoja, títulos que se repiten cuando una sección se parte entre páginas, y logo en SVG tras descartar varios PNG por calidad y por traer el tagline antiguo |
 | 2026-08-31 | v4.9, pantalla de revisión y aprobación funcionando de extremo a extremo desde el navegador. Se corrige un hallazgo de infraestructura importante: el servicio de systemd no leía el `.env`, así que la aplicación en producción nunca tuvo las claves de API hasta hoy. Se verifica que el ajuste en lenguaje natural cambia solo lo pedido y que una versión ajustada nunca hereda el estado verificado de la anterior |
 | 2026-09-01 | v5.0, sistema de login implementado y verificado. Cierra el hueco de seguridad más urgente del proyecto: hasta ahora cualquiera con la IP podía ver expedientes reales. La contraseña se generó directo en el servidor, nunca pasó por el chat. Se documenta un error de orden de middleware en Starlette (el último agregado se ejecuta primero) que causaba un fallo en cada petición hasta corregirlo |
+| 2026-09-01 | v5.1, logout, recuperación de contraseña por correo, y cambio de proveedor de correo de SMTP a Resend (DigitalOcean bloquea los puertos SMTP por política de toda la plataforma). Dominio mafernut.com verificado en Resend. Se repite y se corrige el error de orden de middleware documentado el día anterior |
