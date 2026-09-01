@@ -284,6 +284,29 @@ def ver_expediente(paciente_id: int, request: Request, db: Session = Depends(get
         .all()
     )
 
+    mediciones = (
+        db.query(models.MedicionInBody)
+        .filter(models.MedicionInBody.paciente_id == paciente_id)
+        .order_by(models.MedicionInBody.fecha_medicion.asc())
+        .all()
+    )
+
+    # JSON listo para Chart.js. Se arma aqui, no en la plantilla, para que
+    # agregar una metrica nueva a futuro (ej. tasa_metabolica_basal) sea
+    # solo una linea en este diccionario, sin tocar la logica de consulta.
+    mediciones_json = json.dumps(
+        [
+            {
+                "fecha": m.fecha_medicion.strftime("%d/%m/%Y") if m.fecha_medicion else None,
+                "peso": m.peso,
+                "porcentaje_grasa": m.porcentaje_grasa,
+                "mme": m.mme,
+            }
+            for m in mediciones
+        ],
+        ensure_ascii=False,
+    )
+
     dietas = (
         db.query(models.DietaVersion)
         .filter(models.DietaVersion.paciente_id == paciente_id)
@@ -294,7 +317,15 @@ def ver_expediente(paciente_id: int, request: Request, db: Session = Depends(get
     return templates.TemplateResponse(
         request,
         "expediente.html",
-        {"paciente": paciente, "citas": citas, "historia": historia, "followups": followups, "dietas": dietas},
+        {
+            "paciente": paciente,
+            "citas": citas,
+            "historia": historia,
+            "followups": followups,
+            "dietas": dietas,
+            "mediciones": mediciones,
+            "mediciones_json": mediciones_json,
+        },
     )
 
 

@@ -7,6 +7,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ paciente.nombre_completo }}</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+    <style>
+        @media print {
+            body * { visibility: hidden; }
+            #seccion-progreso, #seccion-progreso * { visibility: visible; }
+            #seccion-progreso { position: absolute; left: 0; top: 0; width: 100%; box-shadow: none; }
+            #botones-progreso { display: none; }
+        }
+    </style>
 </head>
 <body class="bg-green-50 min-h-screen">
 
@@ -163,6 +172,76 @@
             {% else %}
             <p class="text-sm text-gray-500">Sin citas registradas.</p>
             {% endif %}
+        </div>
+
+        <div id="seccion-progreso" class="bg-white rounded-xl shadow-sm p-6 mb-6">
+            <div id="botones-progreso" class="flex justify-between items-center border-b-2 border-blue-500 pb-2 mb-4">
+                <h2 class="text-lg font-medium text-green-700">Progreso</h2>
+                <div class="flex gap-3">
+                    <button onclick="window.print()"
+                            class="text-xs text-green-700 hover:underline">
+                        Imprimir / Descargar
+                    </button>
+                    <button id="btn-toggle-progreso"
+                            onclick="
+                                const c = document.getElementById('progreso-contenido');
+                                c.classList.toggle('hidden');
+                                this.textContent = c.classList.contains('hidden') ? 'Mostrar' : 'Ocultar';
+                            "
+                            class="text-xs text-green-700 hover:underline">
+                        Ocultar
+                    </button>
+                </div>
+            </div>
+
+            <div id="progreso-contenido">
+            {% if mediciones|length >= 2 %}
+            <div class="grid gap-6">
+                <div>
+                    <p class="text-sm text-gray-500 mb-2">Peso (kg)</p>
+                    <canvas id="grafica-peso" height="80"></canvas>
+                </div>
+                <div>
+                    <p class="text-sm text-gray-500 mb-2">Porcentaje de grasa (%)</p>
+                    <canvas id="grafica-grasa" height="80"></canvas>
+                </div>
+                <div>
+                    <p class="text-sm text-gray-500 mb-2">Masa muscular esquelética, MME (kg)</p>
+                    <canvas id="grafica-mme" height="80"></canvas>
+                </div>
+            </div>
+            <script>
+                const medicionesProgreso = {{ mediciones_json|safe }};
+                const etiquetas = medicionesProgreso.map(m => m.fecha);
+
+                function graficaLinea(idCanvas, datos, color) {
+                    new Chart(document.getElementById(idCanvas), {
+                        type: 'line',
+                        data: {
+                            labels: etiquetas,
+                            datasets: [{
+                                data: datos,
+                                borderColor: color,
+                                backgroundColor: color,
+                                tension: 0.2,
+                                spanGaps: true,
+                            }]
+                        },
+                        options: {
+                            plugins: { legend: { display: false } },
+                            scales: { y: { beginAtZero: false } }
+                        }
+                    });
+                }
+
+                graficaLinea('grafica-peso', medicionesProgreso.map(m => m.peso), '#16a34a');
+                graficaLinea('grafica-grasa', medicionesProgreso.map(m => m.porcentaje_grasa), '#3B82F6');
+                graficaLinea('grafica-mme', medicionesProgreso.map(m => m.mme), '#16a34a');
+            </script>
+            {% else %}
+            <p class="text-sm text-gray-500">Aún no hay suficientes mediciones para graficar.</p>
+            {% endif %}
+            </div>
         </div>
 
         <div class="bg-white rounded-xl shadow-sm p-6 mb-6">
