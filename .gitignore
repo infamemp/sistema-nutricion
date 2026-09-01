@@ -219,3 +219,5 @@ __marimo__/
 
 google-service-account.json
 .backup_passphrase
+google-token-privado.json
+google-token-unido.json

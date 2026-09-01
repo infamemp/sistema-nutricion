@@ -18,6 +18,7 @@ class Paciente(Base):
     referido_por = Column(String)
     fecha_alta = Column(DateTime, default=datetime.utcnow)
     activo = Column(Integer, default=1)
+    origen_consulta = Column(String, default="privado")
 
     historia_clinica = relationship("HistoriaClinica", back_populates="paciente", uselist=False)
     mediciones_inbody = relationship("MedicionInBody", back_populates="paciente")

@@ -14,6 +14,7 @@ from database import get_db, engine
 import models
 import auth
 import correo
+import calendario
 import plan_generador as plan_gen
 import redactor
 import pdf as pdf_gen
@@ -209,6 +210,7 @@ def crear_paciente(
     sexo: Optional[str] = Form(None),
     motivo_consulta: Optional[str] = Form(None),
     referido_por: Optional[str] = Form(None),
+    origen_consulta: str = Form("privado"),
     cita_fecha: Optional[str] = Form(None),
     cita_hora: Optional[str] = Form(None),
     cita_notas: Optional[str] = Form(None),
@@ -226,6 +228,7 @@ def crear_paciente(
         sexo=sexo,
         motivo_consulta=motivo_consulta,
         referido_por=referido_por,
+        origen_consulta=origen_consulta,
     )
     db.add(paciente)
     db.commit()
@@ -245,6 +248,8 @@ def crear_paciente(
         )
         db.add(cita)
         db.commit()
+        db.refresh(cita)
+        _sincronizar_creacion_google(db, cita, paciente, ya_en_google=False)
         mensaje = mensaje + " Cita agendada para el " + cita_fecha + " a las " + hora + "."
 
     return templates.TemplateResponse(
@@ -345,6 +350,7 @@ def guardar_edicion_paciente(
     sexo: Optional[str] = Form(None),
     motivo_consulta: Optional[str] = Form(None),
     referido_por: Optional[str] = Form(None),
+    origen_consulta: str = Form("privado"),
     db: Session = Depends(get_db),
 ):
     paciente = obtener_paciente(db, paciente_id)
@@ -356,6 +362,7 @@ def guardar_edicion_paciente(
     paciente.sexo = sexo
     paciente.motivo_consulta = motivo_consulta
     paciente.referido_por = referido_por
+    paciente.origen_consulta = origen_consulta
 
     db.commit()
 
@@ -432,15 +439,51 @@ async def guardar_historia(paciente_id: int, request: Request, db: Session = Dep
     return RedirectResponse(url="/pacientes/" + str(paciente_id), status_code=303)
 
 
+def _sincronizar_creacion_google(db, cita, paciente, ya_en_google):
+    """
+    Crea el evento en el calendario de Google correspondiente al
+    origen_consulta del paciente, salvo que ya_en_google indique que
+    la cita nacio directo en Google Calendar (se evita duplicar).
+    Un fallo aqui nunca debe tronar la peticion: la cita ya quedo
+    guardada en el sistema, que es lo indispensable.
+    """
+    if ya_en_google:
+        return
+    try:
+        event_id = calendario.crear_evento(
+            paciente.origen_consulta or "privado",
+            resumen=paciente.nombre_completo,
+            fecha_hora_inicio=cita.fecha_hora,
+            descripcion=cita.notas_breves or "",
+        )
+        cita.google_event_id = event_id
+        db.commit()
+    except Exception as e:
+        print("Aviso: no se pudo sincronizar con Google Calendar:", str(e)[:300])
+
+
+def _sincronizar_borrado_google(db, cita, paciente):
+    """Borra el evento de Google Calendar de una cita, si tenia uno."""
+    if not cita.google_event_id:
+        return
+    try:
+        calendario.eliminar_evento(paciente.origen_consulta or "privado", cita.google_event_id)
+        cita.google_event_id = None
+        db.commit()
+    except Exception as e:
+        print("Aviso: no se pudo borrar el evento de Google Calendar:", str(e)[:300])
+
+
 @app.post("/pacientes/{paciente_id}/citas/nueva")
 def nueva_cita(
     paciente_id: int,
     fecha: str = Form(...),
     hora: str = Form(...),
     notas: Optional[str] = Form(None),
+    ya_en_google: Optional[str] = Form(None),
     db: Session = Depends(get_db),
 ):
-    obtener_paciente(db, paciente_id)
+    paciente = obtener_paciente(db, paciente_id)
 
     existe_previa = (
         db.query(models.Cita)
@@ -458,6 +501,9 @@ def nueva_cita(
     )
     db.add(cita)
     db.commit()
+    db.refresh(cita)
+
+    _sincronizar_creacion_google(db, cita, paciente, ya_en_google=bool(ya_en_google))
 
     return RedirectResponse(url="/pacientes/" + str(paciente_id), status_code=303)
 
@@ -479,6 +525,10 @@ def cambiar_estado_cita(
     cita.estado = nuevo_estado
     db.commit()
 
+    if nuevo_estado == "cancelada":
+        paciente = obtener_paciente(db, cita.paciente_id)
+        _sincronizar_borrado_google(db, cita, paciente)
+
     return RedirectResponse(url="/pacientes/" + str(cita.paciente_id), status_code=303)
 
 
@@ -487,13 +537,18 @@ def reagendar_cita(
     cita_id: int,
     fecha: str = Form(...),
     hora: str = Form(...),
+    ya_en_google: Optional[str] = Form(None),
     db: Session = Depends(get_db),
 ):
     cita_anterior = db.query(models.Cita).filter(models.Cita.id == cita_id).first()
     if not cita_anterior:
         raise HTTPException(status_code=404, detail="Cita no encontrada")
 
+    paciente = obtener_paciente(db, cita_anterior.paciente_id)
+
     cita_anterior.estado = "cancelada"
+    db.commit()
+    _sincronizar_borrado_google(db, cita_anterior, paciente)
 
     cita_nueva = models.Cita(
         paciente_id=cita_anterior.paciente_id,
@@ -504,6 +559,9 @@ def reagendar_cita(
     )
     db.add(cita_nueva)
     db.commit()
+    db.refresh(cita_nueva)
+
+    _sincronizar_creacion_google(db, cita_nueva, paciente, ya_en_google=bool(ya_en_google))
 
     return RedirectResponse(url="/pacientes/" + str(cita_anterior.paciente_id), status_code=303)
 
