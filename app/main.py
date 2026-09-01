@@ -1,6 +1,7 @@
 import json
 import os
 from fastapi import FastAPI, Request, Form, Depends, HTTPException
+from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
 from fastapi.responses import HTMLResponse, RedirectResponse, FileResponse
@@ -20,6 +21,7 @@ import pdf as pdf_gen
 models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
+app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 
 RUTAS_PUBLICAS = {"/login", "/olvide-password", "/restablecer-password"}
@@ -32,7 +34,7 @@ class RequiereLoginMiddleware(BaseHTTPMiddleware):
     operador, una sola contraseña, sin roles ni permisos distintos.
     """
     async def dispatch(self, request: Request, call_next):
-        if request.url.path in RUTAS_PUBLICAS:
+        if request.url.path in RUTAS_PUBLICAS or request.url.path.startswith("/static/"):
             return await call_next(request)
 
         if not request.session.get("autenticado"):
