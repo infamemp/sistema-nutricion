@@ -1,8 +1,8 @@
 # Sistema Integral de Nutrición, Documento Maestro del Proyecto
 
-**Versión:** 5.3
+**Versión:** 5.4
 **Fecha:** 1 de septiembre de 2026
-**Estado:** Fase 0 completa. Fase 1 muy avanzada, con dominio propio y HTTPS real ya en producción (`https://app.mafernut.com`). Guía de estilo cerrada. Recolección de material en curso.
+**Estado:** Fase 0 completa. Fase 1 muy avanzada. Dominio propio, HTTPS real y gráficas de progreso ya en producción (`https://app.mafernut.com`). Guía de estilo cerrada. Recolección de material en curso.
 
 ---
 
@@ -188,7 +188,12 @@ Stack, servidor, IA, base de alimentos, alcance, identidad visual y guía de est
   - **Enviar por WhatsApp (camino simple):** genera un enlace que abre WhatsApp con el PDF ya adjunto, ella solo confirma el envío dentro de WhatsApp. Sin costo, sin cuentas nuevas, funciona desde el día uno
   - Descartada la opción de imprimir directo desde el sistema: es redundante una vez que el archivo ya se puede descargar
   - **Mejora futura, no bloqueante:** API oficial de WhatsApp Business para envío automático sin confirmación manual. Requiere cuenta de negocio verificada en Meta, un proveedor intermediario (Twilio o similar), costo por mensaje, y plantillas pre-aprobadas por Meta para los primeros contactos. Se evalúa solo si el volumen de pacientes lo justifica
-- **Gráficas de progreso** (peso, porcentaje de grasa, masa muscular en el tiempo, con o sin InBody)
+- [x] **Gráficas de progreso, IMPLEMENTADAS Y VERIFICADAS (1 sep 2026).** Sección "Progreso" en el expediente, con 3 gráficas de líneas (peso, porcentaje de grasa, MME) vía Chart.js
+  - **Fuente de datos, una sola tabla:** `mediciones_inbody` es la fuente única de verdad para peso y composición corporal, venga de un reporte real de InBody o de captura manual en un follow-up (campo `origen`). Cada follow-up se liga opcionalmente vía `medicion_inbody_id`. La gráfica solo lee esta tabla, ordenada por fecha, sin necesidad de combinar fuentes
+  - **Diseño abierto a más métricas:** el JSON para Chart.js se arma en `main.py`, no en la plantilla; agregar una métrica nueva a futuro (ej. grasa visceral, tasa metabólica basal) es una línea en ese diccionario más un bloque de gráfica en la plantilla, sin rediseñar nada
+  - **Estado vacío:** con menos de 2 mediciones muestra "Aún no hay suficientes mediciones para graficar" en vez de una gráfica rota
+  - **Mostrar/ocultar** la sección completa con un botón, visible por default
+  - **Imprimir/descargar:** botón que abre el diálogo de impresión del navegador con un CSS que aísla solo la sección de Progreso (el resto de la página se oculta al imprimir). Permite guardar como PDF manualmente desde cualquier navegador. No genera un PDF en el servidor, así que por ahora no se puede enviar por correo desde aquí (se evaluará más adelante si hace falta)
 - **Carta al médico referente** (informe breve de evolución para el doctor que refirió, la redacta Claude)
 
 - [x] **Sistema de login, IMPLEMENTADO Y VERIFICADO (1 sep 2026).** Hueco de seguridad detectado y cerrado: hasta hoy, cualquiera con la IP podía ver expedientes de pacientes reales
@@ -241,6 +246,8 @@ Puntos clave:
 - **Reglas anti IA:** solo caracteres de teclado normal (nada de guiones largos, comillas curvas ni líneas de `====`), frases prohibidas, y variación natural obligatoria contra la simetría artificial. La flecha `→` sí se autoriza porque es suya
 - **Mayúsculas** solo en títulos, encabezados y etiquetas cortas. Los párrafos largos centrados en mayúsculas se eliminan
 - **Logo confirmado**, leyenda oficial "Nutrición y Salud Hormonal". `Mafer_Logo_Grande.png` para encabezados de documento y web (alta resolución, transparente), versión 360×360 para usos cuadrados (ícono, perfil), `Limon.png` como elemento decorativo suelto sin texto
+- **Marca en la interfaz web, actualizada (1 sep 2026).** El login pasó de un genérico "Sistema de Marifer" a mostrar el nombre real: "Marifer Utrilla" (título grande), "Nutrición y Salud Hormonal" (subtítulo mediano en verde), "Inicia sesión para continuar" (línea chica y discreta). Sin logo por ahora, solo texto
+- **Segundo color de marca: azul `#3B82F6`, como acento.** Se usa exclusivamente como línea de acento bajo encabezados de sección y de tabla en toda la interfaz web (no en los PDFs de dietas, que conservan solo el verde e identidad ya aprobada). No reemplaza al verde como color principal, es un acento funcional aplicado de forma consistente en las 7 plantillas de la app
 
 ---
 
@@ -368,3 +375,4 @@ Las API keys nunca van al repo. Viven en un archivo `.env` local, ya cubierto po
 | 2026-09-01 | v5.1, logout, recuperación de contraseña por correo, y cambio de proveedor de correo de SMTP a Resend (DigitalOcean bloquea los puertos SMTP por política de toda la plataforma). Dominio mafernut.com verificado en Resend. Se repite y se corrige el error de orden de middleware documentado el día anterior |
 | 2026-09-01 | v5.2, envío de dieta por correo funcionando (PDF adjunto vía Resend), edición de datos del paciente, e historial de dietas visible en el expediente. Estos dos últimos fueron huecos señalados por Michel: no se podía corregir un dato mal capturado, y una dieta aprobada se volvía inaccesible. Con esto, el ciclo completo del sistema (capturar, generar, verificar, redactar, revisar, ajustar, aprobar, descargar, enviar, y volver a consultar) queda cerrado de extremo a extremo |
 | 2026-09-01 | v5.3, dominio propio y HTTPS real en producción. Se decide `app.mafernut.com` en vez de la raíz (patrón mail.google.com vs google.com), dejando la raíz y `www` reservados para el futuro sitio público de Marifer. Registro DNS tipo A creado en modo DNS only. nginx instalado como proxy inverso, uvicorn restringido a `127.0.0.1` (puerto 8000 ya no accesible desde fuera), y certificado real de Let's Encrypt vía certbot (se descarta el modo Flexible SSL de Cloudflare por tratarse de datos clínicos reales). Favicon del logo de Marifer agregado a las 11 plantillas, servido desde `app/static/` montado en `main.py`; ajustado `RequiereLoginMiddleware` para no bloquear los archivos estáticos. Con esto queda completo el primer punto de la Fase 5 |
+| 2026-09-01 | v5.4, marca en el login actualizada ("Marifer Utrilla" / "Nutrición y Salud Hormonal" en vez de "Sistema de Marifer"), y segundo color de marca adoptado: azul `#3B82F6` como acento de línea bajo encabezados de sección y de tabla, aplicado en las 7 plantillas de la app. **Gráficas de progreso implementadas:** 3 gráficas de líneas (peso, % grasa, MME) vía Chart.js, leyendo `mediciones_inbody` como fuente única (sea de InBody real o captura manual), con botón de mostrar/ocultar e impresión/descarga aislando solo esa sección. Diseño dejado abierto para agregar más métricas de seguimiento a futuro sin rediseñar. Con esto, la Fase 4 queda completa salvo la carta al médico referente |
