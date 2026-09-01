@@ -1,7 +1,7 @@
 # RESTORE_POINT_v1 — Sistema Nutrición
 
-**Fecha:** 28 de agosto de 2026
-**Estado:** Fase 0 completa. Fase 1 arrancada: esqueleto de la aplicación verificado de extremo a extremo en el droplet.
+**Fecha:** 1 de septiembre de 2026 (actualizado)
+**Estado:** Fase 0 completa. Fase 1 muy avanzada, con login, envío de dietas por correo, historial de versiones y edición de paciente funcionando. Dominio propio y HTTPS real en producción: `https://app.mafernut.com`.
 
 ---
 
@@ -212,24 +212,33 @@ Archivos en `/opt/sistema-nutricion/`: `alimentos.py` (orquestador, 109 líneas)
 
 Arquitectura de tres fuentes con jerarquía, detallada en `docs/FUENTES_ALIMENTOS.md`: BAM local para alimentos mexicanos, USDA para genéricos internacionales, OpenFoodFacts restringido a productos de marca con verificación humana.
 
-## 🔵 EN PROCESO AHORA MISMO (1 sep 2026): dominio, HTTPS y favicon
+## ✅ COMPLETADO (1 sep 2026): dominio, HTTPS y favicon
 
 **Contexto:** Michel pidió una URL decente para que Marifer use el sistema, HTTPS, y un favicon, antes de agregar graficas de progreso.
 
 **Decision tomada:** el sistema vive en `app.mafernut.com`, NO en la raiz `mafernut.com`. La raiz y `www` quedan reservados para el futuro sitio publico de Marifer (paquetes de tratamiento, guias, videos, capacitaciones). Es un patron comun (como mail.google.com vs google.com).
 
-**Estado exacto al pausar:**
-- [ ] Registro DNS tipo A, `app` -> `165.22.7.251`, en Cloudflare, en modo **DNS only** (nube gris, no naranja). Michel lo estaba creando cuando se pauso la sesion, confirmar si ya quedo
-- [ ] Verificar que `app.mafernut.com` resuelve antes de seguir
-- [ ] Instalar nginx como proxy inverso (hoy uvicorn expone el puerto 8000 directo, hay que ponerlo detras de nginx)
-- [ ] Instalar certbot y generar certificado real de Let's Encrypt para `app.mafernut.com` (modo DNS only necesario para que el reto HTTP-01 de certbot llegue directo al droplet)
-- [ ] Cambiar `sistema-nutricion.service` para que uvicorn escuche solo en `127.0.0.1:8000` (no `0.0.0.0`), ya que nginx sera el que reciba trafico publico
-- [ ] Favicon: generar desde `assets/logo/logo_marifer.svg` (ya existe, vectorial), convertir a `.ico` y `.png`, servirlo desde la aplicacion
-- [ ] Verificar que el login y todo el flujo funcionan sobre `https://app.mafernut.com`
+**Todo lo siguiente quedó hecho y verificado en esta sesión:**
+- [x] Registro DNS tipo A, `app` -> `165.22.7.251`, en Cloudflare, en modo **DNS only** (nube gris). Verificado con `nslookup app.mafernut.com` desde la PC de Michel
+- [x] nginx instalado como proxy inverso, bloque de servidor en `/etc/nginx/sites-available/app.mafernut.com`, enlazado en `sites-enabled/`, sitio default removido
+- [x] Certificado real de Let's Encrypt generado con `certbot --nginx -d app.mafernut.com` ("Successfully deployed certificate")
+- [x] `sistema-nutricion.service` cambiado para que uvicorn escuche solo en `127.0.0.1:8000`; verificado que `http://165.22.7.251:8000` ya rechaza conexiones desde fuera ("connection refused")
+- [x] Favicon generado desde `assets/logo/logo_marifer.svg` con `rsvg-convert` (PNG en 16/32/48/180 px) más `imagemagick` (`.ico` combinado), guardado en `app/static/`
+- [x] Login y todo el flujo verificados funcionando sobre `https://app.mafernut.com`
+
+**Trabajo extra no previsto, surgido al implementar el favicon:**
+- **Montaje de `static/` en `main.py`:** se agregó `from fastapi.staticfiles import StaticFiles` (junto a los imports de FastAPI, antes de `app = FastAPI()`) y `app.mount("/static", StaticFiles(directory="static"), name="static")` justo después. Nota para quien retome: el import debe ir *antes* de usarlo, un primer intento lo dejó después por accidente y causó `NameError`
+- **Ajuste a `RequiereLoginMiddleware`:** por defecto bloqueaba `/static/favicon.ico` y redirigía a `/login` (confirmado en los logs: `303 See Other`). Se cambió la condición en `main.py` para dejar pasar cualquier ruta que empiece con `/static/` sin exigir sesión:
+  ```python
+  if request.url.path in RUTAS_PUBLICAS or request.url.path.startswith("/static/"):
+  ```
+- **Etiquetas del favicon** agregadas al `<head>` de las 11 plantillas HTML (una línea `<link rel="icon">` y otra `<link rel="apple-touch-icon">` después de `<head>` en cada una)
 
 **Por que no se eligio "Flexible SSL" de Cloudflare (mas facil):** cifra solo navegador-Cloudflare, no Cloudflare-servidor. Como el sistema mueve datos clinicos reales, se decidio instalar un certificado real en el origen (nginx + certbot), cifrado de extremo a extremo. El proxy de Cloudflare (nube naranja) se puede activar despues como mejora opcional, una vez que el certificado del origen ya funcione.
 
-**Pendiente ya identificado antes de esto (no se te olvide):** graficas de progreso, es lo que sigue una vez cerrado esto.
+**Commit de esta sesión:** `main.py`, las 11 plantillas de `app/templates/`, y los dos archivos nuevos `app/static/favicon.ico` y `app/static/apple-touch-icon.png`.
+
+**Siguiente pendiente:** graficas de progreso.
 
 ---
 
@@ -413,3 +422,5 @@ Verificado con dos casos: paciente de 85 kg con GLP-1 (objetivo 105 g, detectó 
 | 2026-08-30 | Motor de reglas clínicas implementado y verificado. Los criterios de prescripción de la nutrióloga quedan codificados y editables sin tocar código |
 | 2026-08-30 | Arquitectura de fuentes de alimentos implementada y verificada: BAM (local, 2045 alimentos mexicanos), USDA (API, dominio público) y OpenFoodFacts (restringido a marcas). Se descartó OpenFoodFacts como fuente principal tras medir su precisión: 3 de 20 |
 | 2026-08-30 | Módulo de follow-up terminado y verificado. Incluye tres automatizaciones: número de consulta autoasignado, creación del registro de medición si se llenan esos campos, y agendado automático de la próxima cita. Al abrir una consulta nueva muestra los ajustes acordados y el punto de mejora de la anterior |
+| 2026-09-01 | Dominio y HTTPS real: DNS tipo A de `app.mafernut.com` creado y verificado, nginx como proxy inverso, certificado real de Let's Encrypt vía certbot, puerto 8000 cerrado al público (uvicorn solo en `127.0.0.1`) |
+| 2026-09-01 | Favicon del logo de Marifer generado y agregado a las 11 plantillas; requirió montar `static/` en `main.py` (con corrección de orden de import) y ajustar `RequiereLoginMiddleware` para no bloquear `/static/`. Cambios subidos al repo (commit: "Agregar HTTPS en app.mafernut.com y favicon del sitio") |

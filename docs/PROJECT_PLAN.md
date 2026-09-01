@@ -1,8 +1,8 @@
 # Sistema Integral de Nutrición, Documento Maestro del Proyecto
 
-**Versión:** 5.2
-**Fecha:** 30 de agosto de 2026
-**Estado:** Fase 0 completa. Infraestructura lista. Guía de estilo cerrada. Recolección de material en curso.
+**Versión:** 5.3
+**Fecha:** 1 de septiembre de 2026
+**Estado:** Fase 0 completa. Fase 1 muy avanzada, con dominio propio y HTTPS real ya en producción (`https://app.mafernut.com`). Guía de estilo cerrada. Recolección de material en curso.
 
 ---
 
@@ -212,6 +212,10 @@ Stack, servidor, IA, base de alimentos, alcance, identidad visual y guía de est
 - **Regla de middleware reforzada con comentario en el propio código** (`main.py`), tras repetirse el mismo error de orden tres veces al reescribir el archivo sin conservar la corrección
 
 ### Fase 5, Plataforma pulida
+- [x] **Dominio y HTTPS real, IMPLEMENTADO Y VERIFICADO (1 sep 2026).** El sistema vive en `app.mafernut.com`, no en la raíz `mafernut.com`: la raíz y `www` quedan reservados para el futuro sitio público de Marifer (paquetes de tratamiento, guías, videos). Registro DNS tipo A en Cloudflare, modo **DNS only** (nube gris), necesario para que el reto HTTP-01 de certbot llegue directo al droplet
+  - **nginx** instalado como proxy inverso; uvicorn pasó de escuchar en `0.0.0.0:8000` (expuesto al público) a `127.0.0.1:8000` (solo local), verificado que el puerto 8000 ya rechaza conexiones externas
+  - **Certificado real de Let's Encrypt** vía `certbot --nginx`, cifrado de extremo a extremo navegador-servidor. Se descartó el modo "Flexible SSL" de Cloudflare (solo cifra navegador-Cloudflare, no Cloudflare-servidor) por tratarse de datos clínicos reales. El proxy naranja de Cloudflare queda como mejora opcional futura, una vez que el certificado de origen ya funciona
+  - **Favicon** generado desde el logo vectorial (`rsvg-convert` + `imagemagick`), servido desde `app/static/`, montado en `main.py` con `StaticFiles`. Se ajustó `RequiereLoginMiddleware` para dejar pasar cualquier ruta bajo `/static/` sin exigir sesión iniciada
 - Interfaz unificada, responsiva, tablet first
 - **Respaldo diario cifrado de la base de datos a Google Drive** (tarea nocturna)
 
@@ -363,3 +367,4 @@ Las API keys nunca van al repo. Viven en un archivo `.env` local, ya cubierto po
 | 2026-09-01 | v5.0, sistema de login implementado y verificado. Cierra el hueco de seguridad más urgente del proyecto: hasta ahora cualquiera con la IP podía ver expedientes reales. La contraseña se generó directo en el servidor, nunca pasó por el chat. Se documenta un error de orden de middleware en Starlette (el último agregado se ejecuta primero) que causaba un fallo en cada petición hasta corregirlo |
 | 2026-09-01 | v5.1, logout, recuperación de contraseña por correo, y cambio de proveedor de correo de SMTP a Resend (DigitalOcean bloquea los puertos SMTP por política de toda la plataforma). Dominio mafernut.com verificado en Resend. Se repite y se corrige el error de orden de middleware documentado el día anterior |
 | 2026-09-01 | v5.2, envío de dieta por correo funcionando (PDF adjunto vía Resend), edición de datos del paciente, e historial de dietas visible en el expediente. Estos dos últimos fueron huecos señalados por Michel: no se podía corregir un dato mal capturado, y una dieta aprobada se volvía inaccesible. Con esto, el ciclo completo del sistema (capturar, generar, verificar, redactar, revisar, ajustar, aprobar, descargar, enviar, y volver a consultar) queda cerrado de extremo a extremo |
+| 2026-09-01 | v5.3, dominio propio y HTTPS real en producción. Se decide `app.mafernut.com` en vez de la raíz (patrón mail.google.com vs google.com), dejando la raíz y `www` reservados para el futuro sitio público de Marifer. Registro DNS tipo A creado en modo DNS only. nginx instalado como proxy inverso, uvicorn restringido a `127.0.0.1` (puerto 8000 ya no accesible desde fuera), y certificado real de Let's Encrypt vía certbot (se descarta el modo Flexible SSL de Cloudflare por tratarse de datos clínicos reales). Favicon del logo de Marifer agregado a las 11 plantillas, servido desde `app/static/` montado en `main.py`; ajustado `RequiereLoginMiddleware` para no bloquear los archivos estáticos. Con esto queda completo el primer punto de la Fase 5 |
