@@ -258,7 +258,7 @@ ESQUEMA_PLAN = """{
 
 def construir_prompt(paciente, historia, medicion, padecimientos=None,
                      usa_glp1=False, es_deportista=False, esta_embarazada=False,
-                     opciones_previas=None, incluir_kb=True):
+                     opciones_previas=None, retroalimentacion_followup=None, incluir_kb=True):
     """
     Arma el prompt completo para Gemini.
     """
@@ -322,12 +322,37 @@ def construir_prompt(paciente, historia, medicion, padecimientos=None,
         partes.append("\n  " + pp["motivo"])
         partes.append("\n  " + pp["aplicacion"])
 
-    if opciones_previas:
+    if opciones_previas or retroalimentacion_followup:
         partes.append("\n\n" + ("=" * 70) + "\n")
-        partes.append("OPCIONES YA PRESCRITAS A ESTE PACIENTE\n")
-        partes.append("No repitas estas opciones. Propon alternativas distintas.\n\n")
-        for o in opciones_previas[:30]:
-            partes.append("  - " + str(o) + "\n")
+        partes.append("CONTINUIDAD CON EL PLAN ANTERIOR\n")
+        partes.append(
+            "Lo siguiente es INFORMACION DE CONTEXTO, no una instruccion de repetir "
+            "ni de evitar. Usa tu criterio clinico igual que con el resto del "
+            "expediente: a veces lo correcto es mantener una opcion que le funciono "
+            "bien al paciente y solo ajustar porciones para el nuevo objetivo; otras "
+            "veces, sobre todo si hubo dificultad o disgusto, lo correcto es cambiar "
+            "de fondo. Decide caso por caso.\n\n"
+        )
+
+        if retroalimentacion_followup:
+            partes.append("COMO LE FUE AL PACIENTE CON EL PLAN ANTERIOR (ultimo seguimiento):\n")
+            etiquetas = {
+                "que_le_gusto": "Que le gusto",
+                "que_no_le_gusto": "Que no le gusto",
+                "cambios_que_hizo": "Cambios que hizo por su cuenta",
+                "en_que_puede_mejorar": "En que puede mejorar",
+                "ajustes_acordados": "Ajustes ya acordados con la nutriologa",
+            }
+            for campo, etiqueta in etiquetas.items():
+                valor = retroalimentacion_followup.get(campo)
+                if valor:
+                    partes.append("  " + etiqueta + ": " + str(valor) + "\n")
+            partes.append("\n")
+
+        if opciones_previas:
+            partes.append("OPCIONES YA PRESCRITAS ANTERIORMENTE:\n\n")
+            for o in opciones_previas[:30]:
+                partes.append("  - " + str(o) + "\n")
 
     if incluir_kb:
         temas = temas_del_caso(padecimientos, usa_glp1)
@@ -425,7 +450,7 @@ def construir_prompt(paciente, historia, medicion, padecimientos=None,
 
 def generar_plan(paciente, historia, medicion, padecimientos=None,
                  usa_glp1=False, es_deportista=False, esta_embarazada=False,
-                 opciones_previas=None, incluir_kb=True):
+                 opciones_previas=None, retroalimentacion_followup=None, incluir_kb=True):
     """
     Genera el plan tecnico completo para un paciente.
     Devuelve el plan como diccionario, mas metadatos del proceso.
@@ -437,6 +462,7 @@ def generar_plan(paciente, historia, medicion, padecimientos=None,
         es_deportista=es_deportista,
         esta_embarazada=esta_embarazada,
         opciones_previas=opciones_previas,
+        retroalimentacion_followup=retroalimentacion_followup,
         incluir_kb=incluir_kb,
     )
 

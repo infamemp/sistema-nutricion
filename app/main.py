@@ -834,7 +834,46 @@ def generar_dieta(paciente_id: int, db: Session = Depends(get_db)):
     if historia_dict.get("padecimientos_diagnosticados"):
         padecimientos.append(historia_dict["padecimientos_diagnosticados"])
 
-    resultado_plan = plan_gen.generar_plan(paciente_dict, historia_dict, medicion_dict, padecimientos=padecimientos)
+    # Continuidad con el plan anterior: se le pasa a Gemini como contexto,
+    # nunca como instruccion de repetir o evitar (ver plan_generador.py).
+    ultima_aprobada = (
+        db.query(models.DietaVersion)
+        .filter(models.DietaVersion.paciente_id == paciente_id)
+        .filter(models.DietaVersion.estado == "aprobada")
+        .order_by(models.DietaVersion.version.desc())
+        .first()
+    )
+    opciones_previas = None
+    if ultima_aprobada:
+        filas_opciones = (
+            db.query(models.OpcionPrescrita)
+            .filter(models.OpcionPrescrita.dieta_id == ultima_aprobada.id)
+            .all()
+        )
+        if filas_opciones:
+            opciones_previas = [f.descripcion for f in filas_opciones if f.descripcion]
+
+    ultimo_followup = (
+        db.query(models.FollowUp)
+        .filter(models.FollowUp.paciente_id == paciente_id)
+        .order_by(models.FollowUp.numero_consulta.desc())
+        .first()
+    )
+    retroalimentacion = None
+    if ultimo_followup:
+        retroalimentacion = {
+            "que_le_gusto": ultimo_followup.que_le_gusto,
+            "que_no_le_gusto": ultimo_followup.que_no_le_gusto,
+            "cambios_que_hizo": ultimo_followup.cambios_que_hizo,
+            "en_que_puede_mejorar": ultimo_followup.en_que_puede_mejorar,
+            "ajustes_acordados": ultimo_followup.ajustes_acordados,
+        }
+
+    resultado_plan = plan_gen.generar_plan(
+        paciente_dict, historia_dict, medicion_dict, padecimientos=padecimientos,
+        opciones_previas=opciones_previas,
+        retroalimentacion_followup=retroalimentacion,
+    )
     resultado_doc = redactor.redactar(resultado_plan["plan"], nombre_paciente=paciente.nombre_completo)
 
     ultima = (
@@ -902,6 +941,20 @@ def aprobar_dieta(paciente_id: int, dieta_id: int, db: Session = Depends(get_db)
         raise HTTPException(status_code=404, detail="Version de dieta no encontrada")
 
     dieta.estado = "aprobada"
+
+    # Registro de opciones prescritas: se guarda solo al aprobar, nunca en
+    # un borrador, para que "ya se le dio esto" signifique que de verdad
+    # llego al paciente.
+    guardado = _cargar_contenido(dieta)
+    menu = guardado.get("documento", {}).get("menu", {})
+    for tipo_comida, datos in menu.items():
+        for opcion_texto in datos.get("opciones", []) or []:
+            db.add(models.OpcionPrescrita(
+                dieta_id=dieta.id,
+                tipo_comida=tipo_comida,
+                descripcion=opcion_texto,
+            ))
+
     db.commit()
 
     return RedirectResponse(url="/pacientes/" + str(paciente_id), status_code=303)
