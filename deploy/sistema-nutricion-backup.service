@@ -1,0 +1,6 @@
+[Unit]
+Description=Respaldo diario cifrado a Google Drive
+
+[Service]
+Type=oneshot
+ExecStart=/opt/sistema-nutricion/backup.sh

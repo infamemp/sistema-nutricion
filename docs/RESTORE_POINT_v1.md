@@ -1,7 +1,7 @@
 # RESTORE_POINT_v1 — Sistema Nutrición
 
-**Fecha:** 1 de septiembre de 2026 (actualizado)
-**Estado:** Fase 0 completa. Fase 1 muy avanzada, con login, envío de dietas por correo, historial de versiones y edición de paciente funcionando. Dominio propio y HTTPS real en producción: `https://app.mafernut.com`.
+**Fecha:** 1 de septiembre de 2026 (actualizado, cierre de sesión)
+**Estado:** Fase 0 completa. Fase 1 muy avanzada. Fase 4 completa salvo la carta al médico referente. Fase 5 casi completa: dominio, HTTPS, favicon y respaldo diario cifrado a Google Drive ya en producción; solo falta pulir la interfaz tablet-first. Sistema en vivo en `https://app.mafernut.com`.
 
 ---
 
@@ -72,7 +72,7 @@ Type=simple
 User=root
 WorkingDirectory=/opt/sistema-nutricion
 Environment="PATH=/opt/sistema-nutricion/venv/bin"
-ExecStart=/opt/sistema-nutricion/venv/bin/uvicorn main:app --host 0.0.0.0 --port 8000
+ExecStart=/opt/sistema-nutricion/venv/bin/uvicorn main:app --host 127.0.0.1 --port 8000
 Restart=always
 RestartSec=5
 
@@ -92,7 +92,7 @@ WantedBy=multi-user.target
 
 **Cambio de flujo importante:** durante el desarrollo inicial se usaba `uvicorn main:app --host 0.0.0.0 --reload` en primer plano, que recargaba solo al guardar cambios. Con el servicio, cada cambio de código requiere reiniciar manualmente con `systemctl restart sistema-nutricion`.
 
-**Nota de seguridad esperada:** el navegador muestra "Not secure" porque se accede por `http://` directo a la IP, sin certificado SSL. Es normal en esta etapa; el certificado se instala en la Fase 5, cuando se conecte el dominio `mafernut.com` a la aplicación real.
+**Nota de seguridad, ya resuelta (ver sección de dominio y HTTPS más abajo):** el sistema corre con HTTPS real sobre `https://app.mafernut.com` desde el 1 de septiembre de 2026, con certificado de Let's Encrypt vía nginx. `uvicorn` ya no escucha en `0.0.0.0`, solo en `127.0.0.1` (el `ExecStart` de arriba ya refleja esto). El puerto 8000 no es accesible desde fuera del servidor.
 
 ---
 
@@ -181,10 +181,10 @@ pip install -r requirements.txt
 - [ ] Carta al médico referente
 - [ ] Módulo de acciones de salida: correo, descarga, WhatsApp por enlace
 
-### Fase 5 — Plataforma pulida ⬜ PENDIENTE
-- [ ] Certificado SSL sobre `mafernut.com`
+### Fase 5 — Plataforma pulida 🔵 CASI COMPLETA
+- [x] Certificado SSL sobre `app.mafernut.com`
 - [ ] Interfaz unificada, tablet-first
-- [ ] Respaldo diario cifrado a Google Drive
+- [x] Respaldo diario cifrado a Google Drive
 
 ### Fase 6 — Portal del paciente y pagos ⬜ PENDIENTE (opcional, se decide al llegar)
 - [ ] Acceso web del paciente
@@ -242,6 +242,51 @@ Arquitectura de tres fuentes con jerarquía, detallada en `docs/FUENTES_ALIMENTO
 
 ---
 
+## ✅ COMPLETADO (1 sep 2026): marca en el login y acento azul
+
+- Login actualizado: "Marifer Utrilla" (título grande) / "Nutrición y Salud Hormonal" (subtítulo verde) / "Inicia sesión para continuar" (línea chica), en vez del genérico "Sistema de Marifer". Sin logo, solo texto
+- Segundo color de marca adoptado: azul `#3B82F6` (es el `blue-500` nativo de Tailwind, no requirió color personalizado), usado únicamente como línea de acento (`border-b-2 border-blue-500`) bajo encabezados de sección y de tabla, en las 7 plantillas de la app: `login.html`, `lista_pacientes.html`, `expediente.html`, `ver_dieta.html`, `follow_up.html`, `historia_clinica.html`, `alta_rapida.html`. No se tocó ningún PDF de dieta, que conserva solo la identidad verde ya aprobada
+
+## ✅ COMPLETADO (1 sep 2026): gráficas de progreso
+
+- Sección "Progreso" en `expediente.html`, con 3 gráficas de líneas (peso, % de grasa, MME) vía Chart.js (CDN: `https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js` — la versión fijada `4.4.4` en `cdnjs.cloudflare.com` que se probó primero no existía y causaba `Chart is not defined` en consola)
+- **Fuente de datos, una sola tabla:** `mediciones_inbody`, sea que la medición venga de un reporte real de InBody o de captura manual en un follow-up (`origen="manual"`). La consulta se agregó en `ver_expediente()` en `main.py`, entre `followups` y `dietas`, armando también un `mediciones_json` listo para Chart.js (JSON construido en Python, no en la plantilla, para que agregar una métrica nueva a futuro sea una línea más en ese diccionario)
+- Estado vacío: con menos de 2 mediciones, muestra "Aún no hay suficientes mediciones para graficar"
+- Botón de mostrar/ocultar toda la sección (visible por default), y botón "Imprimir/Descargar" que llama a `window.print()` con CSS `@media print` que aísla solo la sección `#seccion-progreso`, ocultando el resto de la página al imprimir o guardar como PDF
+
+## ✅ COMPLETADO (1 sep 2026): respaldo diario cifrado a Google Drive
+
+**Decisión de arquitectura importante, con un giro a medio camino:** el plan original era usar una **cuenta de servicio** de Google (sin login interactivo). Se descubrió en la práctica que **las cuentas de servicio no tienen cuota de almacenamiento en un Drive personal** (`storageQuotaExceeded` al primer intento de escritura) — esa función solo existe en Google Workspace (Shared Drives), que Marifer no tiene. Confirmado en la documentación oficial de `rclone` y reportes de otros usuarios con el mismo caso.
+
+**Solución adoptada: OAuth como la cuenta personal de Marifer**, autorizada una sola vez (token con renovación automática, no expira mientras se use). Esta misma arquitectura es la que se va a reutilizar para la futura sincronización de sus 2 calendarios de Google (pendiente, Fase 1/6) — no fue trabajo perdido.
+
+**Alcance del permiso otorgado:** por una limitación de `rclone authorize`, el permiso concedido terminó siendo de **Drive completo** (`https://www.googleapis.com/auth/drive`), no el más acotado `drive.file` que se buscaba originalmente. Decisión consciente (Michel confirmó seguir así en vez de repetir la videollamada de autorización): la app solo usa la carpeta de respaldos que Marifer compartió, pero técnicamente el token permite más. Si en el futuro se quiere acotar, hay que rehacer la autorización con `rclone authorize "drive:scope=drive.file" client_id client_secret`.
+
+**Piezas de la infraestructura:**
+
+| Archivo/dato | Ubicación | Contenido | ¿Va al repo? |
+|---|---|---|---|
+| Proyecto de Google Cloud | `sistema-nutricion` (consola web) | APIs activas: Drive, Calendar. OAuth consent screen publicado en "Production" | — |
+| Client ID / Secret OAuth | `181382395592-es248860rhqqmoqqajjfssj2qmgfoa0r.apps.googleusercontent.com` / `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` | Tipo "Desktop app", nombre `rclone-sistema-nutricion` | No (viven solo en `rclone.conf` del servidor) |
+| Página de política de privacidad | `app/static/legal-oauth.html` | Exigida por Google para publicar el OAuth en producción. Pública (`/static/` no requiere login) | Sí |
+| Config de `rclone` | `/root/.config/rclone/rclone.conf` en el servidor, remote `gdrive-marifer` | Token OAuth de la cuenta de Marifer, con refresh automático | No |
+| Cuenta de servicio (`google-service-account.json`) | `/opt/sistema-nutricion/google-service-account.json` | **Ya no se usa** (era el intento fallido). Se puede borrar del servidor si se quiere, no se usa en `backup.sh` | No, nunca |
+| Frase de cifrado GPG | `/opt/sistema-nutricion/.backup_passphrase` (permisos 600) + copiada en el gestor de contraseñas de Michel | Generada aleatoriamente por Claude, 32 caracteres. **Sin ella, los respaldos en Drive son irrecuperables** | No, nunca |
+| Carpeta de Drive de Marifer | ID `1AexbrpkVhn-F67SyeFx7y145Tua4q4kt` ("Respaldos Sistema Nutrición") | Compartida por Marifer, ahora con permiso de escritura para la cuenta OAuth autorizada | — |
+| Script de respaldo | `/opt/sistema-nutricion/backup.sh` (ejecutable) | Empaqueta `sistema_nutricion.db` + `.env`, cifra con GPG (AES256 simétrico), sube con `rclone`, borra temporales, y rota (borra de Drive lo mayor a 30 días) | Sí, en `deploy/backup.sh` |
+| Programación | `systemd` timer, no `cron` | `sistema-nutricion-backup.service` + `.timer`, corre diario a las 3:00 AM UTC, `Persistent=true` (si el droplet estuvo apagado a esa hora, corre al encender) | Sí, en `deploy/` |
+
+**Verificado de extremo a extremo:** respaldo manual generado, subido, y **restaurado de prueba** (descargado de Drive, descifrado con la frase guardada, contenido confirmado con `tar -tzf`). El timer quedó activo y programado para la madrugada del 2 de septiembre.
+
+**Cómo restaurar un respaldo en el futuro** (por si hace falta reconstruir el droplet desde cero):
+```bash
+rclone lsf gdrive-marifer: --drive-root-folder-id 1AexbrpkVhn-F67SyeFx7y145Tua4q4kt   # ver respaldos disponibles
+rclone copy gdrive-marifer:NOMBRE_DEL_ARCHIVO.tar.gz.gpg . --drive-root-folder-id 1AexbrpkVhn-F67SyeFx7y145Tua4q4kt
+gpg --batch --yes --passphrase-file /opt/sistema-nutricion/.backup_passphrase --decrypt -o restaurado.tar.gz NOMBRE_DEL_ARCHIVO.tar.gz.gpg
+tar -xzf restaurado.tar.gz   # extrae sistema_nutricion.db y .env
+```
+Si el droplet es nuevo y `rclone` no está configurado todavía, hay que volver a correr `rclone config create gdrive-marifer drive client_id ... client_secret ... token '...'` con las credenciales guardadas (client_id y secret están en esta tabla; el token específico habría que regenerarlo si expiró, repitiendo el proceso de autorización con Marifer).
+
 ## ⚠️ REGLA CRÍTICA, LEER ANTES DE TOCAR main.py
 
 **El orden de `app.add_middleware()` ya causó el mismo error DOS VECES.** En Starlette, el último middleware agregado es el que se ejecuta PRIMERO en cada petición. El orden correcto en este proyecto es:
@@ -258,6 +303,14 @@ Si `SessionMiddleware` queda ANTES que `RequiereLoginMiddleware` en el código (
 grep -n "app.add_middleware\|class RequiereLoginMiddleware" main.py
 ```
 `RequiereLoginMiddleware` debe aparecer, y el `add_middleware(RequiereLoginMiddleware)` debe estar ANTES del `add_middleware(SessionMiddleware...)`.
+
+**Lecciones operativas nuevas de esta sesión (1 sep 2026), para no repetir el mismo tropiezo:**
+- Michel trabaja en **dos computadoras distintas** (`E:\Dev\github\...` y `C:\Dev\Github\...`), cada una con su propio usuario de Windows. Un archivo descargado o generado en una **no existe** en la otra — antes de dar una ruta o comando de búsqueda, confirmar en cuál máquina se está.
+- **PowerShell no expande comodines (`*`) al llamar a `scp.exe`** (a diferencia de otros programas). Si se necesita el nombre exacto de un archivo, pedirlo con `dir` o `Get-ChildItem` primero, nunca asumir que `scp archivo*.ext destino` va a funcionar.
+- `scp` y comandos de Windows (`dir`, `cd`, rutas con `E:\`) **nunca deben correrse dentro de una sesión SSH activa** — si el prompt muestra `root@sistema-nutricion:...`, hay que hacer `exit` primero. Confundir esto genera errores de "no se puede resolver el host" muy despistantes.
+- Para editar `main.py` u otro archivo del servidor: **siempre el archivo completo generado por Claude, nunca localizar y editar un bloque a mano por SSH.** Único caso aceptable para `sed`/sustitución de una línea puntual: cuando el cambio es de verdad de una sola línea aislada (ej. corregir una URL de CDN), y aun así conviene confirmarlo con el usuario antes de tocar el archivo que está pendiente de bajar al repo.
+- **Autenticación SSH sin contraseña configurada** (1 sep 2026): se copió la llave pública existente de Michel (`~/.ssh/id_ed25519.pub`) a `~/.ssh/authorized_keys` del droplet. Desde entonces, `ssh`/`scp` hacia `165.22.7.251` no vuelven a pedir contraseña.
+- **Antes de dar por buena una implementación de un chat viejo, verificar el estado real del código en el servidor** (con `grep`/`cat`), no confiar solo en lo que dice la documentación — la documentación se desactualiza más rápido que el código.
 
 ---
 
@@ -424,3 +477,6 @@ Verificado con dos casos: paciente de 85 kg con GLP-1 (objetivo 105 g, detectó 
 | 2026-08-30 | Módulo de follow-up terminado y verificado. Incluye tres automatizaciones: número de consulta autoasignado, creación del registro de medición si se llenan esos campos, y agendado automático de la próxima cita. Al abrir una consulta nueva muestra los ajustes acordados y el punto de mejora de la anterior |
 | 2026-09-01 | Dominio y HTTPS real: DNS tipo A de `app.mafernut.com` creado y verificado, nginx como proxy inverso, certificado real de Let's Encrypt vía certbot, puerto 8000 cerrado al público (uvicorn solo en `127.0.0.1`) |
 | 2026-09-01 | Favicon del logo de Marifer generado y agregado a las 11 plantillas; requirió montar `static/` en `main.py` (con corrección de orden de import) y ajustar `RequiereLoginMiddleware` para no bloquear `/static/`. Cambios subidos al repo (commit: "Agregar HTTPS en app.mafernut.com y favicon del sitio") |
+| 2026-09-01 | Marca actualizada en el login ("Marifer Utrilla" / "Nutrición y Salud Hormonal") y acento azul `#3B82F6` aplicado como línea bajo encabezados en las 7 plantillas de la app |
+| 2026-09-01 | Gráficas de progreso implementadas (peso, % grasa, MME) vía Chart.js, leyendo `mediciones_inbody`. Se corrigió sobre la marcha una versión de CDN que no existía. Se agregó mostrar/ocultar e imprimir/descargar |
+| 2026-09-01 | Respaldo diario cifrado a Google Drive implementado y verificado de extremo a extremo (incluye restauración de prueba). Se descubrió a medio camino que las cuentas de servicio de Google no funcionan con Drive personal; se cambió a autorización OAuth de la cuenta de Marifer, arquitectura reutilizable para la futura sincronización de calendarios. Programado con systemd timer, 3:00 AM diario, retención de 30 días. **Con esto, la Fase 5 queda completa salvo pulir la interfaz tablet-first** |
