@@ -143,15 +143,15 @@
                                 class="text-xs text-green-700 hover:underline">Reagendar</button>
                         <form method="post" action="/citas/{{ c.id }}/estado" class="inline">
                             <input type="hidden" name="nuevo_estado" value="completada">
-                            <button type="submit" class="text-xs text-green-700 hover:underline">Marcar completada</button>
+                            <button type="submit" onclick="return confirm('¿Marcar como completada?')" class="text-xs text-green-700 hover:underline">Marcar completada</button>
                         </form>
                         <form method="post" action="/citas/{{ c.id }}/estado" class="inline">
                             <input type="hidden" name="nuevo_estado" value="no_asistio">
-                            <button type="submit" class="text-xs text-orange-600 hover:underline">No asistió</button>
+                            <button type="submit" onclick="return confirm('¿Confirmar que no asistió?')" class="text-xs text-orange-600 hover:underline">No asistió</button>
                         </form>
                         <form method="post" action="/citas/{{ c.id }}/estado" class="inline">
                             <input type="hidden" name="nuevo_estado" value="cancelada">
-                            <button type="submit" class="text-xs text-gray-500 hover:underline">Cancelar</button>
+                            <button type="submit" onclick="return confirm('¿Cancelar esta cita?')" class="text-xs text-gray-500 hover:underline">Cancelar</button>
                         </form>
                     </div>
 
@@ -168,7 +168,7 @@
                             <input type="checkbox" name="ya_en_google" class="text-green-600 focus:ring-green-400">
                             Esta cita ya está en Google Calendar (no duplicar)
                         </label>
-                        <button type="submit"
+                        <button type="submit" onclick="return confirm('¿Confirmar el cambio de fecha?')"
                                 class="bg-green-600 hover:bg-green-700 text-white text-xs font-medium px-3 py-2 rounded-lg transition">
                             Confirmar nueva fecha
                         </button>
