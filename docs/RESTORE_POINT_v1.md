@@ -1,7 +1,7 @@
 # RESTORE_POINT_v1 — Sistema Nutrición
 
 **Fecha:** 1 de septiembre de 2026 (actualizado, cierre de sesión)
-**Estado:** Fase 0 completa. Fase 1 muy avanzada. Fase 4 completa salvo la carta al médico referente. Fase 5 casi completa: dominio, HTTPS, favicon y respaldo diario cifrado a Google Drive ya en producción; solo falta pulir la interfaz tablet-first. Sistema en vivo en `https://app.mafernut.com`.
+**Estado:** Fase 0 completa. Fase 1 prácticamente completa (Google Calendar, InBody, opciones prescritas, todo implementado hoy). Fase 4 completa salvo la carta al médico referente. Fase 5 casi completa: dominio, HTTPS, favicon y respaldo diario a Google Drive en producción; solo falta pulir la interfaz tablet-first. Sistema en vivo en `https://app.mafernut.com`.
 
 ---
 
@@ -138,7 +138,7 @@ pip install -r requirements.txt
 - [x] Tabla de Equivalencias Nutrimentales propia (reemplaza el SMAE, evita infracción de derechos de autor)
 - [x] Aviso de Privacidad (LFPDPPP 2025), borrador completo
 
-### Fase 1 — Base de datos y plantillas 🔵 EN CURSO
+### Fase 1 — Base de datos y plantillas 🔵 CASI COMPLETA
 - [x] Python 3.12 confirmado en el droplet
 - [x] Entorno virtual creado y funcionando
 - [x] FastAPI + Uvicorn + Jinja2 + python-multipart instalados
@@ -148,14 +148,14 @@ pip install -r requirements.txt
 - [x] Formulario de alta rápida (datos básicos del paciente + agendar cita), funcionando y verificado
 - [x] Lista de pacientes, funcionando
 - [x] Vista de expediente del paciente (datos de contacto, citas con estado, estado de historia clínica), funcionando
-- [x] Gestión de citas desde el expediente: agendar nueva, reagendar (cancela la anterior y crea nueva, dejando registro visible), cancelar, marcar completada, marcar no asistió. Verificado
+- [x] Gestión de citas desde el expediente: agendar nueva, reagendar (cancela la anterior y crea nueva, dejando registro visible), cancelar, marcar completada, marcar no asistió. Verificado. **Confirmación obligatoria agregada el 1 sep 2026** antes de las 4 acciones que cambian estado
 - [x] Módulo de follow-up (consultas de seguimiento) con número autoasignado, registro de medición, agendado automático de próxima cita, y recordatorio de la consulta anterior. Verificado
 - [x] Formulario completo de Historia Clínica (10 secciones, guardar y editar), funcionando y verificado
-- [ ] Formulario digital de intake (basado en `Historia_Clinica_v2.docx`)
-- [ ] Formulario digital de follow-up (basado en `Follow_Up_v1.docx`)
-- [ ] Mecanismo de identificación de InBody en 3 capas (búsqueda por lista, pantalla de comparación, lista de IDs por paciente)
-- [ ] Historial de versiones de dietas (nunca sobreescribir)
-- [ ] Registro de opciones ya prescritas por paciente
+- [ ] Auditoría pendiente (no bloqueante): confirmar que Historia Clínica y Follow-up cubren el 100% de las secciones documentadas en `Historia_Clinica_v2.docx` y `Follow_Up_v1.docx` — es revisión, no construcción nueva
+- [x] **Mecanismo de identificación de InBody, IMPLEMENTADO (1 sep 2026), simplificado respecto al diseño original.** En vez de búsqueda global en 3 capas, la carga vive dentro del expediente ya abierto (identidad conocida de antemano); se conservan 3 verificaciones de seguridad antes de guardar (ID cruzado con otro paciente, edad, sexo/estatura). Ver sección completa más abajo
+- [x] Historial de versiones de dietas (nunca se sobreescribe, cada ajuste crea una versión nueva vía `version_anterior_id`)
+- [x] **Registro de opciones ya prescritas por paciente, IMPLEMENTADO (1 sep 2026).** Ver sección completa más abajo
+- [x] **Sincronización con Google Calendar, IMPLEMENTADA (1 sep 2026).** Ver sección completa más abajo
 - [x] Servidor convertido en servicio permanente de systemd (arranca solo, sobrevive al cierre de SSH, se reinicia solo si falla)
 
 ### Fase 2 — Knowledgebase y base de alimentos ⬜ PENDIENTE
@@ -286,6 +286,71 @@ gpg --batch --yes --passphrase-file /opt/sistema-nutricion/.backup_passphrase --
 tar -xzf restaurado.tar.gz   # extrae sistema_nutricion.db y .env
 ```
 Si el droplet es nuevo y `rclone` no está configurado todavía, hay que volver a correr `rclone config create gdrive-marifer drive client_id ... client_secret ... token '...'` con las credenciales guardadas (client_id y secret están en esta tabla; el token específico habría que regenerarlo si expiró, repitiendo el proceso de autorización con Marifer).
+
+## ✅ COMPLETADO (1 sep 2026): sincronización con Google Calendar
+
+**Alcance:** solo Sistema → Google (crear/reagendar/cancelar una cita en la app se refleja en Google Calendar). La dirección inversa queda pendiente y no es bloqueante.
+
+**Los 2 calendarios de Marifer, cada uno con su propio correo de Google, completamente independientes entre sí:**
+- `maferul2309@gmail.com` — consulta privada, correo que ella maneja personalmente
+- `nutricion.unido@gmail.com` — pacientes de UniDO, correo compartido que maneja personal de UniDO (sin acceso a la app)
+
+**Decisión de arquitectura, con el mismo giro que en el respaldo de Drive:** se intentó primero una cuenta de servicio de Google; falla igual por la misma razón (`storageQuotaExceeded` no aplica a Calendar, pero el patrón de "cuenta de servicio no sirve para cuentas personales" sí). Se usa **autorización OAuth de cada cuenta personal**, reutilizando el mismo cliente OAuth creado para Drive (Client ID/Secret ya existentes). Dos tokens nuevos e independientes, cada uno obtenido con el mismo proceso manual de videollamada que Drive (el link de autorización solo funciona en la máquina donde corre el comando, nunca por WhatsApp).
+
+**Piezas:**
+- `google-token-privado.json` y `google-token-unido.json` en `/opt/sistema-nutricion/` (permisos 600, nunca al repo)
+- `calendario.py` (nuevo, 144 líneas): renovación automática de token (dura 1 hora, se refresca solo cuando está por vencer), `crear_evento()`, `eliminar_evento()`
+- **Campo nuevo `origen_consulta` en `pacientes`** (`privado`/`unido`, radio buttons en Alta rápida y Editar datos, "Privado" por default), decide a qué calendario va cada cita del paciente
+- **Casilla "Esta cita ya está en Google Calendar (no duplicar)"** en los formularios de agendar y reagendar. Resuelve el caso real: Marifer agenda directo en su celular y luego lo registra en la app (se duplicaría sin la casilla), o UniDO agenda algo que ella solo transcribe después
+- Reagendar borra el evento viejo y crea uno nuevo; cancelar borra el evento. Un fallo de Google nunca bloquea la cita en el sistema (try/except silencioso con aviso en el log, la cita ya quedó guardada, que es lo indispensable)
+
+**Verificado de extremo a extremo:** agendar, reagendar y cancelar, confirmando en el calendario real de Marifer cada vez.
+
+## ✅ COMPLETADO (1 sep 2026): lectura automática de reportes InBody
+
+**Decisión de producto que simplificó la especificación original:** la carga vive **dentro del expediente ya abierto** de un paciente (arrastrar y soltar una imagen), no como pantalla global de búsqueda. Como la identidad del paciente ya se conoce (se abrió su expediente a propósito), no hace falta el mecanismo de búsqueda en 3 capas originalmente diseñado.
+
+**El reporte real es una imagen (`.jpg`), no un PDF** como decía la especificación original — el dispositivo InBody manda foto por correo. Ajustado sin problema, Gemini lee imágenes igual de bien.
+
+**Flujo:**
+1. Zona de arrastrar-y-soltar en el expediente, visible **solo si `origen_consulta == 'unido'`** (los pacientes privados nunca generan InBody)
+2. La imagen se manda a `gemini-3.7-flash` (multimodal, confirmado vigente en la lista de modelos) con un prompt restrictivo pidiendo JSON estricto: ID de InBody, nombre impreso, edad, sexo, estatura, y **todo** el historial de mediciones que aparezca en el reporte
+3. Pantalla de confirmación (nunca se salta) con **3 verificaciones de seguridad**, ninguna bloquea por completo, todas avisan:
+   - El ID de InBody ya está ligado a **otro** paciente (la señal más clara de haber soltado el archivo equivocado)
+   - La edad del reporte no coincide con la calculada desde `fecha_nacimiento`
+   - El sexo o la estatura no coinciden con lo ya registrado
+4. Al confirmar, cada punto del historial se guarda en `mediciones_inbody` (`origen="inbody"`), se registra el ID en `ids_inbody_conocidos`, y se llenan sexo/estatura del paciente **solo si estaban vacíos** (nunca se sobreescribe un valor ya capturado)
+5. **La imagen se descarta tras la extracción**, nunca se guarda en el servidor (decisión explícita, ahorro de almacenamiento)
+
+**Campo nuevo:** `estatura` en `pacientes` (Float), se llena solo la primera vez que se lee un InBody de ese paciente. Los pacientes privados (que nunca usan InBody) simplemente no la tienen, sin pérdida de funcionalidad porque nada más del sistema la usaba antes.
+
+**Piezas:**
+- `inbody.py` (nuevo, 69 líneas): prompt de extracción y chequeo de sensatez (peso 20-300 kg)
+- `gemini.py` extendido: `generar_con_imagen()` y `generar_json_con_imagen()`, factorizando la lógica interna en `_generar_parts()` sin cambiar el comportamiento de `generar()`/`generar_json()` que ya usan `plan_generador.py`
+- `main.py`: rutas `/inbody/procesar` y `/inbody/confirmar`
+- `inbody_confirmar.html` (nueva plantilla)
+- Los puntos guardados alimentan automáticamente las gráficas de Progreso ya existentes (Fase 5), sin cambios adicionales
+
+**Verificado con un reporte real de InBody370S de UniDO:** los 7 campos extraídos coincidieron exactamente contra la imagen original.
+
+## ✅ COMPLETADO (1 sep 2026): registro de opciones ya prescritas + continuidad entre dietas
+
+**Hallazgo al empezar:** la tabla `opciones_prescritas` ya existía en el esquema desde el diseño original de la Fase 1, y `plan_generador.py` ya tenía el parámetro `opciones_previas` preparado — pero nada la llenaba ni la usaba. El trabajo fue conectar piezas ya diseñadas, no inventar desde cero.
+
+**Decisión de diseño importante, tras discutirlo:** el objetivo NO es evitar repetir opciones. Un paciente puede pedir seguir con la misma dieta (ajustando solo porciones para el nuevo objetivo), o puede necesitar un cambio de fondo por dificultad, disgusto, o no conseguir ingredientes. El sistema le da a Gemini el contexto para decidir con criterio clínico, igual que con el resto del expediente — nunca una instrucción de "no repitas".
+
+**Flujo:**
+- Al **aprobar** una dieta (nunca en un borrador, para que "ya se le dio esto" signifique que de verdad llegó al paciente), cada opción de su menú se guarda en `opciones_prescritas`
+- Al generar una dieta nueva, se consulta la última dieta **aprobada** (no cualquier versión) y sus opciones, más los 5 campos cualitativos del follow-up más reciente (`que_le_gusto`, `que_no_le_gusto`, `cambios_que_hizo`, `en_que_puede_mejorar`, `ajustes_acordados`)
+- Ambos se presentan a Gemini en un bloque nuevo del prompt, "Continuidad con el plan anterior", como información, no como regla a seguir
+
+**Efecto secundario detectado y resuelto:** el prompt más grande hizo que Gemini tardara más en responder, superando el timeout de 60s por default de nginx. Se subieron `proxy_read_timeout`/`proxy_connect_timeout`/`proxy_send_timeout` a 300s en `/etc/nginx/sites-available/app.mafernut.com`, ahora respaldado también en `deploy/app.mafernut.com.nginx`.
+
+**Verificado:** 15 opciones guardadas tras aprobar una dieta de prueba (4 tiempos de comida x ~4 opciones), y una dieta nueva generada sin error usando el contexto.
+
+## ✅ COMPLETADO (1 sep 2026): confirmación antes de acciones sobre citas
+
+Los 4 botones que cambian el estado de una cita (Cancelar, Reagendar, Marcar completada, No asistió) piden confirmación (`confirm()` nativo del navegador) antes de ejecutarse. Textos breves: "¿Cancelar esta cita?", "¿Confirmar el cambio de fecha?", "¿Marcar como completada?", "¿Confirmar que no asistió?".
 
 ## ⚠️ REGLA CRÍTICA, LEER ANTES DE TOCAR main.py
 
@@ -480,3 +545,7 @@ Verificado con dos casos: paciente de 85 kg con GLP-1 (objetivo 105 g, detectó 
 | 2026-09-01 | Marca actualizada en el login ("Marifer Utrilla" / "Nutrición y Salud Hormonal") y acento azul `#3B82F6` aplicado como línea bajo encabezados en las 7 plantillas de la app |
 | 2026-09-01 | Gráficas de progreso implementadas (peso, % grasa, MME) vía Chart.js, leyendo `mediciones_inbody`. Se corrigió sobre la marcha una versión de CDN que no existía. Se agregó mostrar/ocultar e imprimir/descargar |
 | 2026-09-01 | Respaldo diario cifrado a Google Drive implementado y verificado de extremo a extremo (incluye restauración de prueba). Se descubrió a medio camino que las cuentas de servicio de Google no funcionan con Drive personal; se cambió a autorización OAuth de la cuenta de Marifer, arquitectura reutilizable para la futura sincronización de calendarios. Programado con systemd timer, 3:00 AM diario, retención de 30 días. **Con esto, la Fase 5 queda completa salvo pulir la interfaz tablet-first** |
+| 2026-09-01 | Sincronización con Google Calendar (sistema→google) implementada: 2 calendarios independientes de Marifer, OAuth reutilizando el cliente de Drive, campo `origen_consulta` por paciente, casilla anti-duplicado. Verificado agendando, reagendando y cancelando |
+| 2026-09-01 | Lectura automática de reportes InBody vía imagen (no PDF, el dispositivo real manda `.jpg`) con Gemini multimodal. Identificación simplificada al vivir dentro del expediente ya abierto, con 3 verificaciones de seguridad en vez de la búsqueda global de 3 capas originalmente especificada. Verificado con un reporte real, los 7 campos coincidieron exactos. La imagen se descarta tras leerla |
+| 2026-09-01 | Registro de opciones ya prescritas al aprobar una dieta, usado junto con la retroalimentación del follow-up como contexto (no instrucción) para la siguiente dieta. Se subieron los timeouts de nginx a 300s porque el prompt mas grande hacia que Gemini tardara mas. **Con esto, la Fase 1 queda practicamente completa** |
+| 2026-09-01 | Confirmación agregada antes de cancelar, reagendar, marcar completada o no asistió una cita |
