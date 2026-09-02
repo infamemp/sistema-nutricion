@@ -44,165 +44,240 @@
         </div>
         {% endif %}
 
-        <div class="bg-white rounded-xl shadow-sm p-6 mb-6">
-            <h2 class="text-lg font-medium text-green-700 border-b-2 border-blue-500 pb-2 mb-4">Datos de contacto</h2>
-
-            <dl class="grid grid-cols-2 gap-x-6 gap-y-4 text-sm">
-                <div>
-                    <dt class="text-gray-500">Celular</dt>
-                    <dd class="text-gray-800 mt-0.5">{{ paciente.celular or 'No registrado' }}</dd>
-                </div>
-                <div>
-                    <dt class="text-gray-500">Correo electrónico</dt>
-                    <dd class="text-gray-800 mt-0.5">{{ paciente.correo_electronico or 'No registrado' }}</dd>
-                </div>
-                <div>
-                    <dt class="text-gray-500">Fecha de nacimiento</dt>
-                    <dd class="text-gray-800 mt-0.5">
-                        {{ paciente.fecha_nacimiento.strftime('%d/%m/%Y') if paciente.fecha_nacimiento else 'No registrada' }}
-                    </dd>
-                </div>
-                <div>
-                    <dt class="text-gray-500">Sexo</dt>
-                    <dd class="text-gray-800 mt-0.5">{{ paciente.sexo or 'No especificado' }}</dd>
-                </div>
-                <div class="col-span-2">
-                    <dt class="text-gray-500">Referido por</dt>
-                    <dd class="text-gray-800 mt-0.5">{{ paciente.referido_por or 'No registrado' }}</dd>
-                </div>
-                <div class="col-span-2">
-                    <dt class="text-gray-500">Motivo de la consulta</dt>
-                    <dd class="text-gray-800 mt-0.5">{{ paciente.motivo_consulta or 'No registrado' }}</dd>
-                </div>
-            </dl>
-        </div>
-
-        <div class="bg-white rounded-xl shadow-sm p-6 mb-6">
+        <!-- 1. Datos de contacto -->
+        <div class="tarjeta-colapsable bg-white rounded-xl shadow-sm p-6 mb-6">
             <div class="flex justify-between items-center border-b-2 border-blue-500 pb-2 mb-4">
-                <h2 class="text-lg font-medium text-green-700">Citas</h2>
-                <button onclick="document.getElementById('form-nueva-cita').classList.toggle('hidden')"
-                        class="bg-green-600 hover:bg-green-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition">
-                    Agendar cita
+                <h2 class="text-lg font-medium text-green-700">Datos de contacto</h2>
+                <button type="button" onclick="toggleSeccion(this)" class="p-1 hover:bg-gray-100 rounded">
+                    <svg class="w-5 h-5 text-gray-400 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                 </button>
             </div>
-
-            <form id="form-nueva-cita" method="post" action="/pacientes/{{ paciente.id }}/citas/nueva"
-                  class="hidden bg-green-50 rounded-lg p-4 mb-4">
-                <div class="grid grid-cols-2 gap-4 mb-3">
+            <div class="seccion-contenido">
+                <dl class="grid grid-cols-2 gap-x-6 gap-y-4 text-sm">
                     <div>
-                        <label class="block text-sm text-gray-700 mb-1">Fecha</label>
-                        <input type="date" name="fecha" required
-                               class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400">
+                        <dt class="text-gray-500">Celular</dt>
+                        <dd class="text-gray-800 mt-0.5">{{ paciente.celular or 'No registrado' }}</dd>
                     </div>
                     <div>
-                        <label class="block text-sm text-gray-700 mb-1">Hora</label>
-                        <input type="time" name="hora" required
-                               class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400">
+                        <dt class="text-gray-500">Correo electrónico</dt>
+                        <dd class="text-gray-800 mt-0.5">{{ paciente.correo_electronico or 'No registrado' }}</dd>
                     </div>
-                </div>
-                <div class="mb-3">
-                    <label class="block text-sm text-gray-700 mb-1">Notas</label>
-                    <input type="text" name="notas" placeholder="Opcional"
-                           class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400">
-                </div>
-                <label class="flex items-center gap-2 text-sm text-gray-600 mb-3">
-                    <input type="checkbox" name="ya_en_google" class="text-green-600 focus:ring-green-400">
-                    Esta cita ya está en Google Calendar (no duplicar)
-                </label>
-                <button type="submit"
-                        class="bg-green-600 hover:bg-green-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition">
-                    Guardar cita
-                </button>
-            </form>
-
-            {% if citas %}
-            <ul class="space-y-3">
-                {% for c in citas %}
-                <li class="border-b border-gray-100 pb-3 last:border-0 last:pb-0">
-                    <div class="flex items-start justify-between">
-                        <div>
-                            <p class="text-sm {% if c.estado == 'cancelada' %}text-gray-400 line-through{% else %}text-gray-800{% endif %}">
-                                {{ c.fecha_hora.strftime('%d/%m/%Y a las %H:%M') }}
-                            </p>
-                            {% if c.notas_breves %}
-                            <p class="text-gray-500 text-xs mt-0.5">{{ c.notas_breves }}</p>
-                            {% endif %}
-                        </div>
-                        <span class="text-xs px-2 py-1 rounded-full whitespace-nowrap
-                            {% if c.estado == 'cancelada' %}bg-gray-100 text-gray-600
-                            {% elif c.estado == 'completada' %}bg-green-100 text-green-700
-                            {% elif c.estado == 'no_asistio' %}bg-orange-100 text-orange-700
-                            {% else %}bg-blue-50 text-blue-700{% endif %}">
-                            {{ c.estado.replace('_', ' ') }}
-                        </span>
+                    <div>
+                        <dt class="text-gray-500">Fecha de nacimiento</dt>
+                        <dd class="text-gray-800 mt-0.5">
+                            {{ paciente.fecha_nacimiento.strftime('%d/%m/%Y') if paciente.fecha_nacimiento else 'No registrada' }}
+                        </dd>
                     </div>
-
-                    {% if c.estado in ['agendada', 'confirmada'] %}
-                    <div class="flex gap-2 mt-2">
-                        <button onclick="document.getElementById('reagendar-{{ c.id }}').classList.toggle('hidden')"
-                                class="text-xs text-green-700 hover:underline">Reagendar</button>
-                        <form method="post" action="/citas/{{ c.id }}/estado" class="inline">
-                            <input type="hidden" name="nuevo_estado" value="completada">
-                            <button type="submit" onclick="return confirm('¿Marcar como completada?')" class="text-xs text-green-700 hover:underline">Marcar completada</button>
-                        </form>
-                        <form method="post" action="/citas/{{ c.id }}/estado" class="inline">
-                            <input type="hidden" name="nuevo_estado" value="no_asistio">
-                            <button type="submit" onclick="return confirm('¿Confirmar que no asistió?')" class="text-xs text-orange-600 hover:underline">No asistió</button>
-                        </form>
-                        <form method="post" action="/citas/{{ c.id }}/estado" class="inline">
-                            <input type="hidden" name="nuevo_estado" value="cancelada">
-                            <button type="submit" onclick="return confirm('¿Cancelar esta cita?')" class="text-xs text-gray-500 hover:underline">Cancelar</button>
-                        </form>
+                    <div>
+                        <dt class="text-gray-500">Sexo</dt>
+                        <dd class="text-gray-800 mt-0.5">{{ paciente.sexo or 'No especificado' }}</dd>
                     </div>
-
-                    <form id="reagendar-{{ c.id }}" method="post" action="/citas/{{ c.id }}/reagendar"
-                          class="hidden bg-green-50 rounded-lg p-3 mt-2">
-                        <p class="text-xs text-gray-600 mb-2">La cita actual se marcará como cancelada y se creará una nueva.</p>
-                        <div class="grid grid-cols-2 gap-3 mb-2">
-                            <input type="date" name="fecha" required
-                                   class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-400">
-                            <input type="time" name="hora" required
-                                   class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-400">
-                        </div>
-                        <label class="flex items-center gap-2 text-xs text-gray-600 mb-2">
-                            <input type="checkbox" name="ya_en_google" class="text-green-600 focus:ring-green-400">
-                            Esta cita ya está en Google Calendar (no duplicar)
-                        </label>
-                        <button type="submit" onclick="return confirm('¿Confirmar el cambio de fecha?')"
-                                class="bg-green-600 hover:bg-green-700 text-white text-xs font-medium px-3 py-2 rounded-lg transition">
-                            Confirmar nueva fecha
-                        </button>
-                    </form>
-                    {% endif %}
-                </li>
-                {% endfor %}
-            </ul>
-            {% else %}
-            <p class="text-sm text-gray-500">Sin citas registradas.</p>
-            {% endif %}
+                    <div class="col-span-2">
+                        <dt class="text-gray-500">Referido por</dt>
+                        <dd class="text-gray-800 mt-0.5">{{ paciente.referido_por or 'No registrado' }}</dd>
+                    </div>
+                    <div class="col-span-2">
+                        <dt class="text-gray-500">Motivo de la consulta</dt>
+                        <dd class="text-gray-800 mt-0.5">{{ paciente.motivo_consulta or 'No registrado' }}</dd>
+                    </div>
+                </dl>
+            </div>
         </div>
 
-        <div id="seccion-progreso" class="bg-white rounded-xl shadow-sm p-6 mb-6">
+        <!-- 2. Historia clínica -->
+        <div class="tarjeta-colapsable bg-white rounded-xl shadow-sm p-6 mb-6">
+            <div class="flex justify-between items-center border-b-2 border-blue-500 pb-2 mb-4">
+                <h2 class="text-lg font-medium text-green-700">Historia clínica</h2>
+                <div class="flex items-center gap-2">
+                    <a href="/pacientes/{{ paciente.id }}/historia"
+                       class="bg-green-600 hover:bg-green-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition">
+                        {% if historia %}Editar{% else %}Llenar historia clínica{% endif %}
+                    </a>
+                    <button type="button" onclick="toggleSeccion(this)" class="p-1 hover:bg-gray-100 rounded">
+                        <svg class="w-5 h-5 text-gray-400 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                    </button>
+                </div>
+            </div>
+            <div class="seccion-contenido">
+                {% if historia %}
+                <p class="text-sm text-gray-600">
+                    Registrada. Última actualización:
+                    {{ historia.fecha_actualizacion.strftime('%d/%m/%Y') if historia.fecha_actualizacion else 'sin fecha' }}
+                </p>
+                {% else %}
+                <p class="text-sm text-gray-500">Todavía no se ha llenado la historia clínica de este paciente.</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- 3. Consultas de seguimiento -->
+        <div class="tarjeta-colapsable bg-white rounded-xl shadow-sm p-6 mb-6">
+            <div class="flex justify-between items-center border-b-2 border-blue-500 pb-2 mb-4">
+                <h2 class="text-lg font-medium text-green-700">Consultas de seguimiento</h2>
+                <div class="flex items-center gap-2">
+                    <a href="/pacientes/{{ paciente.id }}/followup/nuevo"
+                       class="bg-green-600 hover:bg-green-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition">
+                        Nueva consulta
+                    </a>
+                    <button type="button" onclick="toggleSeccion(this)" class="p-1 hover:bg-gray-100 rounded">
+                        <svg class="w-5 h-5 text-gray-400 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                    </button>
+                </div>
+            </div>
+            <div class="seccion-contenido">
+                {% if followups %}
+                <ul class="space-y-4">
+                    {% for f in followups %}
+                    <li class="border-b border-gray-100 pb-4 last:border-0 last:pb-0">
+                        <div class="flex justify-between items-baseline mb-1">
+                            <p class="text-sm font-medium text-gray-800">
+                                Consulta {{ f.numero_consulta }}
+                                <span class="font-normal text-gray-500">&middot; {{ f.fecha_consulta.strftime('%d/%m/%Y') }}</span>
+                            </p>
+                            {% if f.porcentaje_apego is not none %}
+                            <span class="text-xs text-gray-500">Apego {{ f.porcentaje_apego|int }}%</span>
+                            {% endif %}
+                        </div>
+                        {% if f.ajustes_acordados %}
+                        <p class="text-sm text-gray-600 mt-1">{{ f.ajustes_acordados }}</p>
+                        {% endif %}
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <p class="text-sm text-gray-500">Sin consultas de seguimiento registradas.</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- 4. Citas -->
+        <div class="tarjeta-colapsable bg-white rounded-xl shadow-sm p-6 mb-6">
+            <div class="flex justify-between items-center border-b-2 border-blue-500 pb-2 mb-4">
+                <h2 class="text-lg font-medium text-green-700">Citas</h2>
+                <div class="flex items-center gap-2">
+                    <button onclick="document.getElementById('form-nueva-cita').classList.toggle('hidden')"
+                            class="bg-green-600 hover:bg-green-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition">
+                        Agendar cita
+                    </button>
+                    <button type="button" onclick="toggleSeccion(this)" class="p-1 hover:bg-gray-100 rounded">
+                        <svg class="w-5 h-5 text-gray-400 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                    </button>
+                </div>
+            </div>
+            <div class="seccion-contenido">
+                <form id="form-nueva-cita" method="post" action="/pacientes/{{ paciente.id }}/citas/nueva"
+                      class="hidden bg-green-50 rounded-lg p-4 mb-4">
+                    <div class="grid grid-cols-2 gap-4 mb-3">
+                        <div>
+                            <label class="block text-sm text-gray-700 mb-1">Fecha</label>
+                            <input type="date" name="fecha" required
+                                   class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400">
+                        </div>
+                        <div>
+                            <label class="block text-sm text-gray-700 mb-1">Hora</label>
+                            <input type="time" name="hora" required
+                                   class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="block text-sm text-gray-700 mb-1">Notas</label>
+                        <input type="text" name="notas" placeholder="Opcional"
+                               class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400">
+                    </div>
+                    <label class="flex items-center gap-2 text-sm text-gray-600 mb-3">
+                        <input type="checkbox" name="ya_en_google" class="text-green-600 focus:ring-green-400">
+                        Esta cita ya está en Google Calendar (no duplicar)
+                    </label>
+                    <button type="submit" onclick="return confirm('¿Guardar esta cita?')"
+                            class="bg-green-600 hover:bg-green-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition">
+                        Guardar cita
+                    </button>
+                </form>
+
+                {% if citas %}
+                <ul class="space-y-3">
+                    {% for c in citas %}
+                    <li class="border-b border-gray-100 pb-3 last:border-0 last:pb-0">
+                        <div class="flex items-start justify-between">
+                            <div>
+                                <p class="text-sm {% if c.estado == 'cancelada' %}text-gray-400 line-through{% else %}text-gray-800{% endif %}">
+                                    {{ c.fecha_hora.strftime('%d/%m/%Y a las %H:%M') }}
+                                </p>
+                                {% if c.notas_breves %}
+                                <p class="text-gray-500 text-xs mt-0.5">{{ c.notas_breves }}</p>
+                                {% endif %}
+                            </div>
+                            <span class="text-xs px-2 py-1 rounded-full whitespace-nowrap
+                                {% if c.estado == 'cancelada' %}bg-gray-100 text-gray-600
+                                {% elif c.estado == 'completada' %}bg-green-100 text-green-700
+                                {% elif c.estado == 'no_asistio' %}bg-orange-100 text-orange-700
+                                {% else %}bg-blue-50 text-blue-700{% endif %}">
+                                {{ c.estado.replace('_', ' ') }}
+                            </span>
+                        </div>
+
+                        {% if c.estado in ['agendada', 'confirmada'] %}
+                        <div class="flex gap-2 mt-2">
+                            <button onclick="document.getElementById('reagendar-{{ c.id }}').classList.toggle('hidden')"
+                                    class="text-xs text-green-700 hover:underline">Reagendar</button>
+                            <form method="post" action="/citas/{{ c.id }}/estado" class="inline">
+                                <input type="hidden" name="nuevo_estado" value="completada">
+                                <button type="submit" onclick="return confirm('¿Marcar como completada?')" class="text-xs text-green-700 hover:underline">Marcar completada</button>
+                            </form>
+                            <form method="post" action="/citas/{{ c.id }}/estado" class="inline">
+                                <input type="hidden" name="nuevo_estado" value="no_asistio">
+                                <button type="submit" onclick="return confirm('¿Confirmar que no asistió?')" class="text-xs text-orange-600 hover:underline">No asistió</button>
+                            </form>
+                            <form method="post" action="/citas/{{ c.id }}/estado" class="inline">
+                                <input type="hidden" name="nuevo_estado" value="cancelada">
+                                <button type="submit" onclick="return confirm('¿Cancelar esta cita?')" class="text-xs text-gray-500 hover:underline">Cancelar</button>
+                            </form>
+                        </div>
+
+                        <form id="reagendar-{{ c.id }}" method="post" action="/citas/{{ c.id }}/reagendar"
+                              class="hidden bg-green-50 rounded-lg p-3 mt-2">
+                            <p class="text-xs text-gray-600 mb-2">La cita actual se marcará como cancelada y se creará una nueva.</p>
+                            <div class="grid grid-cols-2 gap-3 mb-2">
+                                <input type="date" name="fecha" required
+                                       class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-400">
+                                <input type="time" name="hora" required
+                                       class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-400">
+                            </div>
+                            <label class="flex items-center gap-2 text-xs text-gray-600 mb-2">
+                                <input type="checkbox" name="ya_en_google" class="text-green-600 focus:ring-green-400">
+                                Esta cita ya está en Google Calendar (no duplicar)
+                            </label>
+                            <button type="submit" onclick="return confirm('¿Confirmar el cambio de fecha?')"
+                                    class="bg-green-600 hover:bg-green-700 text-white text-xs font-medium px-3 py-2 rounded-lg transition">
+                                Confirmar nueva fecha
+                            </button>
+                        </form>
+                        {% endif %}
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <p class="text-sm text-gray-500">Sin citas registradas.</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- 5. Progreso -->
+        <div id="seccion-progreso" class="tarjeta-colapsable bg-white rounded-xl shadow-sm p-6 mb-6">
             <div id="botones-progreso" class="flex justify-between items-center border-b-2 border-blue-500 pb-2 mb-4">
                 <h2 class="text-lg font-medium text-green-700">Progreso</h2>
-                <div class="flex gap-3">
+                <div class="flex items-center gap-2">
                     <button onclick="window.print()"
                             class="text-xs text-green-700 hover:underline">
                         Imprimir / Descargar
                     </button>
-                    <button id="btn-toggle-progreso"
-                            onclick="
-                                const c = document.getElementById('progreso-contenido');
-                                c.classList.toggle('hidden');
-                                this.textContent = c.classList.contains('hidden') ? 'Mostrar' : 'Ocultar';
-                            "
-                            class="text-xs text-green-700 hover:underline">
-                        Ocultar
+                    <button type="button" onclick="toggleSeccion(this)" class="p-1 hover:bg-gray-100 rounded">
+                        <svg class="w-5 h-5 text-gray-400 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                     </button>
                 </div>
             </div>
 
-            <div id="progreso-contenido">
+            <div class="seccion-contenido">
             {% if mediciones|length >= 2 %}
             <div class="grid gap-6">
                 <div>
@@ -252,127 +327,153 @@
             </div>
         </div>
 
+        <!-- 6. Dietas -->
+        <div class="tarjeta-colapsable bg-white rounded-xl shadow-sm p-6 mb-6">
+            <div class="flex justify-between items-center border-b-2 border-blue-500 pb-2 mb-4">
+                <h2 class="text-lg font-medium text-green-700">Dietas</h2>
+                <div class="flex items-center gap-2">
+                    <a href="/pacientes/{{ paciente.id }}/dieta/nueva"
+                       onclick="return confirm('¿Generar una nueva dieta con inteligencia artificial?')"
+                       class="bg-green-600 hover:bg-green-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition">
+                        Generar con IA
+                    </a>
+                    <button type="button" onclick="toggleSeccion(this)" class="p-1 hover:bg-gray-100 rounded">
+                        <svg class="w-5 h-5 text-gray-400 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                    </button>
+                </div>
+            </div>
+            <div class="seccion-contenido">
+                {% if dietas %}
+                <ul class="space-y-2">
+                    {% for d in dietas %}
+                    <li>
+                        <a href="/pacientes/{{ paciente.id }}/dieta/{{ d.id }}"
+                           class="flex justify-between items-center text-sm p-2 rounded-lg hover:bg-green-50 transition">
+                            <span class="text-gray-700">
+                                Versión {{ d.version }}
+                                <span class="text-gray-400">&middot; {{ d.fecha_creacion.strftime('%d/%m/%Y') if d.fecha_creacion else '' }}</span>
+                            </span>
+                            <span class="text-xs px-2 py-1 rounded-full whitespace-nowrap
+                                {% if d.estado == 'aprobada' %}bg-green-100 text-green-700
+                                {% elif d.estado == 'reemplazada' %}bg-gray-100 text-gray-500
+                                {% else %}bg-blue-50 text-blue-700{% endif %}">
+                                {{ d.estado.replace('_', ' ') }}
+                            </span>
+                        </a>
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <p class="text-sm text-gray-500">Genera un borrador con inteligencia artificial para revisar y aprobar.</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- 7. Reporte InBody -->
         {% if paciente.origen_consulta == 'unido' %}
-        <div class="bg-white rounded-xl shadow-sm p-6 mb-6">
-            <h2 class="text-lg font-medium text-green-700 border-b-2 border-blue-500 pb-2 mb-4">Reporte InBody</h2>
-            <form id="form-inbody" method="post" action="/pacientes/{{ paciente.id }}/inbody/procesar" enctype="multipart/form-data">
-                <label id="zona-inbody"
-                       class="flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-lg p-8 text-center cursor-pointer hover:border-blue-400 hover:bg-blue-50 transition">
-                    <span class="text-sm text-gray-600">Arrastra aquí la imagen del reporte InBody, o haz clic para seleccionarla</span>
-                    <input type="file" name="archivo" accept="image/*" class="hidden" onchange="document.getElementById('form-inbody').submit()">
-                </label>
-            </form>
-            <script>
-                (function() {
-                    const zona = document.getElementById('zona-inbody');
-                    const input = zona.querySelector('input[type="file"]');
-                    zona.addEventListener('dragover', function(e) {
-                        e.preventDefault();
-                        zona.classList.add('border-blue-400', 'bg-blue-50');
-                    });
-                    zona.addEventListener('dragleave', function() {
-                        zona.classList.remove('border-blue-400', 'bg-blue-50');
-                    });
-                    zona.addEventListener('drop', function(e) {
-                        e.preventDefault();
-                        zona.classList.remove('border-blue-400', 'bg-blue-50');
-                        if (e.dataTransfer.files.length) {
-                            input.files = e.dataTransfer.files;
-                            document.getElementById('form-inbody').submit();
-                        }
-                    });
-                })();
-            </script>
+        <div class="tarjeta-colapsable bg-white rounded-xl shadow-sm p-6 mb-6">
+            <div class="flex justify-between items-center border-b-2 border-blue-500 pb-2 mb-4">
+                <h2 class="text-lg font-medium text-green-700">Reporte InBody</h2>
+                <button type="button" onclick="toggleSeccion(this)" class="p-1 hover:bg-gray-100 rounded">
+                    <svg class="w-5 h-5 text-gray-400 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                </button>
+            </div>
+            <div class="seccion-contenido">
+                <form id="form-inbody" method="post" action="/pacientes/{{ paciente.id }}/inbody/procesar" enctype="multipart/form-data">
+                    <label id="zona-inbody"
+                           class="flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-lg p-8 text-center cursor-pointer hover:border-blue-400 hover:bg-blue-50 transition">
+                        <span class="text-sm text-gray-600">Arrastra aquí la imagen del reporte InBody, o haz clic para seleccionarla</span>
+                        <input type="file" name="archivo" accept="image/*" class="hidden" onchange="document.getElementById('form-inbody').submit()">
+                    </label>
+                </form>
+                <script>
+                    (function() {
+                        const zona = document.getElementById('zona-inbody');
+                        const input = zona.querySelector('input[type="file"]');
+                        zona.addEventListener('dragover', function(e) {
+                            e.preventDefault();
+                            zona.classList.add('border-blue-400', 'bg-blue-50');
+                        });
+                        zona.addEventListener('dragleave', function() {
+                            zona.classList.remove('border-blue-400', 'bg-blue-50');
+                        });
+                        zona.addEventListener('drop', function(e) {
+                            e.preventDefault();
+                            zona.classList.remove('border-blue-400', 'bg-blue-50');
+                            if (e.dataTransfer.files.length) {
+                                input.files = e.dataTransfer.files;
+                                document.getElementById('form-inbody').submit();
+                            }
+                        });
+                    })();
+                </script>
+            </div>
         </div>
         {% endif %}
 
-        <div class="bg-white rounded-xl shadow-sm p-6 mb-6">
+        <!-- 8. Laboratorios -->
+        <div class="tarjeta-colapsable bg-white rounded-xl shadow-sm p-6">
             <div class="flex justify-between items-center border-b-2 border-blue-500 pb-2 mb-4">
-                <h2 class="text-lg font-medium text-green-700">Consultas de seguimiento</h2>
-                <a href="/pacientes/{{ paciente.id }}/followup/nuevo"
-                   class="bg-green-600 hover:bg-green-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition">
-                    Nueva consulta
-                </a>
+                <h2 class="text-lg font-medium text-green-700">Laboratorios</h2>
+                <button type="button" onclick="toggleSeccion(this)" class="p-1 hover:bg-gray-100 rounded">
+                    <svg class="w-5 h-5 text-gray-400 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                </button>
             </div>
+            <div class="seccion-contenido">
+                <form id="form-laboratorio" method="post" action="/pacientes/{{ paciente.id }}/laboratorio/procesar" enctype="multipart/form-data">
+                    <label id="zona-laboratorio"
+                           class="flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-lg p-6 text-center cursor-pointer hover:border-blue-400 hover:bg-blue-50 transition mb-4">
+                        <span class="text-sm text-gray-600">Arrastra aquí el laboratorio (PDF o imagen), o haz clic para seleccionarlo</span>
+                        <input type="file" name="archivo" accept="image/*,application/pdf" class="hidden" onchange="document.getElementById('form-laboratorio').submit()">
+                    </label>
+                </form>
+                <script>
+                    (function() {
+                        const zona = document.getElementById('zona-laboratorio');
+                        const input = zona.querySelector('input[type="file"]');
+                        zona.addEventListener('dragover', function(e) {
+                            e.preventDefault();
+                            zona.classList.add('border-blue-400', 'bg-blue-50');
+                        });
+                        zona.addEventListener('dragleave', function() {
+                            zona.classList.remove('border-blue-400', 'bg-blue-50');
+                        });
+                        zona.addEventListener('drop', function(e) {
+                            e.preventDefault();
+                            zona.classList.remove('border-blue-400', 'bg-blue-50');
+                            if (e.dataTransfer.files.length) {
+                                input.files = e.dataTransfer.files;
+                                document.getElementById('form-laboratorio').submit();
+                            }
+                        });
+                    })();
+                </script>
 
-            {% if followups %}
-            <ul class="space-y-4">
-                {% for f in followups %}
-                <li class="border-b border-gray-100 pb-4 last:border-0 last:pb-0">
-                    <div class="flex justify-between items-baseline mb-1">
-                        <p class="text-sm font-medium text-gray-800">
-                            Consulta {{ f.numero_consulta }}
-                            <span class="font-normal text-gray-500">&middot; {{ f.fecha_consulta.strftime('%d/%m/%Y') }}</span>
-                        </p>
-                        {% if f.porcentaje_apego is not none %}
-                        <span class="text-xs text-gray-500">Apego {{ f.porcentaje_apego|int }}%</span>
-                        {% endif %}
-                    </div>
-                    {% if f.ajustes_acordados %}
-                    <p class="text-sm text-gray-600 mt-1">{{ f.ajustes_acordados }}</p>
-                    {% endif %}
-                </li>
-                {% endfor %}
-            </ul>
-            {% else %}
-            <p class="text-sm text-gray-500">Sin consultas de seguimiento registradas.</p>
-            {% endif %}
-        </div>
-
-        <div class="bg-white rounded-xl shadow-sm p-6 mb-6">
-            <div class="flex justify-between items-center border-b-2 border-blue-500 pb-2 mb-4">
-                <h2 class="text-lg font-medium text-green-700">Dietas</h2>
-                <a href="/pacientes/{{ paciente.id }}/dieta/nueva"
-                   class="bg-green-600 hover:bg-green-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition">
-                    Generar con IA
-                </a>
+                {% if laboratorios %}
+                <ul class="space-y-3">
+                    {% for lab in laboratorios %}
+                    <li class="border-t border-gray-100 pt-3">
+                        <p class="text-xs text-gray-400 mb-1">{{ lab.fecha_subida.strftime('%d/%m/%Y') if lab.fecha_subida else '' }}</p>
+                        <p class="text-sm text-gray-700 whitespace-pre-line">{{ lab.analisis_ia }}</p>
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <p class="text-sm text-gray-500">Sin laboratorios analizados todavía.</p>
+                {% endif %}
             </div>
-
-            {% if dietas %}
-            <ul class="space-y-2">
-                {% for d in dietas %}
-                <li>
-                    <a href="/pacientes/{{ paciente.id }}/dieta/{{ d.id }}"
-                       class="flex justify-between items-center text-sm p-2 rounded-lg hover:bg-green-50 transition">
-                        <span class="text-gray-700">
-                            Versión {{ d.version }}
-                            <span class="text-gray-400">&middot; {{ d.fecha_creacion.strftime('%d/%m/%Y') if d.fecha_creacion else '' }}</span>
-                        </span>
-                        <span class="text-xs px-2 py-1 rounded-full whitespace-nowrap
-                            {% if d.estado == 'aprobada' %}bg-green-100 text-green-700
-                            {% elif d.estado == 'reemplazada' %}bg-gray-100 text-gray-500
-                            {% else %}bg-blue-50 text-blue-700{% endif %}">
-                            {{ d.estado.replace('_', ' ') }}
-                        </span>
-                    </a>
-                </li>
-                {% endfor %}
-            </ul>
-            {% else %}
-            <p class="text-sm text-gray-500">Genera un borrador con inteligencia artificial para revisar y aprobar.</p>
-            {% endif %}
-        </div>
-
-        <div class="bg-white rounded-xl shadow-sm p-6">
-            <div class="flex justify-between items-center border-b-2 border-blue-500 pb-2 mb-4">
-                <h2 class="text-lg font-medium text-green-700">Historia clínica</h2>
-                <a href="/pacientes/{{ paciente.id }}/historia"
-                   class="bg-green-600 hover:bg-green-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition">
-                    {% if historia %}Editar{% else %}Llenar historia clínica{% endif %}
-                </a>
-            </div>
-
-            {% if historia %}
-            <p class="text-sm text-gray-600">
-                Registrada. Última actualización:
-                {{ historia.fecha_actualizacion.strftime('%d/%m/%Y') if historia.fecha_actualizacion else 'sin fecha' }}
-            </p>
-            {% else %}
-            <p class="text-sm text-gray-500">Todavía no se ha llenado la historia clínica de este paciente.</p>
-            {% endif %}
         </div>
 
     </div>
+
+    <script>
+        function toggleSeccion(btn) {
+            const tarjeta = btn.closest('.tarjeta-colapsable');
+            const contenido = tarjeta.querySelector('.seccion-contenido');
+            contenido.classList.toggle('hidden');
+            btn.querySelector('svg').classList.toggle('rotate-180');
+        }
+    </script>
 
 </body>
 </html>

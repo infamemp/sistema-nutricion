@@ -16,6 +16,7 @@ import auth
 import correo
 import calendario
 import inbody
+import laboratorio
 import plan_generador as plan_gen
 import redactor
 import pdf as pdf_gen
@@ -276,6 +277,11 @@ def ver_expediente(paciente_id: int, request: Request, db: Session = Depends(get
             "No se pudo leer el reporte de InBody con inteligencia artificial. "
             "Intenta con una foto mas clara, o captura los datos manualmente en un follow-up."
         )
+    elif request.query_params.get("error") == "laboratorio_fallo":
+        mensaje = (
+            "No se pudo analizar el laboratorio con inteligencia artificial. "
+            "Intenta con una foto o PDF mas claro."
+        )
 
     citas = (
         db.query(models.Cita)
@@ -327,6 +333,13 @@ def ver_expediente(paciente_id: int, request: Request, db: Session = Depends(get
         .all()
     )
 
+    laboratorios = (
+        db.query(models.Laboratorio)
+        .filter(models.Laboratorio.paciente_id == paciente_id)
+        .order_by(models.Laboratorio.fecha_subida.desc())
+        .all()
+    )
+
     return templates.TemplateResponse(
         request,
         "expediente.html",
@@ -338,6 +351,7 @@ def ver_expediente(paciente_id: int, request: Request, db: Session = Depends(get
             "dietas": dietas,
             "mediciones": mediciones,
             "mediciones_json": mediciones_json,
+            "laboratorios": laboratorios,
             "mensaje": mensaje,
         },
     )
@@ -501,6 +515,46 @@ def confirmar_inbody(
     if not paciente.estatura and resultado.get("estatura_cm"):
         paciente.estatura = resultado["estatura_cm"]
 
+    db.commit()
+
+    return RedirectResponse(url="/pacientes/" + str(paciente_id), status_code=303)
+
+
+@app.post("/pacientes/{paciente_id}/laboratorio/procesar", response_class=HTMLResponse)
+async def procesar_laboratorio(
+    paciente_id: int,
+    request: Request,
+    archivo: UploadFile = File(...),
+    db: Session = Depends(get_db),
+):
+    paciente = obtener_paciente(db, paciente_id)
+
+    archivo_bytes = await archivo.read()
+    mime_type = archivo.content_type or "application/pdf"
+
+    try:
+        analisis = laboratorio.analizar(archivo_bytes, mime_type)
+    except Exception:
+        return RedirectResponse(
+            url="/pacientes/" + str(paciente_id) + "?error=laboratorio_fallo", status_code=303
+        )
+
+    return templates.TemplateResponse(
+        request,
+        "laboratorio_confirmar.html",
+        {"paciente": paciente, "analisis": analisis},
+    )
+
+
+@app.post("/pacientes/{paciente_id}/laboratorio/guardar")
+def guardar_laboratorio(
+    paciente_id: int,
+    analisis: str = Form(...),
+    db: Session = Depends(get_db),
+):
+    obtener_paciente(db, paciente_id)
+
+    db.add(models.Laboratorio(paciente_id=paciente_id, analisis_ia=analisis))
     db.commit()
 
     return RedirectResponse(url="/pacientes/" + str(paciente_id), status_code=303)

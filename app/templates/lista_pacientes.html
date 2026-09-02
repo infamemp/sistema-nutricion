@@ -9,13 +9,12 @@
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-green-50 min-h-screen">
-
     <div class="max-w-4xl mx-auto p-6">
-
         <div class="flex justify-between items-center mb-6">
             <h1 class="text-2xl font-medium text-green-800">Pacientes</h1>
             <div class="flex items-center gap-3">
                 <a href="/pacientes/nuevo"
+                   onclick="return confirm('¿Dar de alta un nuevo paciente?')"
                    class="bg-green-600 hover:bg-green-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition">
                     Nuevo paciente
                 </a>
@@ -27,6 +26,11 @@
         </div>
 
         {% if pacientes %}
+        <div class="mb-4">
+            <input type="text" id="buscador-pacientes" placeholder="Buscar por nombre, celular, correo o referido por..."
+                   oninput="filtrarPacientes()"
+                   class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-400">
+        </div>
         <div class="bg-white rounded-xl shadow-sm overflow-hidden">
             <table class="w-full text-sm">
                 <thead class="bg-green-100 text-green-800 border-b-2 border-blue-500">
@@ -37,9 +41,9 @@
                         <th class="text-left px-4 py-3 font-medium">Referido por</th>
                     </tr>
                 </thead>
-                <tbody>
+                <tbody id="cuerpo-tabla-pacientes">
                     {% for p in pacientes %}
-                    <tr class="border-t border-gray-100 hover:bg-green-50 transition">
+                    <tr class="border-t border-gray-100 hover:bg-green-50 transition fila-paciente">
                         <td class="px-4 py-3">
                             <a href="/pacientes/{{ p.id }}" class="text-green-700 font-medium hover:underline">
                                 {{ p.nombre_completo }}
@@ -52,14 +56,30 @@
                     {% endfor %}
                 </tbody>
             </table>
+            <p id="sin-resultados" class="hidden text-sm text-gray-500 p-4 text-center">
+                Ningún paciente coincide con la búsqueda.
+            </p>
         </div>
+        <script>
+            function filtrarPacientes() {
+                const texto = document.getElementById('buscador-pacientes').value.toLowerCase();
+                const filas = document.querySelectorAll('.fila-paciente');
+                let visibles = 0;
+
+                filas.forEach(function(fila) {
+                    const coincide = fila.textContent.toLowerCase().includes(texto);
+                    fila.classList.toggle('hidden', !coincide);
+                    if (coincide) visibles++;
+                });
+
+                document.getElementById('sin-resultados').classList.toggle('hidden', visibles !== 0);
+            }
+        </script>
         {% else %}
         <div class="bg-white rounded-xl shadow-sm p-8 text-center">
             <p class="text-gray-500">Todavía no hay pacientes registrados.</p>
         </div>
         {% endif %}
-
     </div>
-
 </body>
 </html>
