@@ -615,7 +615,7 @@ CAMPOS_HISTORIA = [
 
 @app.post("/pacientes/{paciente_id}/historia")
 async def guardar_historia(paciente_id: int, request: Request, db: Session = Depends(get_db)):
-    obtener_paciente(db, paciente_id)
+    paciente = obtener_paciente(db, paciente_id)
 
     form = await request.form()
 
@@ -639,6 +639,22 @@ async def guardar_historia(paciente_id: int, request: Request, db: Session = Dep
 
     estres = form.get("nivel_estres")
     historia.nivel_estres = int(estres) if estres else None
+
+    # Peso actual capturado a mano en la Historia Clinica: crea una
+    # medicion real (misma tabla que usan las graficas de Progreso y la
+    # generacion de dietas), no solo una nota de referencia. Resuelve el
+    # caso de un paciente sin InBody que necesita su primer peso registrado.
+    peso_actual = form.get("peso_actual")
+    if peso_actual:
+        db.add(models.MedicionInBody(
+            paciente_id=paciente_id,
+            peso=float(peso_actual),
+            origen="manual",
+        ))
+
+    estatura_actual = form.get("estatura_actual")
+    if estatura_actual:
+        paciente.estatura = float(estatura_actual)
 
     db.commit()
 
@@ -1073,6 +1089,141 @@ def aprobar_dieta(paciente_id: int, dieta_id: int, db: Session = Depends(get_db)
     db.commit()
 
     return RedirectResponse(url="/pacientes/" + str(paciente_id), status_code=303)
+
+
+TIEMPOS_MENU = ["desayuno", "colacion", "comida", "cena"]
+
+
+def _lineas_a_lista(texto):
+    """Convierte un textarea (una idea por linea) en una lista, sin lineas vacias."""
+    if not texto:
+        return []
+    return [linea.strip() for linea in texto.split("\n") if linea.strip()]
+
+
+def _lista_a_lineas(lista):
+    """Inverso de _lineas_a_lista, para prellenar el formulario de edicion."""
+    return "\n".join(lista or [])
+
+
+@app.get("/pacientes/{paciente_id}/dieta/nueva-manual")
+def crear_dieta_manual(paciente_id: int, db: Session = Depends(get_db)):
+    """
+    Crea un borrador completamente vacio, para llenar a mano cuando no
+    hay internet o no se quiere usar la IA. Reutiliza la misma pantalla
+    de edicion que un borrador generado por IA.
+    """
+    obtener_paciente(db, paciente_id)
+
+    ultima = (
+        db.query(models.DietaVersion)
+        .filter(models.DietaVersion.paciente_id == paciente_id)
+        .order_by(models.DietaVersion.version.desc())
+        .first()
+    )
+    numero_version = (ultima.version + 1) if ultima else 1
+
+    documento_vacio = {
+        "objetivos_clave": [],
+        "suplementacion": [],
+        "menu": {t: {"encabezado": "", "opciones": []} for t in TIEMPOS_MENU},
+        "recomendaciones": [],
+    }
+    guardado = {"documento": documento_vacio, "confiable": False, "cobertura": 0}
+
+    dieta = models.DietaVersion(
+        paciente_id=paciente_id,
+        version=numero_version,
+        contenido=json.dumps(guardado, ensure_ascii=False),
+        estado="borrador_ia",
+        creado_por="manual",
+        version_anterior_id=ultima.id if ultima else None,
+    )
+    db.add(dieta)
+    db.commit()
+    db.refresh(dieta)
+
+    return RedirectResponse(
+        url="/pacientes/" + str(paciente_id) + "/dieta/" + str(dieta.id) + "/editar", status_code=303
+    )
+
+
+@app.get("/pacientes/{paciente_id}/dieta/{dieta_id}/editar", response_class=HTMLResponse)
+def formulario_editar_dieta(paciente_id: int, dieta_id: int, request: Request, db: Session = Depends(get_db)):
+    paciente = obtener_paciente(db, paciente_id)
+    dieta = db.query(models.DietaVersion).filter(models.DietaVersion.id == dieta_id).first()
+    if not dieta:
+        raise HTTPException(status_code=404, detail="Version de dieta no encontrada")
+    if dieta.estado == "aprobada":
+        raise HTTPException(status_code=400, detail="Una dieta ya aprobada no se puede editar.")
+
+    guardado = _cargar_contenido(dieta)
+    doc = guardado.get("documento", {})
+    menu = doc.get("menu", {})
+
+    campos_menu = {}
+    for tiempo in TIEMPOS_MENU:
+        datos = menu.get(tiempo, {})
+        campos_menu[tiempo] = {
+            "encabezado": datos.get("encabezado", ""),
+            "opciones_texto": _lista_a_lineas(datos.get("opciones")),
+        }
+
+    return templates.TemplateResponse(
+        request,
+        "dieta_editar.html",
+        {
+            "paciente": paciente,
+            "dieta": dieta,
+            "objetivos_texto": _lista_a_lineas(doc.get("objetivos_clave")),
+            "suplementacion_texto": _lista_a_lineas(doc.get("suplementacion")),
+            "recomendaciones_texto": _lista_a_lineas(doc.get("recomendaciones")),
+            "campos_menu": campos_menu,
+            "tiempos_menu": TIEMPOS_MENU,
+        },
+    )
+
+
+@app.post("/pacientes/{paciente_id}/dieta/{dieta_id}/editar")
+async def guardar_edicion_dieta(paciente_id: int, dieta_id: int, request: Request, db: Session = Depends(get_db)):
+    dieta = db.query(models.DietaVersion).filter(models.DietaVersion.id == dieta_id).first()
+    if not dieta:
+        raise HTTPException(status_code=404, detail="Version de dieta no encontrada")
+    if dieta.estado == "aprobada":
+        raise HTTPException(status_code=400, detail="Una dieta ya aprobada no se puede editar.")
+
+    form = await request.form()
+
+    menu_editado = {}
+    for tiempo in TIEMPOS_MENU:
+        menu_editado[tiempo] = {
+            "encabezado": form.get("encabezado_" + tiempo, "") or "",
+            "opciones": _lineas_a_lista(form.get("opciones_" + tiempo, "")),
+        }
+
+    documento_editado = {
+        "objetivos_clave": _lineas_a_lista(form.get("objetivos_clave", "")),
+        "suplementacion": _lineas_a_lista(form.get("suplementacion", "")),
+        "menu": menu_editado,
+        "recomendaciones": _lineas_a_lista(form.get("recomendaciones", "")),
+    }
+
+    guardado = {
+        "documento": documento_editado,
+        "confiable": False,
+        "cobertura": 0,
+        "nota": "Editada manualmente, las cantidades no se verificaron contra la base de datos nutricional.",
+    }
+
+    # Se guarda en el mismo borrador, sin crear una version nueva: mientras
+    # no este aprobada, es un documento de trabajo. El historial de
+    # versiones queda para hitos reales (aprobada, o un ajuste de la IA).
+    dieta.contenido = json.dumps(guardado, ensure_ascii=False)
+    db.commit()
+
+    return RedirectResponse(
+        url="/pacientes/" + str(paciente_id) + "/dieta/" + str(dieta_id), status_code=303
+    )
 
 
 @app.post("/pacientes/{paciente_id}/dieta/{dieta_id}/ajustar")

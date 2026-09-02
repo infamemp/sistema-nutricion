@@ -2,10 +2,7 @@
 <html lang="es">
 <head>
     <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
-    <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32x32.png">
-    <link rel="icon" type="image/png" sizes="16x16" href="/static/favicon-16x16.png">
-    <link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png">
-    <link rel="manifest" href="/static/site.webmanifest">
+    <link rel="apple-touch-icon" href="/static/apple-touch-icon.png">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ paciente.nombre_completo }}</title>
@@ -339,6 +336,10 @@
                        {% if not laboratorios %}onclick="return confirm('¿Generar una nueva dieta con inteligencia artificial?')"{% endif %}
                        class="bg-green-600 hover:bg-green-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition">
                         Generar con IA
+                    </a>
+                    <a href="/pacientes/{{ paciente.id }}/dieta/nueva-manual"
+                       class="bg-white border border-green-600 text-green-700 hover:bg-green-50 text-sm font-medium px-4 py-2 rounded-lg transition">
+                        Crear manual
                     </a>
                     <button type="button" onclick="toggleSeccion(this)" class="p-1 hover:bg-gray-100 rounded">
                         <svg class="w-5 h-5 text-gray-400 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
