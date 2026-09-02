@@ -1036,6 +1036,54 @@ def _generar_dieta_y_redirigir(paciente_id: int, db: Session, analisis_laborator
     return RedirectResponse(url="/pacientes/" + str(paciente_id) + "/dieta/" + str(dieta.id), status_code=303)
 
 
+@app.get("/pacientes/{paciente_id}/dieta/nueva-manual")
+def crear_dieta_manual(paciente_id: int, db: Session = Depends(get_db)):
+    """
+    Crea un borrador completamente vacio, para llenar a mano cuando no
+    hay internet o no se quiere usar la IA. Reutiliza la misma pantalla
+    de edicion que un borrador generado por IA.
+
+    Esta ruta debe quedar registrada ANTES que ver_dieta (mas abajo): las
+    dos tienen la forma /dieta/<algo>, y FastAPI usa la primera que
+    coincida en orden de registro, sin importar el tipo esperado. Si
+    ver_dieta queda primero, "nueva-manual" se intenta leer como
+    dieta_id (entero) y truena.
+    """
+    obtener_paciente(db, paciente_id)
+
+    ultima = (
+        db.query(models.DietaVersion)
+        .filter(models.DietaVersion.paciente_id == paciente_id)
+        .order_by(models.DietaVersion.version.desc())
+        .first()
+    )
+    numero_version = (ultima.version + 1) if ultima else 1
+
+    documento_vacio = {
+        "objetivos_clave": [],
+        "suplementacion": [],
+        "menu": {t: {"encabezado": "", "opciones": []} for t in TIEMPOS_MENU},
+        "recomendaciones": [],
+    }
+    guardado = {"documento": documento_vacio, "confiable": False, "cobertura": 0}
+
+    dieta = models.DietaVersion(
+        paciente_id=paciente_id,
+        version=numero_version,
+        contenido=json.dumps(guardado, ensure_ascii=False),
+        estado="borrador_ia",
+        creado_por="manual",
+        version_anterior_id=ultima.id if ultima else None,
+    )
+    db.add(dieta)
+    db.commit()
+    db.refresh(dieta)
+
+    return RedirectResponse(
+        url="/pacientes/" + str(paciente_id) + "/dieta/" + str(dieta.id) + "/editar", status_code=303
+    )
+
+
 @app.get("/pacientes/{paciente_id}/dieta/{dieta_id}", response_class=HTMLResponse)
 def ver_dieta(paciente_id: int, dieta_id: int, request: Request, db: Session = Depends(get_db)):
     paciente = obtener_paciente(db, paciente_id)
@@ -1104,48 +1152,6 @@ def _lineas_a_lista(texto):
 def _lista_a_lineas(lista):
     """Inverso de _lineas_a_lista, para prellenar el formulario de edicion."""
     return "\n".join(lista or [])
-
-
-@app.get("/pacientes/{paciente_id}/dieta/nueva-manual")
-def crear_dieta_manual(paciente_id: int, db: Session = Depends(get_db)):
-    """
-    Crea un borrador completamente vacio, para llenar a mano cuando no
-    hay internet o no se quiere usar la IA. Reutiliza la misma pantalla
-    de edicion que un borrador generado por IA.
-    """
-    obtener_paciente(db, paciente_id)
-
-    ultima = (
-        db.query(models.DietaVersion)
-        .filter(models.DietaVersion.paciente_id == paciente_id)
-        .order_by(models.DietaVersion.version.desc())
-        .first()
-    )
-    numero_version = (ultima.version + 1) if ultima else 1
-
-    documento_vacio = {
-        "objetivos_clave": [],
-        "suplementacion": [],
-        "menu": {t: {"encabezado": "", "opciones": []} for t in TIEMPOS_MENU},
-        "recomendaciones": [],
-    }
-    guardado = {"documento": documento_vacio, "confiable": False, "cobertura": 0}
-
-    dieta = models.DietaVersion(
-        paciente_id=paciente_id,
-        version=numero_version,
-        contenido=json.dumps(guardado, ensure_ascii=False),
-        estado="borrador_ia",
-        creado_por="manual",
-        version_anterior_id=ultima.id if ultima else None,
-    )
-    db.add(dieta)
-    db.commit()
-    db.refresh(dieta)
-
-    return RedirectResponse(
-        url="/pacientes/" + str(paciente_id) + "/dieta/" + str(dieta.id) + "/editar", status_code=303
-    )
 
 
 @app.get("/pacientes/{paciente_id}/dieta/{dieta_id}/editar", response_class=HTMLResponse)
@@ -1334,3 +1340,19 @@ def descargar_pdf(paciente_id: int, dieta_id: int, db: Session = Depends(get_db)
     ruta_pdf = pdf_gen.generar(guardado["documento"], paciente.nombre_completo)
 
     return FileResponse(ruta_pdf, media_type="application/pdf", filename=os.path.basename(ruta_pdf))
+
+
+@app.post("/pacientes/{paciente_id}/dieta/{dieta_id}/eliminar")
+def eliminar_dieta(paciente_id: int, dieta_id: int, db: Session = Depends(get_db)):
+    dieta = (
+        db.query(models.DietaVersion)
+        .filter(models.DietaVersion.id == dieta_id)
+        .filter(models.DietaVersion.paciente_id == paciente_id)
+        .first()
+    )
+    if dieta:
+        db.query(models.OpcionPrescrita).filter(models.OpcionPrescrita.dieta_id == dieta.id).delete()
+        db.delete(dieta)
+        db.commit()
+
+    return RedirectResponse(url="/pacientes/" + str(paciente_id), status_code=303)

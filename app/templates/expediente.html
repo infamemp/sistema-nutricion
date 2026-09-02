@@ -350,9 +350,9 @@
                 {% if dietas %}
                 <ul class="space-y-2">
                     {% for d in dietas %}
-                    <li>
+                    <li class="flex items-center gap-2">
                         <a href="/pacientes/{{ paciente.id }}/dieta/{{ d.id }}"
-                           class="flex justify-between items-center text-sm p-2 rounded-lg hover:bg-green-50 transition">
+                           class="flex-1 flex justify-between items-center text-sm p-2 rounded-lg hover:bg-green-50 transition">
                             <span class="text-gray-700">
                                 Versión {{ d.version }}
                                 <span class="text-gray-400">&middot; {{ d.fecha_creacion.strftime('%d/%m/%Y') if d.fecha_creacion else '' }}</span>
@@ -364,6 +364,12 @@
                                 {{ d.estado.replace('_', ' ') }}
                             </span>
                         </a>
+                        <form method="post" action="/pacientes/{{ paciente.id }}/dieta/{{ d.id }}/eliminar" class="inline">
+                            <button type="submit" onclick="return confirm('¿Eliminar la versión {{ d.version }} de esta dieta? Esta acción no se puede deshacer.')"
+                                    class="text-xs text-gray-400 hover:text-red-600 px-2">
+                                Eliminar
+                            </button>
+                        </form>
                     </li>
                     {% endfor %}
                 </ul>
