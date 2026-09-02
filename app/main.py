@@ -560,6 +560,21 @@ def guardar_laboratorio(
     return RedirectResponse(url="/pacientes/" + str(paciente_id), status_code=303)
 
 
+@app.post("/pacientes/{paciente_id}/laboratorio/{laboratorio_id}/eliminar")
+def eliminar_laboratorio(paciente_id: int, laboratorio_id: int, db: Session = Depends(get_db)):
+    lab = (
+        db.query(models.Laboratorio)
+        .filter(models.Laboratorio.id == laboratorio_id)
+        .filter(models.Laboratorio.paciente_id == paciente_id)
+        .first()
+    )
+    if lab:
+        db.delete(lab)
+        db.commit()
+
+    return RedirectResponse(url="/pacientes/" + str(paciente_id), status_code=303)
+
+
 @app.get("/pacientes/{paciente_id}/historia", response_class=HTMLResponse)
 def ver_historia(paciente_id: int, request: Request, db: Session = Depends(get_db)):
     paciente = obtener_paciente(db, paciente_id)
@@ -853,8 +868,53 @@ def _cargar_contenido(dieta):
     return json.loads(dieta.contenido)
 
 
-@app.get("/pacientes/{paciente_id}/dieta/nueva")
-def generar_dieta(paciente_id: int, db: Session = Depends(get_db)):
+@app.get("/pacientes/{paciente_id}/dieta/nueva", response_class=HTMLResponse)
+def formulario_generar_dieta(paciente_id: int, request: Request, db: Session = Depends(get_db)):
+    """
+    Si el paciente no tiene ningun laboratorio analizado, genera directo
+    (comportamiento identico al de siempre). Si tiene uno o mas, primero
+    pregunta si se debe incluir alguno, y cual, antes de generar.
+    """
+    paciente = obtener_paciente(db, paciente_id)
+
+    laboratorios = (
+        db.query(models.Laboratorio)
+        .filter(models.Laboratorio.paciente_id == paciente_id)
+        .order_by(models.Laboratorio.fecha_subida.desc())
+        .all()
+    )
+
+    if not laboratorios:
+        return _generar_dieta_y_redirigir(paciente_id, db, analisis_laboratorio=None)
+
+    return templates.TemplateResponse(
+        request,
+        "dieta_confirmar_laboratorio.html",
+        {"paciente": paciente, "laboratorios": laboratorios},
+    )
+
+
+@app.post("/pacientes/{paciente_id}/dieta/nueva")
+def generar_dieta_confirmada(
+    paciente_id: int,
+    incluir_laboratorio: Optional[str] = Form(None),
+    laboratorio_id: Optional[str] = Form(None),
+    db: Session = Depends(get_db),
+):
+    analisis_laboratorio = None
+    if incluir_laboratorio and laboratorio_id:
+        lab = (
+            db.query(models.Laboratorio)
+            .filter(models.Laboratorio.id == int(laboratorio_id))
+            .first()
+        )
+        if lab:
+            analisis_laboratorio = lab.analisis_ia
+
+    return _generar_dieta_y_redirigir(paciente_id, db, analisis_laboratorio=analisis_laboratorio)
+
+
+def _generar_dieta_y_redirigir(paciente_id: int, db: Session, analisis_laboratorio=None):
     paciente = obtener_paciente(db, paciente_id)
 
     historia_obj = (
@@ -927,6 +987,7 @@ def generar_dieta(paciente_id: int, db: Session = Depends(get_db)):
         paciente_dict, historia_dict, medicion_dict, padecimientos=padecimientos,
         opciones_previas=opciones_previas,
         retroalimentacion_followup=retroalimentacion,
+        analisis_laboratorio=analisis_laboratorio,
     )
     resultado_doc = redactor.redactar(resultado_plan["plan"], nombre_paciente=paciente.nombre_completo)
 

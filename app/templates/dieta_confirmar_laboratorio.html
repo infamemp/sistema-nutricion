@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
+    <link rel="apple-touch-icon" href="/static/apple-touch-icon.png">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generar dieta</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-green-50 min-h-screen">
+
+    <div class="max-w-2xl mx-auto p-6">
+
+        <div class="mb-4">
+            <a href="/pacientes/{{ paciente.id }}" class="text-sm text-green-700 hover:underline">&larr; Volver al expediente</a>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-sm p-6 mb-6">
+            <h1 class="text-xl font-medium text-green-800 mb-1">Generar dieta con IA</h1>
+            <p class="text-sm text-gray-500">Paciente: {{ paciente.nombre_completo }}</p>
+        </div>
+
+        <form method="post" action="/pacientes/{{ paciente.id }}/dieta/nueva">
+            <div class="bg-white rounded-xl shadow-sm p-6 mb-6">
+                <label class="flex items-center gap-2 text-sm font-medium text-gray-700 mb-4">
+                    <input type="checkbox" name="incluir_laboratorio" id="incluir-laboratorio"
+                           onchange="document.getElementById('lista-laboratorios').classList.toggle('hidden', !this.checked)"
+                           class="text-green-600 focus:ring-green-400">
+                    Incluir análisis de laboratorio en esta generación
+                </label>
+
+                <div id="lista-laboratorios" class="hidden space-y-3 pl-6">
+                    {% for lab in laboratorios %}
+                    <label class="flex items-start gap-2 text-sm text-gray-700 border-b border-gray-100 pb-3 last:border-0">
+                        <input type="radio" name="laboratorio_id" value="{{ lab.id }}"
+                               {% if loop.first %}checked{% endif %}
+                               class="mt-1 text-green-600 focus:ring-green-400">
+                        <span>
+                            <span class="block text-xs text-gray-400 mb-0.5">{{ lab.fecha_subida.strftime('%d/%m/%Y') if lab.fecha_subida else '' }}</span>
+                            {{ lab.analisis_ia[:200] }}{% if lab.analisis_ia|length > 200 %}…{% endif %}
+                        </span>
+                    </label>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <button type="submit" onclick="return confirm('¿Generar una nueva dieta con inteligencia artificial?')"
+                    class="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-3 rounded-lg transition">
+                Generar dieta
+            </button>
+        </form>
+
+    </div>
+
+</body>
+</html>
