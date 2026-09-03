@@ -399,7 +399,6 @@
                 <h2 class="text-lg font-medium text-green-700">Dietas</h2>
                 <div class="flex items-center gap-2">
                     <a href="/pacientes/{{ paciente.id }}/dieta/nueva"
-                       {% if not laboratorios %}onclick="return confirm('¿Generar una nueva dieta con inteligencia artificial?')"{% endif %}
                        class="bg-green-600 hover:bg-green-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition">
                         Generar con IA
                     </a>

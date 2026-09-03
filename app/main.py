@@ -907,9 +907,9 @@ def _cargar_contenido(dieta):
 @app.get("/pacientes/{paciente_id}/dieta/nueva", response_class=HTMLResponse)
 def formulario_generar_dieta(paciente_id: int, request: Request, db: Session = Depends(get_db)):
     """
-    Si el paciente no tiene ningun laboratorio analizado, genera directo
-    (comportamiento identico al de siempre). Si tiene uno o mas, primero
-    pregunta si se debe incluir alguno, y cual, antes de generar.
+    Siempre muestra una pantalla de confirmacion antes de generar: elegir
+    Menu o Tabla de Porciones, y si hay laboratorios, decidir si incluir
+    alguno.
     """
     paciente = obtener_paciente(db, paciente_id)
 
@@ -920,12 +920,9 @@ def formulario_generar_dieta(paciente_id: int, request: Request, db: Session = D
         .all()
     )
 
-    if not laboratorios:
-        return _generar_dieta_y_redirigir(paciente_id, db, analisis_laboratorio=None)
-
     return templates.TemplateResponse(
         request,
-        "dieta_confirmar_laboratorio.html",
+        "dieta_nueva.html",
         {"paciente": paciente, "laboratorios": laboratorios},
     )
 
@@ -933,6 +930,7 @@ def formulario_generar_dieta(paciente_id: int, request: Request, db: Session = D
 @app.post("/pacientes/{paciente_id}/dieta/nueva")
 def generar_dieta_confirmada(
     paciente_id: int,
+    tipo_documento: str = Form("menu"),
     incluir_laboratorio: Optional[str] = Form(None),
     laboratorio_id: Optional[str] = Form(None),
     db: Session = Depends(get_db),
@@ -947,10 +945,12 @@ def generar_dieta_confirmada(
         if lab:
             analisis_laboratorio = lab.analisis_ia
 
-    return _generar_dieta_y_redirigir(paciente_id, db, analisis_laboratorio=analisis_laboratorio)
+    return _generar_dieta_y_redirigir(
+        paciente_id, db, analisis_laboratorio=analisis_laboratorio, tipo_documento=tipo_documento
+    )
 
 
-def _generar_dieta_y_redirigir(paciente_id: int, db: Session, analisis_laboratorio=None):
+def _generar_dieta_y_redirigir(paciente_id: int, db: Session, analisis_laboratorio=None, tipo_documento="menu"):
     paciente = obtener_paciente(db, paciente_id)
 
     historia_obj = (
@@ -984,49 +984,6 @@ def _generar_dieta_y_redirigir(paciente_id: int, db: Session, analisis_laborator
     if historia_dict.get("padecimientos_diagnosticados"):
         padecimientos.append(historia_dict["padecimientos_diagnosticados"])
 
-    # Continuidad con el plan anterior: se le pasa a Gemini como contexto,
-    # nunca como instruccion de repetir o evitar (ver plan_generador.py).
-    ultima_aprobada = (
-        db.query(models.DietaVersion)
-        .filter(models.DietaVersion.paciente_id == paciente_id)
-        .filter(models.DietaVersion.estado == "aprobada")
-        .order_by(models.DietaVersion.version.desc())
-        .first()
-    )
-    opciones_previas = None
-    if ultima_aprobada:
-        filas_opciones = (
-            db.query(models.OpcionPrescrita)
-            .filter(models.OpcionPrescrita.dieta_id == ultima_aprobada.id)
-            .all()
-        )
-        if filas_opciones:
-            opciones_previas = [f.descripcion for f in filas_opciones if f.descripcion]
-
-    ultimo_followup = (
-        db.query(models.FollowUp)
-        .filter(models.FollowUp.paciente_id == paciente_id)
-        .order_by(models.FollowUp.numero_consulta.desc())
-        .first()
-    )
-    retroalimentacion = None
-    if ultimo_followup:
-        retroalimentacion = {
-            "que_le_gusto": ultimo_followup.que_le_gusto,
-            "que_no_le_gusto": ultimo_followup.que_no_le_gusto,
-            "cambios_que_hizo": ultimo_followup.cambios_que_hizo,
-            "en_que_puede_mejorar": ultimo_followup.en_que_puede_mejorar,
-            "ajustes_acordados": ultimo_followup.ajustes_acordados,
-        }
-
-    resultado_plan = plan_gen.generar_plan(
-        paciente_dict, historia_dict, medicion_dict, padecimientos=padecimientos,
-        opciones_previas=opciones_previas,
-        retroalimentacion_followup=retroalimentacion,
-        analisis_laboratorio=analisis_laboratorio,
-    )
-    resultado_doc = redactor.redactar(resultado_plan["plan"], nombre_paciente=paciente.nombre_completo)
-
     ultima = (
         db.query(models.DietaVersion)
         .filter(models.DietaVersion.paciente_id == paciente_id)
@@ -1035,11 +992,78 @@ def _generar_dieta_y_redirigir(paciente_id: int, db: Session, analisis_laborator
     )
     numero_version = (ultima.version + 1) if ultima else 1
 
-    guardado = {
-        "documento": resultado_doc["documento"],
-        "confiable": resultado_plan["verificacion"]["resumen"]["confiable"],
-        "cobertura": resultado_plan["verificacion"]["resumen"]["cobertura_promedio"],
-    }
+    if tipo_documento == "porciones":
+        # Los ejemplos de comidas armadas solo se incluyen la primera vez
+        # que este paciente recibe una Tabla de Porciones (decision de
+        # Marifer). Las siguientes veces se omiten solos.
+        ya_tuvo_porciones = (
+            db.query(models.DietaVersion)
+            .filter(models.DietaVersion.paciente_id == paciente_id)
+            .filter(models.DietaVersion.tipo_documento == "porciones")
+            .first()
+        )
+        incluir_ejemplos = ya_tuvo_porciones is None
+
+        resultado = plan_gen.generar_tabla_porciones(
+            paciente_dict, historia_dict, medicion_dict, incluir_ejemplos,
+            padecimientos=padecimientos,
+        )
+        guardado = {
+            "documento": resultado["documento"],
+            "confiable": resultado["verificacion"]["confiable"],
+            "problemas": resultado["verificacion"]["problemas"],
+        }
+    else:
+        # Continuidad con el plan anterior: se le pasa a Gemini como
+        # contexto, nunca como instruccion de repetir o evitar (ver
+        # plan_generador.py). Es exclusivo del Menu; la Tabla de Porciones
+        # no maneja "opciones prescritas" en ese sentido.
+        ultima_aprobada = (
+            db.query(models.DietaVersion)
+            .filter(models.DietaVersion.paciente_id == paciente_id)
+            .filter(models.DietaVersion.estado == "aprobada")
+            .order_by(models.DietaVersion.version.desc())
+            .first()
+        )
+        opciones_previas = None
+        if ultima_aprobada:
+            filas_opciones = (
+                db.query(models.OpcionPrescrita)
+                .filter(models.OpcionPrescrita.dieta_id == ultima_aprobada.id)
+                .all()
+            )
+            if filas_opciones:
+                opciones_previas = [f.descripcion for f in filas_opciones if f.descripcion]
+
+        ultimo_followup = (
+            db.query(models.FollowUp)
+            .filter(models.FollowUp.paciente_id == paciente_id)
+            .order_by(models.FollowUp.numero_consulta.desc())
+            .first()
+        )
+        retroalimentacion = None
+        if ultimo_followup:
+            retroalimentacion = {
+                "que_le_gusto": ultimo_followup.que_le_gusto,
+                "que_no_le_gusto": ultimo_followup.que_no_le_gusto,
+                "cambios_que_hizo": ultimo_followup.cambios_que_hizo,
+                "en_que_puede_mejorar": ultimo_followup.en_que_puede_mejorar,
+                "ajustes_acordados": ultimo_followup.ajustes_acordados,
+            }
+
+        resultado_plan = plan_gen.generar_plan(
+            paciente_dict, historia_dict, medicion_dict, padecimientos=padecimientos,
+            opciones_previas=opciones_previas,
+            retroalimentacion_followup=retroalimentacion,
+            analisis_laboratorio=analisis_laboratorio,
+        )
+        resultado_doc = redactor.redactar(resultado_plan["plan"], nombre_paciente=paciente.nombre_completo)
+
+        guardado = {
+            "documento": resultado_doc["documento"],
+            "confiable": resultado_plan["verificacion"]["resumen"]["confiable"],
+            "cobertura": resultado_plan["verificacion"]["resumen"]["cobertura_promedio"],
+        }
 
     dieta = models.DietaVersion(
         paciente_id=paciente_id,
@@ -1047,6 +1071,7 @@ def _generar_dieta_y_redirigir(paciente_id: int, db: Session, analisis_laborator
         contenido=json.dumps(guardado, ensure_ascii=False),
         estado="borrador_ia",
         creado_por="ia",
+        tipo_documento=tipo_documento,
         version_anterior_id=ultima.id if ultima else None,
     )
     db.add(dieta)
@@ -1119,6 +1144,20 @@ def ver_dieta(paciente_id: int, dieta_id: int, request: Request, db: Session = D
     elif request.query_params.get("error") == "sin_correo":
         mensaje = "Este paciente no tiene correo electronico registrado. Agregalo en sus datos de contacto."
 
+    if dieta.tipo_documento == "porciones":
+        return templates.TemplateResponse(
+            request,
+            "ver_porciones.html",
+            {
+                "paciente": paciente,
+                "dieta": dieta,
+                "doc": guardado["documento"],
+                "confiable": guardado.get("confiable", False),
+                "problemas": guardado.get("problemas", []),
+                "mensaje": mensaje,
+            },
+        )
+
     return templates.TemplateResponse(
         request,
         "ver_dieta.html",
@@ -1174,6 +1213,32 @@ def _lista_a_lineas(lista):
     return "\n".join(lista or [])
 
 
+def _filas_a_lineas_porciones(filas):
+    """
+    Convierte una lista de {"alimento":.., "cantidad":..} (formato de la
+    Tabla de Porciones) en texto, una fila por linea, "Alimento - Cantidad".
+    """
+    lineas = []
+    for f in filas or []:
+        lineas.append((f.get("alimento") or "") + " - " + (f.get("cantidad") or ""))
+    return "\n".join(lineas)
+
+
+def _lineas_a_filas_porciones(texto):
+    """Inverso de _filas_a_lineas_porciones."""
+    filas = []
+    for linea in (texto or "").split("\n"):
+        linea = linea.strip()
+        if not linea:
+            continue
+        if " - " in linea:
+            alimento, cantidad = linea.split(" - ", 1)
+        else:
+            alimento, cantidad = linea, ""
+        filas.append({"alimento": alimento.strip(), "cantidad": cantidad.strip()})
+    return filas
+
+
 @app.get("/pacientes/{paciente_id}/dieta/{dieta_id}/editar", response_class=HTMLResponse)
 def formulario_editar_dieta(paciente_id: int, dieta_id: int, request: Request, db: Session = Depends(get_db)):
     paciente = obtener_paciente(db, paciente_id)
@@ -1185,8 +1250,32 @@ def formulario_editar_dieta(paciente_id: int, dieta_id: int, request: Request, d
 
     guardado = _cargar_contenido(dieta)
     doc = guardado.get("documento", {})
-    menu = doc.get("menu", {})
 
+    if dieta.tipo_documento == "porciones":
+        ejemplos = doc.get("ejemplos") or {}
+        return templates.TemplateResponse(
+            request,
+            "dieta_editar_porciones.html",
+            {
+                "paciente": paciente,
+                "dieta": dieta,
+                "meta_proteina": doc.get("meta_proteina", ""),
+                "instruccion_general": doc.get("instruccion_general", ""),
+                "tabla_proteinas_texto": _filas_a_lineas_porciones(doc.get("tabla_proteinas")),
+                "objetivo_distribucion_texto": _lista_a_lineas(doc.get("objetivo_distribucion")),
+                "carbohidratos_instruccion": doc.get("tabla_carbohidratos", {}).get("instruccion", ""),
+                "carbohidratos_texto": _filas_a_lineas_porciones(doc.get("tabla_carbohidratos", {}).get("alimentos")),
+                "grasas_instruccion": doc.get("tabla_grasas", {}).get("instruccion", ""),
+                "grasas_texto": _filas_a_lineas_porciones(doc.get("tabla_grasas", {}).get("alimentos")),
+                "nota_verduras": doc.get("nota_verduras", ""),
+                "metas_diarias_texto": _lista_a_lineas(doc.get("metas_diarias")),
+                "ejemplo_desayuno_texto": _lista_a_lineas(ejemplos.get("desayuno")),
+                "ejemplo_comida_texto": _lista_a_lineas(ejemplos.get("comida")),
+                "ejemplo_cena_texto": _lista_a_lineas(ejemplos.get("cena")),
+            },
+        )
+
+    menu = doc.get("menu", {})
     campos_menu = {}
     for tiempo in TIEMPOS_MENU:
         datos = menu.get(tiempo, {})
@@ -1220,26 +1309,59 @@ async def guardar_edicion_dieta(paciente_id: int, dieta_id: int, request: Reques
 
     form = await request.form()
 
-    menu_editado = {}
-    for tiempo in TIEMPOS_MENU:
-        menu_editado[tiempo] = {
-            "encabezado": form.get("encabezado_" + tiempo, "") or "",
-            "opciones": _lineas_a_lista(form.get("opciones_" + tiempo, "")),
+    if dieta.tipo_documento == "porciones":
+        ejemplo_desayuno = _lineas_a_lista(form.get("ejemplo_desayuno", ""))
+        ejemplo_comida = _lineas_a_lista(form.get("ejemplo_comida", ""))
+        ejemplo_cena = _lineas_a_lista(form.get("ejemplo_cena", ""))
+        ejemplos = None
+        if ejemplo_desayuno or ejemplo_comida or ejemplo_cena:
+            ejemplos = {"desayuno": ejemplo_desayuno, "comida": ejemplo_comida, "cena": ejemplo_cena}
+
+        documento_editado = {
+            "meta_proteina": form.get("meta_proteina", ""),
+            "instruccion_general": form.get("instruccion_general", ""),
+            "tabla_proteinas": _lineas_a_filas_porciones(form.get("tabla_proteinas", "")),
+            "objetivo_distribucion": _lineas_a_lista(form.get("objetivo_distribucion", "")),
+            "tabla_carbohidratos": {
+                "instruccion": form.get("carbohidratos_instruccion", ""),
+                "alimentos": _lineas_a_filas_porciones(form.get("carbohidratos_alimentos", "")),
+            },
+            "tabla_grasas": {
+                "instruccion": form.get("grasas_instruccion", ""),
+                "alimentos": _lineas_a_filas_porciones(form.get("grasas_alimentos", "")),
+            },
+            "nota_verduras": form.get("nota_verduras", ""),
+            "metas_diarias": _lineas_a_lista(form.get("metas_diarias", "")),
+            "ejemplos": ejemplos,
         }
 
-    documento_editado = {
-        "objetivos_clave": _lineas_a_lista(form.get("objetivos_clave", "")),
-        "suplementacion": _lineas_a_lista(form.get("suplementacion", "")),
-        "menu": menu_editado,
-        "recomendaciones": _lineas_a_lista(form.get("recomendaciones", "")),
-    }
+        guardado = {
+            "documento": documento_editado,
+            "confiable": False,
+            "problemas": [],
+            "nota": "Editada manualmente, las cantidades no se verificaron contra la base de datos nutricional.",
+        }
+    else:
+        menu_editado = {}
+        for tiempo in TIEMPOS_MENU:
+            menu_editado[tiempo] = {
+                "encabezado": form.get("encabezado_" + tiempo, "") or "",
+                "opciones": _lineas_a_lista(form.get("opciones_" + tiempo, "")),
+            }
 
-    guardado = {
-        "documento": documento_editado,
-        "confiable": False,
-        "cobertura": 0,
-        "nota": "Editada manualmente, las cantidades no se verificaron contra la base de datos nutricional.",
-    }
+        documento_editado = {
+            "objetivos_clave": _lineas_a_lista(form.get("objetivos_clave", "")),
+            "suplementacion": _lineas_a_lista(form.get("suplementacion", "")),
+            "menu": menu_editado,
+            "recomendaciones": _lineas_a_lista(form.get("recomendaciones", "")),
+        }
+
+        guardado = {
+            "documento": documento_editado,
+            "confiable": False,
+            "cobertura": 0,
+            "nota": "Editada manualmente, las cantidades no se verificaron contra la base de datos nutricional.",
+        }
 
     # Se guarda en el mismo borrador, sin crear una version nueva: mientras
     # no este aprobada, es un documento de trabajo. El historial de
@@ -1339,7 +1461,10 @@ def enviar_dieta_por_correo(paciente_id: int, dieta_id: int, db: Session = Depen
         raise HTTPException(status_code=404, detail="Version de dieta no encontrada")
 
     guardado = _cargar_contenido(dieta)
-    ruta_pdf = pdf_gen.generar(guardado["documento"], paciente.nombre_completo)
+    if dieta.tipo_documento == "porciones":
+        ruta_pdf = pdf_gen.generar_porciones(guardado["documento"], paciente.nombre_completo)
+    else:
+        ruta_pdf = pdf_gen.generar(guardado["documento"], paciente.nombre_completo)
 
     correo.enviar_dieta(paciente.correo_electronico, paciente.nombre_completo, ruta_pdf)
 
@@ -1357,7 +1482,10 @@ def descargar_pdf(paciente_id: int, dieta_id: int, db: Session = Depends(get_db)
         raise HTTPException(status_code=404, detail="Version de dieta no encontrada")
 
     guardado = _cargar_contenido(dieta)
-    ruta_pdf = pdf_gen.generar(guardado["documento"], paciente.nombre_completo)
+    if dieta.tipo_documento == "porciones":
+        ruta_pdf = pdf_gen.generar_porciones(guardado["documento"], paciente.nombre_completo)
+    else:
+        ruta_pdf = pdf_gen.generar(guardado["documento"], paciente.nombre_completo)
 
     return FileResponse(ruta_pdf, media_type="application/pdf", filename=os.path.basename(ruta_pdf))
 

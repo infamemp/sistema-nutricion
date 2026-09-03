@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/static/favicon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png">
+    <link rel="manifest" href="/static/site.webmanifest">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Editar Tabla de Porciones - {{ paciente.nombre_completo }}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        green: {
+                            50: "#f1f9eb",
+                            100: "#deefd1",
+                            400: "#93c66b",
+                            600: "#65a035",
+                            700: "#518329",
+                            800: "#395b1e"
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-green-50 min-h-screen pb-24">
+
+    <div class="max-w-3xl mx-auto p-6">
+
+        <div class="mb-4">
+            <a href="/pacientes/{{ paciente.id }}/dieta/{{ dieta.id }}" class="text-sm text-green-700 hover:underline">&larr; Cancelar y volver</a>
+        </div>
+
+        <div class="mb-6">
+            <h1 class="text-2xl font-medium text-green-800">Editar Tabla de Porciones</h1>
+            <p class="text-sm text-gray-600 mt-1">{{ paciente.nombre_completo }} &middot; versión {{ dieta.version }}</p>
+            <p class="text-xs text-gray-400 mt-1">En las tablas de alimentos, un renglón por línea: "Alimento - Cantidad".</p>
+        </div>
+
+        <form method="post" action="/pacientes/{{ paciente.id }}/dieta/{{ dieta.id }}/editar" class="space-y-6">
+
+            <div class="bg-white rounded-xl shadow-sm p-6">
+                <h2 class="text-lg font-medium text-green-700 border-b-2 border-blue-500 pb-2 mb-4">Meta de proteína</h2>
+                <div class="space-y-3">
+                    <div>
+                        <label class="block text-sm text-gray-700 mb-1">Meta (texto)</label>
+                        <input type="text" name="meta_proteina" value="{{ meta_proteina }}"
+                               class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-400">
+                    </div>
+                    <div>
+                        <label class="block text-sm text-gray-700 mb-1">Instrucción general</label>
+                        <input type="text" name="instruccion_general" value="{{ instruccion_general }}"
+                               class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-400">
+                    </div>
+                    <div>
+                        <label class="block text-sm text-gray-700 mb-1">Objetivo por tiempo de comida (una línea cada uno)</label>
+                        <textarea name="objetivo_distribucion" rows="4"
+                                  class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-400 resize-y">{{ objetivo_distribucion_texto }}</textarea>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-sm p-6">
+                <h2 class="text-lg font-medium text-green-700 border-b-2 border-blue-500 pb-2 mb-4">Proteínas</h2>
+                <textarea name="tabla_proteinas" rows="10"
+                          class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-400 resize-y">{{ tabla_proteinas_texto }}</textarea>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-sm p-6">
+                <h2 class="text-lg font-medium text-green-700 border-b-2 border-blue-500 pb-2 mb-4">Carbohidratos</h2>
+                <div class="mb-3">
+                    <label class="block text-sm text-gray-700 mb-1">Instrucción</label>
+                    <input type="text" name="carbohidratos_instruccion" value="{{ carbohidratos_instruccion }}"
+                           class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-400">
+                </div>
+                <textarea name="carbohidratos_alimentos" rows="8"
+                          class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-400 resize-y">{{ carbohidratos_texto }}</textarea>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-sm p-6">
+                <h2 class="text-lg font-medium text-green-700 border-b-2 border-blue-500 pb-2 mb-4">Grasas</h2>
+                <div class="mb-3">
+                    <label class="block text-sm text-gray-700 mb-1">Instrucción</label>
+                    <input type="text" name="grasas_instruccion" value="{{ grasas_instruccion }}"
+                           class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-400">
+                </div>
+                <textarea name="grasas_alimentos" rows="8"
+                          class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-400 resize-y">{{ grasas_texto }}</textarea>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-sm p-6">
+                <h2 class="text-lg font-medium text-green-700 border-b-2 border-blue-500 pb-2 mb-4">Verduras</h2>
+                <textarea name="nota_verduras" rows="2"
+                          class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-400 resize-y">{{ nota_verduras }}</textarea>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-sm p-6">
+                <h2 class="text-lg font-medium text-green-700 border-b-2 border-blue-500 pb-2 mb-4">Metas diarias</h2>
+                <textarea name="metas_diarias" rows="6"
+                          class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-400 resize-y">{{ metas_diarias_texto }}</textarea>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-sm p-6">
+                <h2 class="text-lg font-medium text-green-700 border-b-2 border-blue-500 pb-2 mb-4">Ejemplos (opcional)</h2>
+                <div class="space-y-3">
+                    <div>
+                        <label class="block text-sm text-gray-700 mb-1">Desayuno</label>
+                        <textarea name="ejemplo_desayuno" rows="3"
+                                  class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-400 resize-y">{{ ejemplo_desayuno_texto }}</textarea>
+                    </div>
+                    <div>
+                        <label class="block text-sm text-gray-700 mb-1">Comida</label>
+                        <textarea name="ejemplo_comida" rows="3"
+                                  class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-400 resize-y">{{ ejemplo_comida_texto }}</textarea>
+                    </div>
+                    <div>
+                        <label class="block text-sm text-gray-700 mb-1">Cena</label>
+                        <textarea name="ejemplo_cena" rows="3"
+                                  class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-400 resize-y">{{ ejemplo_cena_texto }}</textarea>
+                    </div>
+                </div>
+            </div>
+
+            <div class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 shadow-lg">
+                <div class="max-w-3xl mx-auto flex gap-3">
+                    <a href="/pacientes/{{ paciente.id }}/dieta/{{ dieta.id }}"
+                       class="flex-1 text-center border border-gray-300 text-gray-700 font-medium py-3 rounded-lg hover:bg-gray-50 transition">
+                        Cancelar
+                    </a>
+                    <button type="submit"
+                            class="flex-1 bg-green-600 hover:bg-green-700 text-white font-medium py-3 rounded-lg transition">
+                        Guardar cambios
+                    </button>
+                </div>
+            </div>
+
+        </form>
+
+    </div>
+
+    <script>
+        function autoCrecer(el) {
+            el.style.height = 'auto';
+            el.style.height = el.scrollHeight + 'px';
+        }
+        document.querySelectorAll('textarea').forEach(function(el) {
+            el.addEventListener('input', function() { autoCrecer(el); });
+            autoCrecer(el);
+        });
+    </script>
+
+</body>
+</html>

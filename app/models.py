@@ -169,6 +169,7 @@ class DietaVersion(Base):
     creado_por = Column(String)
     instruccion_ajuste = Column(Text)
     version_anterior_id = Column(Integer, ForeignKey("dietas_versiones.id"), nullable=True)
+    tipo_documento = Column(String, default="menu")
 
     paciente = relationship("Paciente", back_populates="dietas")
     opciones = relationship("OpcionPrescrita", back_populates="dieta")

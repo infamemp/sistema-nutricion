@@ -199,3 +199,101 @@ def generar_html(documento, nombre_paciente, proxima_cita=None,
         pie_titulo=PIE_TITULO,
         pie_telefono=PIE_TELEFONO,
     )
+
+
+def _armar_bloques_porciones(documento):
+    """
+    Convierte el documento de una Tabla de Porciones en la misma lista de
+    bloques generica que usa el Menu, para reutilizar la plantilla del PDF
+    sin cambios. Cada fila alimento/cantidad se convierte en una linea de
+    texto simple ("Alimento — Cantidad").
+    """
+    bloques = []
+
+    intro = []
+    if documento.get("meta_proteina"):
+        intro.append(documento["meta_proteina"])
+    if documento.get("instruccion_general"):
+        intro.append(documento["instruccion_general"])
+    if documento.get("objetivo_distribucion"):
+        intro.extend(documento["objetivo_distribucion"])
+    if intro:
+        bloques.append({"tipo": "lista", "titulo": "TABLA DE PORCIONES", "elementos": intro})
+
+    if documento.get("tabla_proteinas"):
+        elementos = [
+            (f.get("alimento", "") + " — " + f.get("cantidad", "")).strip(" —")
+            for f in documento["tabla_proteinas"]
+        ]
+        bloques.append({"tipo": "lista", "titulo": "PROTEÍNAS", "elementos": elementos})
+
+    carbohidratos = documento.get("tabla_carbohidratos") or {}
+    if carbohidratos.get("alimentos"):
+        elementos = []
+        if carbohidratos.get("instruccion"):
+            elementos.append(carbohidratos["instruccion"])
+        elementos.extend(
+            (f.get("alimento", "") + " — " + f.get("cantidad", "")).strip(" —")
+            for f in carbohidratos["alimentos"]
+        )
+        bloques.append({"tipo": "lista", "titulo": "CARBOHIDRATOS", "elementos": elementos})
+
+    grasas = documento.get("tabla_grasas") or {}
+    if grasas.get("alimentos"):
+        elementos = []
+        if grasas.get("instruccion"):
+            elementos.append(grasas["instruccion"])
+        elementos.extend(
+            (f.get("alimento", "") + " — " + f.get("cantidad", "")).strip(" —")
+            for f in grasas["alimentos"]
+        )
+        bloques.append({"tipo": "lista", "titulo": "GRASAS", "elementos": elementos})
+
+    if documento.get("nota_verduras"):
+        bloques.append({"tipo": "texto", "titulo": "VERDURAS", "texto": documento["nota_verduras"]})
+
+    if documento.get("metas_diarias"):
+        bloques.append({"tipo": "lista", "titulo": "METAS DIARIAS", "elementos": documento["metas_diarias"]})
+
+    ejemplos = documento.get("ejemplos") or {}
+    for tiempo, titulo in [
+        ("desayuno", "EJEMPLO DE DESAYUNO"),
+        ("comida", "EJEMPLO DE COMIDA"),
+        ("cena", "EJEMPLO DE CENA"),
+    ]:
+        if ejemplos.get(tiempo):
+            bloques.append({"tipo": "lista", "titulo": titulo, "elementos": ejemplos[tiempo]})
+
+    return bloques
+
+
+def generar_porciones(documento, nombre_paciente, proxima_cita=None,
+                      fecha_documento=None, ruta_salida=None):
+    """
+    Igual que generar(), pero para el documento de una Tabla de Porciones.
+    Reutiliza la misma plantilla plan_pdf.html sin ningun cambio.
+    """
+    bloques = _armar_bloques_porciones(documento)
+    if not bloques:
+        raise ValueError("El documento no tiene contenido que imprimir.")
+    entorno = Environment(loader=FileSystemLoader(RUTA_PLANTILLAS))
+    plantilla = entorno.get_template("plan_pdf.html")
+    html = plantilla.render(
+        bloques=bloques,
+        paciente=nombre_paciente,
+        fecha=_fecha_larga(fecha_documento),
+        proxima_cita=proxima_cita,
+        logo=_logo_embebido(),
+        pie_nombre=PIE_NOMBRE,
+        pie_titulo=PIE_TITULO,
+        pie_telefono=PIE_TELEFONO,
+    )
+    if not ruta_salida:
+        os.makedirs(RUTA_SALIDA, exist_ok=True)
+        limpio = "".join(
+            c for c in nombre_paciente if c.isalnum() or c in (" ", "_")
+        ).strip().replace(" ", "_")
+        nombre = "porciones_" + limpio + "_" + datetime.now(ZoneInfo("America/Mexico_City")).date().isoformat() + ".pdf"
+        ruta_salida = os.path.join(RUTA_SALIDA, nombre)
+    HTML(string=html, base_url=BASE_DIR).write_pdf(ruta_salida)
+    return ruta_salida

@@ -258,7 +258,8 @@ ESQUEMA_PLAN = """{
 
 def construir_prompt(paciente, historia, medicion, padecimientos=None,
                      usa_glp1=False, es_deportista=False, esta_embarazada=False,
-                     opciones_previas=None, retroalimentacion_followup=None, incluir_kb=True):
+                     opciones_previas=None, retroalimentacion_followup=None,
+                     analisis_laboratorio=None, incluir_kb=True):
     """
     Arma el prompt completo para Gemini.
     """
@@ -353,6 +354,18 @@ def construir_prompt(paciente, historia, medicion, padecimientos=None,
             partes.append("OPCIONES YA PRESCRITAS ANTERIORMENTE:\n\n")
             for o in opciones_previas[:30]:
                 partes.append("  - " + str(o) + "\n")
+
+    if analisis_laboratorio:
+        partes.append("\n\n" + ("=" * 70) + "\n")
+        partes.append("ANALISIS DE LABORATORIO\n")
+        partes.append(
+            "La nutrióloga revisó explícitamente este resultado y decidió incluirlo "
+            "para este plan. Tómalo en cuenta al definir el enfoque, las banderas "
+            "clínicas (tipo 'laboratorio' si aplica), y cualquier ajuste nutricional "
+            "relevante. No diagnostiques ni sugieras un padecimiento, solo la "
+            "implicación nutricional.\n\n"
+        )
+        partes.append(str(analisis_laboratorio) + "\n")
 
     if incluir_kb:
         temas = temas_del_caso(padecimientos, usa_glp1)
@@ -450,7 +463,8 @@ def construir_prompt(paciente, historia, medicion, padecimientos=None,
 
 def generar_plan(paciente, historia, medicion, padecimientos=None,
                  usa_glp1=False, es_deportista=False, esta_embarazada=False,
-                 opciones_previas=None, retroalimentacion_followup=None, incluir_kb=True):
+                 opciones_previas=None, retroalimentacion_followup=None,
+                 analisis_laboratorio=None, incluir_kb=True):
     """
     Genera el plan tecnico completo para un paciente.
     Devuelve el plan como diccionario, mas metadatos del proceso.
@@ -463,6 +477,7 @@ def generar_plan(paciente, historia, medicion, padecimientos=None,
         esta_embarazada=esta_embarazada,
         opciones_previas=opciones_previas,
         retroalimentacion_followup=retroalimentacion_followup,
+        analisis_laboratorio=analisis_laboratorio,
         incluir_kb=incluir_kb,
     )
 
@@ -485,5 +500,169 @@ def generar_plan(paciente, historia, medicion, padecimientos=None,
             "tamano_prompt_kb": len(prompt) // 1024,
             "temas_kb": temas_del_caso(padecimientos, usa_glp1),
             "incluyo_kb": incluir_kb,
+        },
+    }
+
+
+def construir_prompt_porciones(paciente, historia, medicion, incluir_ejemplos, padecimientos=None,
+                               usa_glp1=False, es_deportista=False, esta_embarazada=False, incluir_kb=True):
+    """
+    Arma el prompt para la "Tabla de Porciones": un formato de prescripcion
+    mas simple que el menu completo, para pacientes que no quieren un menu
+    armado, solo un marco de referencia de cuanta proteina, carbohidrato y
+    grasa consumir, y arman su propia comida.
+
+    A diferencia del menu (construir_prompt), este documento sale directo
+    de Gemini sin pasar por Claude: es mas tabla de datos que redaccion, no
+    necesita "voz".
+    """
+    peso = None
+    if medicion:
+        peso = medicion.get("peso")
+    if not peso and historia:
+        peso = historia.get("peso_actual")
+
+    if not peso:
+        raise ValueError("No hay peso registrado. Es indispensable para calcular la proteina.")
+
+    partes = []
+
+    partes.append(
+        "Eres el motor de analisis nutricional de la consulta de Marifer Utrilla, "
+        "nutriologa en Puebla, Mexico, especializada en obesidad, diabetes, "
+        "resistencia a la insulina, SOP, endometriosis, salud hormonal, fertilidad "
+        "y embarazo.\n\n"
+        "Tu trabajo es generar una 'TABLA DE PORCIONES': un formato de prescripcion "
+        "mas simple que un menu armado. Es para pacientes que no quieren recibir "
+        "opciones de comida ya combinadas, solo quieren saber cuantos gramos de "
+        "proteina, carbohidrato y grasa consumir por comida, y ellos arman su "
+        "propio plato con esa referencia.\n\n"
+        "REGLA CENTRAL: razonas sobre este caso concreto, no aplicas una plantilla "
+        "generica. El paciente y sus restricciones son los que determinan que "
+        "alimentos incluir en cada tabla."
+    )
+
+    partes.append("\n\n" + ("=" * 70) + "\n")
+    partes.append(_seccion_expediente(paciente, historia, medicion))
+
+    partes.append("\n\n" + ("=" * 70) + "\n")
+    partes.append("CRITERIOS DE PRESCRIPCION DE LA NUTRIOLOGA\n")
+    partes.append("Estos criterios son de ella y no se negocian.\n\n")
+    partes.append(reglas.resumen_para_prompt(
+        peso, usa_glp1=usa_glp1,
+        es_deportista=es_deportista,
+        esta_embarazada=esta_embarazada,
+    ))
+
+    r = reglas.cargar()
+    partes.append("\nGRASAS PERMITIDAS: " + ", ".join(r["grasa"]["preferidas"]))
+    partes.append("\nGRASAS EXCLUIDAS por criterio de la nutriologa: "
+                  + ", ".join(r["grasa"]["excluidas"]))
+    partes.append("\nFRUTAS PREFERIDAS: " + ", ".join(r["fruta"]["preferidas"]))
+    partes.append("\nCARBOHIDRATOS PREFERIDOS: " + ", ".join(r["carbohidrato"]["preferidos"]))
+
+    if incluir_kb:
+        temas = temas_del_caso(padecimientos, usa_glp1)
+        contexto = kb.contexto_para_caso(temas, max_fuentes=3)
+        if contexto["total"] > 0:
+            partes.append("\n\n" + ("=" * 70) + "\n")
+            partes.append("CONOCIMIENTO CLINICO DE REFERENCIA\n")
+            partes.append(contexto["texto"])
+
+    partes.append("\n\n" + ("=" * 70) + "\n")
+    partes.append("TABLA DE PESOS DEL SISTEMA, REFERENCIA AUTORITATIVA\n")
+    partes.append("NO calcules gramajes de memoria, usa esta tabla:\n\n")
+    partes.append(_tabla_de_pesos())
+
+    if incluir_ejemplos:
+        instruccion_ejemplos = (
+            "Es la PRIMERA VEZ que este paciente recibe una Tabla de Porciones. "
+            "Incluye en el campo \"ejemplos\" tres combinaciones reales de plato "
+            "(desayuno, comida, cena) que usen las tres tablas juntas, para que "
+            "el paciente entienda como se ve una comida armada con este sistema."
+        )
+    else:
+        instruccion_ejemplos = (
+            "Este paciente YA ha usado el formato de Tabla de Porciones antes. "
+            "NO incluyas ejemplos de comidas armadas esta vez: el campo "
+            "\"ejemplos\" debe ir como null."
+        )
+
+    partes.append("\n\n" + ("=" * 70) + "\n")
+    partes.append(
+        "INSTRUCCIONES DE SALIDA\n\n"
+        "Devuelve UNICAMENTE un JSON con este esquema exacto, sin texto fuera del JSON:\n\n"
+        "{\n"
+        '  "meta_proteina": "texto tipo \'Meta: 25 g de proteina por comida (4 veces al dia) = 100g de proteina diaria.\'",\n'
+        '  "instruccion_general": "texto tipo \'Elige 1 opcion en desayuno, comida y cena + 1 colacion.\'",\n'
+        '  "tabla_proteinas": [\n'
+        '    {"alimento": "nombre del alimento", "cantidad": "medida casera y/o gramos, ej. \'90 g\' o \'1 lata de 140g\'"}\n'
+        "  ],\n"
+        '  "objetivo_distribucion": ["Desayuno: 1 opcion", "Comida: 1 opcion", "Cena: 1 opcion", "Colacion: ..."],\n'
+        '  "tabla_carbohidratos": {\n'
+        '    "instruccion": "texto tipo \'Desayuno: 2 opciones (ejemplo: 1 tortilla + 1/2 taza de papaya)...\'",\n'
+        '    "alimentos": [{"alimento": "...", "cantidad": "..."}]\n'
+        "  },\n"
+        '  "tabla_grasas": {\n'
+        '    "instruccion": "texto tipo \'GRASAS: 3 PORCIONES AL DIA DISTRIBUIDAS\'",\n'
+        '    "alimentos": [{"alimento": "...", "cantidad": "..."}]\n'
+        "  },\n"
+        '  "nota_verduras": "texto recomendando tazas de verdura al dia, repartidas en las comidas",\n'
+        '  "metas_diarias": ["3 porciones buenas de proteina", "2-3 frutas", "3-4 tazas de verduras", "2-3 L de agua", "Fuerza X veces/semana", "X pasos diarios"],\n'
+        '  "ejemplos": {"desayuno": ["..."], "comida": ["..."], "cena": ["..."]}\n'
+        "}\n\n"
+        + instruccion_ejemplos + "\n\n"
+        "REGLA DE PORCIONES: cada renglon de tabla_proteinas debe aportar "
+        "aproximadamente la misma cantidad de proteina por porcion (la que "
+        "definas en meta_proteina, dividida entre el numero de comidas). Usa "
+        "la tabla de pesos de arriba para las conversiones, nunca inventes "
+        "un gramaje.\n\n"
+        "- Usa alimentos reales de la cocina mexicana, nada de ultraprocesados.\n"
+        "- Respeta alergias, intolerancias, y alimentos que el paciente evita.\n"
+        "- No cuentes ni menciones calorias."
+    )
+
+    return "".join(partes)
+
+
+def generar_tabla_porciones(paciente, historia, medicion, incluir_ejemplos, padecimientos=None,
+                            usa_glp1=False, es_deportista=False, esta_embarazada=False, incluir_kb=True):
+    """
+    Genera una Tabla de Porciones. A diferencia de generar_plan(), el
+    resultado de Gemini se usa directo como documento final, sin pasar por
+    Claude (es tabla de datos, no redaccion).
+
+    Verifica cada renglon de tabla_proteinas contra la base de datos
+    nutricional real (BAM/USDA), igual que se hace con el menu, pero sin
+    ajustar automaticamente la cantidad: solo reporta si algo no se pudo
+    verificar, para que la nutriologa lo revise.
+    """
+    prompt = construir_prompt_porciones(
+        paciente, historia, medicion, incluir_ejemplos,
+        padecimientos=padecimientos,
+        usa_glp1=usa_glp1,
+        es_deportista=es_deportista,
+        esta_embarazada=esta_embarazada,
+        incluir_kb=incluir_kb,
+    )
+
+    documento = gemini.generar_json(prompt)
+
+    problemas = []
+    for fila in documento.get("tabla_proteinas", []) or []:
+        nutrientes, problema = verificador.nutrientes_de_alimento(fila.get("alimento", ""), fila.get("cantidad", ""))
+        if problema:
+            problemas.append({"alimento": fila.get("alimento"), "cantidad": fila.get("cantidad"), "detalle": problema})
+        else:
+            fila["proteina_verificada_g"] = round(nutrientes["proteina_g"], 1)
+
+    confiable = len(problemas) == 0
+
+    return {
+        "documento": documento,
+        "verificacion": {"confiable": confiable, "problemas": problemas},
+        "meta": {
+            "modelo": gemini.MODELO_ANALISIS,
+            "tamano_prompt_kb": len(prompt) // 1024,
         },
     }

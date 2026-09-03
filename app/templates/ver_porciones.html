@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/static/favicon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png">
+    <link rel="manifest" href="/static/site.webmanifest">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tabla de Porciones - {{ paciente.nombre_completo }}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        green: {
+                            50: "#f1f9eb",
+                            100: "#deefd1",
+                            400: "#93c66b",
+                            600: "#65a035",
+                            700: "#518329",
+                            800: "#395b1e"
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-green-50 min-h-screen pb-24">
+
+    <div class="max-w-3xl mx-auto p-6">
+
+        <div class="mb-4">
+            <a href="/pacientes/{{ paciente.id }}" class="text-sm text-green-700 hover:underline">&larr; Volver al expediente</a>
+        </div>
+
+        <div class="mb-6 flex justify-between items-start">
+            <div>
+                <h1 class="text-2xl font-medium text-green-800">Tabla de Porciones</h1>
+                <p class="text-sm text-gray-600 mt-1">{{ paciente.nombre_completo }} &middot; versión {{ dieta.version }}</p>
+            </div>
+            <span class="text-xs px-3 py-1.5 rounded-full font-medium
+                {% if confiable %}bg-green-100 text-green-700{% else %}bg-orange-100 text-orange-700{% endif %}">
+                {% if confiable %}Verificado{% else %}Revisar cifras{% endif %}
+            </span>
+        </div>
+
+        {% if mensaje %}
+        <div class="bg-green-100 border border-green-300 text-green-800 rounded-lg p-4 mb-6">
+            {{ mensaje }}
+        </div>
+        {% endif %}
+
+        {% if problemas %}
+        <div class="bg-orange-50 border border-orange-200 rounded-xl p-4 mb-6 text-sm text-orange-800">
+            <p class="font-medium mb-2">No se pudieron verificar estos alimentos contra la base de datos nutricional:</p>
+            <ul class="list-disc pl-4 space-y-1">
+                {% for p in problemas %}
+                <li>{{ p.alimento }} ({{ p.cantidad }})</li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+
+        {% if doc.meta_proteina or doc.instruccion_general or doc.objetivo_distribucion %}
+        <div class="bg-white rounded-xl shadow-sm p-6 mb-6">
+            <h2 class="text-lg font-medium text-green-700 border-b-2 border-blue-500 pb-2 mb-4">Meta de proteína</h2>
+            {% if doc.meta_proteina %}<p class="text-sm text-gray-700 mb-2 font-medium">{{ doc.meta_proteina }}</p>{% endif %}
+            {% if doc.instruccion_general %}<p class="text-sm text-gray-600 mb-3">{{ doc.instruccion_general }}</p>{% endif %}
+            {% if doc.objetivo_distribucion %}
+            <ul class="text-sm text-gray-700 list-disc pl-4 space-y-1">
+                {% for o in doc.objetivo_distribucion %}<li>{{ o }}</li>{% endfor %}
+            </ul>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        {% if doc.tabla_proteinas %}
+        <div class="bg-white rounded-xl shadow-sm p-6 mb-6">
+            <h2 class="text-lg font-medium text-green-700 border-b-2 border-blue-500 pb-2 mb-4">Proteínas</h2>
+            <table class="w-full text-sm">
+                <tbody>
+                    {% for f in doc.tabla_proteinas %}
+                    <tr class="border-b border-gray-100 last:border-0">
+                        <td class="py-2 text-gray-700">{{ f.alimento }}</td>
+                        <td class="py-2 text-gray-600 text-right whitespace-nowrap">{{ f.cantidad }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% endif %}
+
+        {% if doc.tabla_carbohidratos and doc.tabla_carbohidratos.alimentos %}
+        <div class="bg-white rounded-xl shadow-sm p-6 mb-6">
+            <h2 class="text-lg font-medium text-green-700 border-b-2 border-blue-500 pb-2 mb-1">Carbohidratos</h2>
+            {% if doc.tabla_carbohidratos.instruccion %}
+            <p class="text-xs text-gray-500 italic mb-3">{{ doc.tabla_carbohidratos.instruccion }}</p>
+            {% endif %}
+            <table class="w-full text-sm">
+                <tbody>
+                    {% for f in doc.tabla_carbohidratos.alimentos %}
+                    <tr class="border-b border-gray-100 last:border-0">
+                        <td class="py-2 text-gray-700">{{ f.alimento }}</td>
+                        <td class="py-2 text-gray-600 text-right whitespace-nowrap">{{ f.cantidad }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% endif %}
+
+        {% if doc.tabla_grasas and doc.tabla_grasas.alimentos %}
+        <div class="bg-white rounded-xl shadow-sm p-6 mb-6">
+            <h2 class="text-lg font-medium text-green-700 border-b-2 border-blue-500 pb-2 mb-1">Grasas</h2>
+            {% if doc.tabla_grasas.instruccion %}
+            <p class="text-xs text-gray-500 italic mb-3">{{ doc.tabla_grasas.instruccion }}</p>
+            {% endif %}
+            <table class="w-full text-sm">
+                <tbody>
+                    {% for f in doc.tabla_grasas.alimentos %}
+                    <tr class="border-b border-gray-100 last:border-0">
+                        <td class="py-2 text-gray-700">{{ f.alimento }}</td>
+                        <td class="py-2 text-gray-600 text-right whitespace-nowrap">{{ f.cantidad }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% endif %}
+
+        {% if doc.nota_verduras %}
+        <div class="bg-white rounded-xl shadow-sm p-6 mb-6">
+            <h2 class="text-lg font-medium text-green-700 border-b-2 border-blue-500 pb-2 mb-4">Verduras</h2>
+            <p class="text-sm text-gray-700">{{ doc.nota_verduras }}</p>
+        </div>
+        {% endif %}
+
+        {% if doc.metas_diarias %}
+        <div class="bg-white rounded-xl shadow-sm p-6 mb-6">
+            <h2 class="text-lg font-medium text-green-700 border-b-2 border-blue-500 pb-2 mb-4">Metas diarias</h2>
+            <ul class="text-sm text-gray-700 list-disc pl-4 space-y-1">
+                {% for m in doc.metas_diarias %}<li>{{ m }}</li>{% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+
+        {% if doc.ejemplos %}
+        <div class="bg-white rounded-xl shadow-sm p-6 mb-6">
+            <h2 class="text-lg font-medium text-green-700 border-b-2 border-blue-500 pb-2 mb-4">Ejemplos</h2>
+            {% for tiempo, titulo in [('desayuno', 'Desayuno'), ('comida', 'Comida'), ('cena', 'Cena')] %}
+            {% if doc.ejemplos.get(tiempo) %}
+            <p class="text-sm font-medium text-gray-700 mt-3 mb-1">{{ titulo }}</p>
+            <ul class="text-sm text-gray-700 list-disc pl-4 space-y-1">
+                {% for e in doc.ejemplos[tiempo] %}<li>{{ e }}</li>{% endfor %}
+            </ul>
+            {% endif %}
+            {% endfor %}
+        </div>
+        {% endif %}
+
+    </div>
+
+    <div class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 shadow-lg">
+        <div class="max-w-3xl mx-auto flex gap-3">
+            <a href="/pacientes/{{ paciente.id }}/dieta/{{ dieta.id }}/pdf"
+               class="flex-1 text-center bg-white border border-green-600 text-green-700 hover:bg-green-50 font-medium py-3 rounded-lg transition">
+                Descargar PDF
+            </a>
+            <form method="post" action="/pacientes/{{ paciente.id }}/dieta/{{ dieta.id }}/enviar-correo" class="flex-1">
+                <button type="submit" class="w-full bg-white border border-green-600 text-green-700 hover:bg-green-50 font-medium py-3 rounded-lg transition">
+                    Enviar por correo
+                </button>
+            </form>
+            {% if dieta.estado != 'aprobada' %}
+            <a href="/pacientes/{{ paciente.id }}/dieta/{{ dieta.id }}/editar"
+               class="flex-1 text-center bg-white border border-green-600 text-green-700 hover:bg-green-50 font-medium py-3 rounded-lg transition">
+                Editar
+            </a>
+            <form method="post" action="/pacientes/{{ paciente.id }}/dieta/{{ dieta.id }}/aprobar" class="flex-1">
+                <button type="submit" class="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-3 rounded-lg transition">
+                    Aprobar
+                </button>
+            </form>
+            {% endif %}
+        </div>
+    </div>
+
+</body>
+</html>
