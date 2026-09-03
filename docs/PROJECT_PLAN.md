@@ -1,8 +1,8 @@
 # Sistema Integral de Nutrición, Documento Maestro del Proyecto
 
-**Versión:** 5.6
-**Fecha:** 1 de septiembre de 2026
-**Estado:** Fase 0 completa. Fase 1 prácticamente completa: sincronización con Google Calendar, lectura automática de InBody, y registro de opciones prescritas, los tres implementados y verificados. Fase 4 completa salvo la carta al médico referente. Fase 5 casi completa: dominio, HTTPS, favicon y respaldo diario a Google Drive en producción; solo falta pulir la interfaz tablet-first. Sistema en vivo en `https://app.mafernut.com`.
+**Versión:** 5.7
+**Fecha:** 2 de septiembre de 2026
+**Estado:** Fase 0 completa. Fase 1 prácticamente completa: sincronización con Google Calendar, lectura automática de InBody, y registro de opciones prescritas, los tres implementados y verificados. Fase 4 completa salvo la carta al médico referente. Fase 5 casi completa: dominio, HTTPS, favicon y respaldo diario a Google Drive en producción; solo falta pulir la interfaz tablet-first. Rediseño visual completo (logo, paleta de verde de marca, favicon) implementado. Sistema en vivo en `https://app.mafernut.com`.
 
 ---
 
@@ -235,6 +235,23 @@ Stack, servidor, IA, base de alimentos, alcance, identidad visual y guía de est
 
 Sugerencia evaluada y descartada por ahora: dictado por voz al expediente (retomable si la nutrióloga lo pide).
 
+### Fase 7, Empaquetado local y producto vendible (idea a futuro, sin fecha, 2 sep 2026)
+
+Dos motivaciones distintas, discutidas y documentadas para cuando se retomen:
+
+**A) Correr en la computadora de Marifer, sin depender del droplet.**
+- Motivación: ahorrar el pago mensual del droplet, y que el sistema resista una falla de internet sin caerse por completo
+- Es técnicamente viable: el sistema ya es ligero (FastAPI + SQLite en un solo archivo, sin base de datos pesada tipo MySQL/Postgres), cercano al patrón ya usado en FIT Forge (empaquetado como `.exe` de escritorio)
+- **"Local" no significa "sin internet"** para las partes que dependen de servicios externos: generación de dietas (Gemini + Claude), lectura de InBody y laboratorios (Gemini), sincronización con Google Calendar, respaldo a Google Drive, y envío de correos. Esas funciones seguirían necesitando conexión, sin importar dónde viva el servidor
+- Lo que SÍ seguiría funcionando sin internet: expedientes, historia clínica, citas, follow-ups, y crear una dieta manual desde cero (ya construido en la Fase 1, pensado justo para este escenario)
+- **Obstáculo técnico identificado:** WeasyPrint (generador de PDF) depende de librerías del sistema operativo (Pango, Cairo) que se instalan fácil en Linux pero son más complicadas de empaquetar en Windows. Resoluble, pero es el punto de mayor esfuerzo
+
+**B) Venderlo como producto a otras nutriólogas.**
+- Requiere una decisión de fondo antes de empezar: **cada nutrióloga con su propia copia instalada** (sus propias claves, su propia cuenta de Google, sin mezclar datos entre clínicas, más simple) frente a **un solo sistema en la nube que atienda a varias a la vez** (requiere manejo de cuentas, seguridad multiplicada, y probablemente cobro recurrente — un producto de software distinto, no solo empaquetar lo ya existente)
+- Requisito explícito de Michel: las conexiones y autorizaciones deben simplificarse a un nivel "usuario y contraseña" para cada servicio involucrado, sin la configuración técnica actual (crear proyecto en Google Cloud, cliente OAuth, autorización manual por consola). Esto es reemplazable por un flujo tipo "Conectar con Google" de un solo botón, pero es trabajo real de construir, no una casilla que se activa sola
+
+Ambas ideas comparten el mismo motor (el sistema actual), pero el empaque y el flujo de configuración de cada una son proyectos distintos entre sí.
+
 ---
 
 ## 5. Identidad y estilo
@@ -382,3 +399,4 @@ Las API keys nunca van al repo. Viven en un archivo `.env` local, ya cubierto po
 | 2026-09-01 | v5.4, marca en el login actualizada ("Marifer Utrilla" / "Nutrición y Salud Hormonal" en vez de "Sistema de Marifer"), y segundo color de marca adoptado: azul `#3B82F6` como acento de línea bajo encabezados de sección y de tabla, aplicado en las 7 plantillas de la app. **Gráficas de progreso implementadas:** 3 gráficas de líneas (peso, % grasa, MME) vía Chart.js, leyendo `mediciones_inbody` como fuente única (sea de InBody real o captura manual), con botón de mostrar/ocultar e impresión/descarga aislando solo esa sección. Diseño dejado abierto para agregar más métricas de seguimiento a futuro sin rediseñar. Con esto, la Fase 4 queda completa salvo la carta al médico referente |
 | 2026-09-01 | v5.5, respaldo diario cifrado a Google Drive implementado y verificado con restauración de prueba. Se descubrió a medio camino que las cuentas de servicio de Google no tienen cuota en Drive personal, forzando un cambio de arquitectura a autorización OAuth de la cuenta de Marifer (reutilizable para la futura sincronización de sus 2 calendarios). Programado con systemd timer, 3:00 AM diario, retención de 30 días. **Con esto, la Fase 5 queda completa salvo pulir la interfaz tablet-first** |
 | 2026-09-01 | v5.6, Fase 1 prácticamente cerrada en una sola sesión: (1) sincronización de citas con Google Calendar (sistema→google) usando OAuth de las 2 cuentas de Marifer, con campo `origen_consulta` por paciente y casilla anti-duplicado; (2) lectura automática de reportes InBody vía imagen con Gemini multimodal, identificación simplificada al vivir dentro del expediente ya abierto, con 3 verificaciones de seguridad en vez de la búsqueda global originalmente especificada; (3) registro de opciones ya prescritas al aprobar una dieta, usado como contexto (no instrucción) junto con la retroalimentación cualitativa del follow-up al generar la siguiente; (4) confirmación obligatoria antes de cancelar, reagendar, o cambiar estado de una cita. Se subieron los timeouts de nginx a 300s porque el prompt de generación creció con el nuevo contexto |
+| 2026-09-02 | v5.7, auditoría de Historia Clínica y Follow-up contra los `.docx` originales: cobertura casi total, con 3 huecos encontrados y 2 resueltos (peso/estatura ahora capturables a mano en Historia Clínica, el peso crea una medición real). Laboratorios implementados: análisis con IA en prosa (formato variable, no JSON), guardado, eliminar, e inclusión opcional y explícita en la generación de dietas. Edición manual completa de cualquier borrador de dieta antes de aprobar, y creación de una dieta desde cero sin IA (pensado para cuando falle el internet). Reordenamiento y colapso/expansión de las secciones del expediente, buscador en la lista de pacientes. **Rediseño visual completo:** nuevo logo (con transparencia real, tras descartar el PNG anterior por venir opaco), paleta de verde de marca extraída por muestreo de píxel del logo real (no inventada), aplicada a las 14 plantillas vía configuración de Tailwind, favicon actualizado, y el mismo logo/colores llevados también al PDF de las dietas. Dos bugs de infraestructura corregidos: fecha del PDF se adelantaba un día (usaba UTC del servidor en vez de zona horaria de México), y el logo del PDF pesaba 2.6 MB por no estar redimensionado (bajó a 257 KB). **Idea a futuro documentada, sin construir:** empaquetar el sistema para correr localmente en la computadora de Marifer (ahorra el droplet, resiste fallas de internet para las funciones que no dependen de IA), y una posible versión vendible a otras nutriólogas con conexiones simplificadas tipo "Conectar con Google" — ver Fase 7 |
