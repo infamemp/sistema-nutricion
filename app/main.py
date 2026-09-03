@@ -1,5 +1,6 @@
 import json
 import os
+import time
 from fastapi import FastAPI, Request, Form, Depends, HTTPException, File, UploadFile
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
@@ -29,12 +30,23 @@ templates = Jinja2Templates(directory="templates")
 
 RUTAS_PUBLICAS = {"/login", "/olvide-password", "/restablecer-password"}
 
+# Tiempo maximo de inactividad antes de pedir la contraseña de nuevo.
+# No es lo mismo que el max_age del SessionMiddleware (esa es la cota
+# externa del cookie firmado); este es el control real que le importa
+# al usuario: "llevo mas de una hora sin tocar la app".
+LIMITE_INACTIVIDAD_SEGUNDOS = 60 * 60  # 1 hora
+
 
 class RequiereLoginMiddleware(BaseHTTPMiddleware):
     """
     Bloquea toda la aplicacion salvo /login hasta que la sesion tenga
     la marca de autenticado. Es deliberadamente simple: un solo
     operador, una sola contraseña, sin roles ni permisos distintos.
+
+    Ademas cierra la sesion por inactividad (LIMITE_INACTIVIDAD_SEGUNDOS):
+    cada peticion autenticada actualiza "ultima_actividad". Si al llegar
+    una peticion ya paso mas de una hora desde la ultima, se trata como
+    sesion vencida aunque el cookie en si siga siendo valido.
     """
     async def dispatch(self, request: Request, call_next):
         if request.url.path in RUTAS_PUBLICAS or request.url.path.startswith("/static/"):
@@ -42,6 +54,15 @@ class RequiereLoginMiddleware(BaseHTTPMiddleware):
 
         if not request.session.get("autenticado"):
             return RedirectResponse(url="/login", status_code=303)
+
+        ahora = time.time()
+        ultima_actividad = request.session.get("ultima_actividad")
+
+        if ultima_actividad and (ahora - ultima_actividad) > LIMITE_INACTIVIDAD_SEGUNDOS:
+            request.session.clear()
+            return RedirectResponse(url="/login", status_code=303)
+
+        request.session["ultima_actividad"] = ahora
 
         return await call_next(request)
 
@@ -79,6 +100,7 @@ def procesar_login(request: Request, password: str = Form(...)):
 
     if auth.verificar_password(password, hash_guardado):
         request.session["autenticado"] = True
+        request.session["ultima_actividad"] = time.time()
         return RedirectResponse(url="/pacientes", status_code=303)
 
     return templates.TemplateResponse(
@@ -194,7 +216,11 @@ def obtener_paciente(db: Session, paciente_id: int):
 
 @app.get("/", response_class=HTMLResponse)
 def inicio(request: Request):
-    return templates.TemplateResponse(request, "alta_rapida.html")
+    # Antes mostraba Alta Rapida directo. Si vuelves a abrir la app
+    # (ej. cerraste la pestaña) esta no es la pantalla util para
+    # retomar el trabajo -- para eso ya existe /pacientes/nuevo, con
+    # boton propio en la lista de pacientes.
+    return RedirectResponse(url="/pacientes", status_code=303)
 
 
 @app.get("/pacientes/nuevo", response_class=HTMLResponse)
