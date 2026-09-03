@@ -69,9 +69,23 @@ def buscar_alimento(nombre):
     if consulta in tabla:
         return tabla[consulta]
 
-    for clave in tabla:
-        if _normalizar(clave) in consulta:
-            return tabla[clave]
+    # Coincidencias por substring: cuando varias claves caben dentro de
+    # la consulta (ej. "pescado" Y "tilapia" caben ambas en "filete de
+    # pescado blanco (tilapia o similar)"), hay que preferir la mas
+    # especifica (la clave mas larga), no la primera que aparezca en el
+    # archivo. Antes de este ajuste, "pescado" (generica) ganaba sobre
+    # "tilapia" (especifica) solo por estar antes en el JSON.
+    candidatas = [clave for clave in tabla if _normalizar(clave) in consulta]
+    if candidatas:
+        # Mas especifica = mas larga. En caso de empate en longitud
+        # (ej. "pescado" y "tilapia" miden lo mismo), se prefiere la
+        # entrada curada con 'buscar_como', en vez de un cajon generico.
+        def _especificidad(clave):
+            tiene_buscar_como = 1 if "buscar_como" in tabla[clave] else 0
+            return (len(_normalizar(clave)), tiene_buscar_como)
+
+        mas_especifica = max(candidatas, key=_especificidad)
+        return tabla[mas_especifica]
 
     for clave in tabla:
         if consulta in _normalizar(clave):
