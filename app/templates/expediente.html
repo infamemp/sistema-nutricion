@@ -110,9 +110,9 @@
             <div class="flex justify-between items-center border-b-2 border-blue-500 pb-2 mb-4">
                 <h2 class="text-lg font-medium text-green-700">Historia clínica</h2>
                 <div class="flex items-center gap-2">
-                    <a href="/pacientes/{{ paciente.id }}/historia"
+                    <a href="/pacientes/{{ paciente.id }}/historia{% if not historia %}?editar=1{% endif %}"
                        class="bg-green-600 hover:bg-green-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition">
-                        {% if historia %}Editar{% else %}Llenar historia clínica{% endif %}
+                        {% if historia %}Ver historia clínica{% else %}Llenar historia clínica{% endif %}
                     </a>
                     <button type="button" onclick="toggleSeccion(this)" class="p-1 hover:bg-gray-100 rounded">
                         <svg class="w-5 h-5 text-gray-400 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>

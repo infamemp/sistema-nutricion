@@ -576,7 +576,7 @@ def eliminar_laboratorio(paciente_id: int, laboratorio_id: int, db: Session = De
 
 
 @app.get("/pacientes/{paciente_id}/historia", response_class=HTMLResponse)
-def ver_historia(paciente_id: int, request: Request, db: Session = Depends(get_db)):
+def ver_historia(paciente_id: int, request: Request, editar: int = 0, db: Session = Depends(get_db)):
     paciente = obtener_paciente(db, paciente_id)
 
     historia = (
@@ -591,7 +591,7 @@ def ver_historia(paciente_id: int, request: Request, db: Session = Depends(get_d
     return templates.TemplateResponse(
         request,
         "historia_clinica.html",
-        {"paciente": paciente, "h": historia},
+        {"paciente": paciente, "h": historia, "editar": bool(editar)},
     )
 
 

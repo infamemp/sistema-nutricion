@@ -37,10 +37,29 @@
             <a href="/pacientes/{{ paciente.id }}" class="text-sm text-green-700 hover:underline">&larr; Volver al expediente</a>
         </div>
 
-        <div class="mb-6">
-            <h1 class="text-2xl font-medium text-green-800">Historia clínica</h1>
-            <p class="text-sm text-gray-600 mt-1">{{ paciente.nombre_completo }}</p>
+        <div class="mb-6 flex items-center justify-between">
+            <div>
+                <h1 class="text-2xl font-medium text-green-800">Historia clínica</h1>
+                <p class="text-sm text-gray-600 mt-1">{{ paciente.nombre_completo }}</p>
+            </div>
+            {% if editar %}
+            <a href="/pacientes/{{ paciente.id }}/historia"
+                class="text-sm border border-gray-300 text-gray-700 rounded-lg px-4 py-2 hover:bg-gray-50">
+                Ver (sin editar)
+            </a>
+            {% else %}
+            <a href="/pacientes/{{ paciente.id }}/historia?editar=1"
+                class="text-sm bg-green-600 hover:bg-green-700 text-white rounded-lg px-4 py-2">
+                Editar
+            </a>
+            {% endif %}
         </div>
+
+        {% if not editar %}
+        <div class="bg-gray-100 border border-gray-300 text-gray-600 text-sm rounded-lg px-4 py-2 mb-6">
+            Modo consulta — los campos no se pueden modificar. Usa el botón "Editar" para hacer cambios.
+        </div>
+        {% endif %}
 
         {% if mensaje %}
         <div class="bg-green-100 border border-green-300 text-green-800 rounded-lg p-4 mb-6">
@@ -56,15 +75,15 @@
                 <div class="space-y-4">
                     <div>
                         <label class="block text-sm text-gray-700 mb-1">¿Qué esperas lograr con este proceso?</label>
-                        <textarea name="objetivo_que_espera" rows="2" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400">{{ h.objetivo_que_espera or '' }}</textarea>
+                        <textarea {% if not editar %}readonly{% endif %} name="objetivo_que_espera" rows="2" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400">{{ h.objetivo_que_espera or '' }}</textarea>
                     </div>
                     <div>
                         <label class="block text-sm text-gray-700 mb-1">¿En qué tiempo te gustaría ver resultados?</label>
-                        <input type="text" name="objetivo_tiempo" value="{{ h.objetivo_tiempo or '' }}" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400">
+                        <input type="text" {% if not editar %}readonly{% endif %} name="objetivo_tiempo" value="{{ h.objetivo_tiempo or '' }}" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400">
                     </div>
                     <div>
                         <label class="block text-sm text-gray-700 mb-1">¿Qué es lo más importante para ti en este momento?</label>
-                        <textarea name="objetivo_importante" rows="2" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400">{{ h.objetivo_importante or '' }}</textarea>
+                        <textarea {% if not editar %}readonly{% endif %} name="objetivo_importante" rows="2" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400">{{ h.objetivo_importante or '' }}</textarea>
                     </div>
                 </div>
             </div>
@@ -75,31 +94,31 @@
                 <div class="grid grid-cols-2 gap-4">
                     <div>
                         <label class="block text-sm text-gray-700 mb-1">Diabetes</label>
-                        <input type="text" name="antecedente_diabetes" value="{{ h.antecedente_diabetes or '' }}" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400">
+                        <input type="text" {% if not editar %}readonly{% endif %} name="antecedente_diabetes" value="{{ h.antecedente_diabetes or '' }}" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400">
                     </div>
                     <div>
                         <label class="block text-sm text-gray-700 mb-1">Obesidad</label>
-                        <input type="text" name="antecedente_obesidad" value="{{ h.antecedente_obesidad or '' }}" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400">
+                        <input type="text" {% if not editar %}readonly{% endif %} name="antecedente_obesidad" value="{{ h.antecedente_obesidad or '' }}" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400">
                     </div>
                     <div>
                         <label class="block text-sm text-gray-700 mb-1">Tiroides</label>
-                        <input type="text" name="antecedente_tiroides" value="{{ h.antecedente_tiroides or '' }}" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400">
+                        <input type="text" {% if not editar %}readonly{% endif %} name="antecedente_tiroides" value="{{ h.antecedente_tiroides or '' }}" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400">
                     </div>
                     <div>
                         <label class="block text-sm text-gray-700 mb-1">Hipertensión</label>
-                        <input type="text" name="antecedente_hipertension" value="{{ h.antecedente_hipertension or '' }}" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400">
+                        <input type="text" {% if not editar %}readonly{% endif %} name="antecedente_hipertension" value="{{ h.antecedente_hipertension or '' }}" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400">
                     </div>
                     <div>
                         <label class="block text-sm text-gray-700 mb-1">Cardiovasculares</label>
-                        <input type="text" name="antecedente_cardiovascular" value="{{ h.antecedente_cardiovascular or '' }}" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400">
+                        <input type="text" {% if not editar %}readonly{% endif %} name="antecedente_cardiovascular" value="{{ h.antecedente_cardiovascular or '' }}" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400">
                     </div>
                     <div>
                         <label class="block text-sm text-gray-700 mb-1">Cáncer</label>
-                        <input type="text" name="antecedente_cancer" value="{{ h.antecedente_cancer or '' }}" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400">
+                        <input type="text" {% if not editar %}readonly{% endif %} name="antecedente_cancer" value="{{ h.antecedente_cancer or '' }}" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400">
                     </div>
                     <div class="col-span-2">
                         <label class="block text-sm text-gray-700 mb-1">Otros antecedentes familiares</label>
-                        <input type="text" name="antecedente_otros" value="{{ h.antecedente_otros or '' }}" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400">
+                        <input type="text" {% if not editar %}readonly{% endif %} name="antecedente_otros" value="{{ h.antecedente_otros or '' }}" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400">
                     </div>
                 </div>
             </div>
@@ -110,15 +129,15 @@
                 <div class="space-y-4">
                     <div>
                         <label class="block text-sm text-gray-700 mb-1">Padecimientos diagnosticados, tratamiento, desde cuándo</label>
-                        <textarea name="padecimientos_diagnosticados" rows="3" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400">{{ h.padecimientos_diagnosticados or '' }}</textarea>
+                        <textarea {% if not editar %}readonly{% endif %} name="padecimientos_diagnosticados" rows="3" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400">{{ h.padecimientos_diagnosticados or '' }}</textarea>
                     </div>
                     <div>
                         <label class="block text-sm text-gray-700 mb-1">Cirugías de importancia</label>
-                        <textarea name="cirugias" rows="2" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400">{{ h.cirugias or '' }}</textarea>
+                        <textarea {% if not editar %}readonly{% endif %} name="cirugias" rows="2" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400">{{ h.cirugias or '' }}</textarea>
                     </div>
                     <div>
                         <label class="block text-sm text-gray-700 mb-1">Tratamiento actual con médico o especialista</label>
-                        <textarea name="tratamiento_medico_actual" rows="2" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400">{{ h.tratamiento_medico_actual or '' }}</textarea>
+                        <textarea {% if not editar %}readonly{% endif %} name="tratamiento_medico_actual" rows="2" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400">{{ h.tratamiento_medico_actual or '' }}</textarea>
                     </div>
                 </div>
             </div>
@@ -129,27 +148,27 @@
                 <div class="grid grid-cols-2 gap-4">
                     <div>
                         <label class="block text-sm text-gray-700 mb-1">Edad de la menarca</label>
-                        <input type="text" name="gineco_menarca" value="{{ h.gineco_menarca or '' }}" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400">
+                        <input type="text" {% if not editar %}readonly{% endif %} name="gineco_menarca" value="{{ h.gineco_menarca or '' }}" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400">
                     </div>
                     <div>
                         <label class="block text-sm text-gray-700 mb-1">Método anticonceptivo</label>
-                        <input type="text" name="gineco_anticonceptivo" value="{{ h.gineco_anticonceptivo or '' }}" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400">
+                        <input type="text" {% if not editar %}readonly{% endif %} name="gineco_anticonceptivo" value="{{ h.gineco_anticonceptivo or '' }}" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400">
                     </div>
                     <div class="col-span-2">
                         <label class="block text-sm text-gray-700 mb-1">Ciclo menstrual (regular o irregular, duración)</label>
-                        <input type="text" name="gineco_ciclo" value="{{ h.gineco_ciclo or '' }}" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400">
+                        <input type="text" {% if not editar %}readonly{% endif %} name="gineco_ciclo" value="{{ h.gineco_ciclo or '' }}" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400">
                     </div>
                     <div class="col-span-2">
                         <label class="block text-sm text-gray-700 mb-1">Embarazos previos (número, complicaciones)</label>
-                        <input type="text" name="gineco_embarazos" value="{{ h.gineco_embarazos or '' }}" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400">
+                        <input type="text" {% if not editar %}readonly{% endif %} name="gineco_embarazos" value="{{ h.gineco_embarazos or '' }}" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400">
                     </div>
                     <div>
                         <label class="block text-sm text-gray-700 mb-1">¿Busca embarazo?</label>
-                        <input type="text" name="gineco_busca_embarazo" value="{{ h.gineco_busca_embarazo or '' }}" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400">
+                        <input type="text" {% if not editar %}readonly{% endif %} name="gineco_busca_embarazo" value="{{ h.gineco_busca_embarazo or '' }}" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400">
                     </div>
                     <div>
                         <label class="block text-sm text-gray-700 mb-1">Menopausia (edad, si aplica)</label>
-                        <input type="text" name="gineco_menopausia" value="{{ h.gineco_menopausia or '' }}" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400">
+                        <input type="text" {% if not editar %}readonly{% endif %} name="gineco_menopausia" value="{{ h.gineco_menopausia or '' }}" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400">
                     </div>
                 </div>
             </div>
@@ -206,12 +225,12 @@
                     </div>
                     <div>
                         <label class="block text-sm text-gray-700 mb-1">Edad inicio sobrepeso</label>
-                        <input type="text" name="edad_inicio_sobrepeso" value="{{ h.edad_inicio_sobrepeso or '' }}" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400">
+                        <input type="text" {% if not editar %}readonly{% endif %} name="edad_inicio_sobrepeso" value="{{ h.edad_inicio_sobrepeso or '' }}" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400">
                     </div>
                 </div>
                 <div>
                     <label class="block text-sm text-gray-700 mb-1">Dietas o tratamientos previos: qué funcionó y qué no</label>
-                    <textarea name="dietas_previas" rows="3" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400">{{ h.dietas_previas or '' }}</textarea>
+                    <textarea {% if not editar %}readonly{% endif %} name="dietas_previas" rows="3" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400">{{ h.dietas_previas or '' }}</textarea>
                 </div>
             </div>
 
@@ -221,47 +240,47 @@
                 <div class="grid grid-cols-2 gap-4">
                     <div>
                         <label class="block text-sm text-gray-700 mb-1">Gastrointestinales</label>
-                        <input type="text" name="sint_gastrointestinal" value="{{ h.sint_gastrointestinal or '' }}" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400">
+                        <input type="text" {% if not editar %}readonly{% endif %} name="sint_gastrointestinal" value="{{ h.sint_gastrointestinal or '' }}" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400">
                     </div>
                     <div>
                         <label class="block text-sm text-gray-700 mb-1">Distensión o mala digestión</label>
-                        <input type="text" name="sint_distension" value="{{ h.sint_distension or '' }}" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400">
+                        <input type="text" {% if not editar %}readonly{% endif %} name="sint_distension" value="{{ h.sint_distension or '' }}" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400">
                     </div>
                     <div>
                         <label class="block text-sm text-gray-700 mb-1">Hormigueo, calambres</label>
-                        <input type="text" name="sint_hormigueo" value="{{ h.sint_hormigueo or '' }}" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400">
+                        <input type="text" {% if not editar %}readonly{% endif %} name="sint_hormigueo" value="{{ h.sint_hormigueo or '' }}" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400">
                     </div>
                     <div>
                         <label class="block text-sm text-gray-700 mb-1">Caída de pelo</label>
-                        <input type="text" name="sint_caida_pelo" value="{{ h.sint_caida_pelo or '' }}" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400">
+                        <input type="text" {% if not editar %}readonly{% endif %} name="sint_caida_pelo" value="{{ h.sint_caida_pelo or '' }}" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400">
                     </div>
                     <div>
                         <label class="block text-sm text-gray-700 mb-1">Uñas débiles</label>
-                        <input type="text" name="sint_unas_debiles" value="{{ h.sint_unas_debiles or '' }}" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400">
+                        <input type="text" {% if not editar %}readonly{% endif %} name="sint_unas_debiles" value="{{ h.sint_unas_debiles or '' }}" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400">
                     </div>
                     <div>
                         <label class="block text-sm text-gray-700 mb-1">Dolores de cabeza</label>
-                        <input type="text" name="sint_dolor_cabeza" value="{{ h.sint_dolor_cabeza or '' }}" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400">
+                        <input type="text" {% if not editar %}readonly{% endif %} name="sint_dolor_cabeza" value="{{ h.sint_dolor_cabeza or '' }}" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400">
                     </div>
                     <div>
                         <label class="block text-sm text-gray-700 mb-1">Memoria o concentración</label>
-                        <input type="text" name="sint_memoria" value="{{ h.sint_memoria or '' }}" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400">
+                        <input type="text" {% if not editar %}readonly{% endif %} name="sint_memoria" value="{{ h.sint_memoria or '' }}" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400">
                     </div>
                     <div>
                         <label class="block text-sm text-gray-700 mb-1">Fatiga o falta de energía</label>
-                        <input type="text" name="sint_fatiga" value="{{ h.sint_fatiga or '' }}" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400">
+                        <input type="text" {% if not editar %}readonly{% endif %} name="sint_fatiga" value="{{ h.sint_fatiga or '' }}" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400">
                     </div>
                     <div>
                         <label class="block text-sm text-gray-700 mb-1">Piel seca</label>
-                        <input type="text" name="sint_piel_seca" value="{{ h.sint_piel_seca or '' }}" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400">
+                        <input type="text" {% if not editar %}readonly{% endif %} name="sint_piel_seca" value="{{ h.sint_piel_seca or '' }}" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400">
                     </div>
                     <div>
                         <label class="block text-sm text-gray-700 mb-1">Acantosis Nigricans</label>
-                        <input type="text" name="sint_acantosis" value="{{ h.sint_acantosis or '' }}" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400">
+                        <input type="text" {% if not editar %}readonly{% endif %} name="sint_acantosis" value="{{ h.sint_acantosis or '' }}" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400">
                     </div>
                     <div class="col-span-2">
                         <label class="block text-sm text-gray-700 mb-1">Otros síntomas o malestares</label>
-                        <textarea name="sint_otro" rows="2" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400">{{ h.sint_otro or '' }}</textarea>
+                        <textarea {% if not editar %}readonly{% endif %} name="sint_otro" rows="2" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400">{{ h.sint_otro or '' }}</textarea>
                     </div>
                 </div>
             </div>
@@ -272,19 +291,19 @@
                 <div class="space-y-4">
                     <div>
                         <label class="block text-sm text-gray-700 mb-1">Alergias alimentarias diagnosticadas</label>
-                        <input type="text" name="alergias" value="{{ h.alergias or '' }}" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400">
+                        <input type="text" {% if not editar %}readonly{% endif %} name="alergias" value="{{ h.alergias or '' }}" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400">
                     </div>
                     <div>
                         <label class="block text-sm text-gray-700 mb-1">Intolerancias (lactosa, gluten, etc.)</label>
-                        <input type="text" name="intolerancias" value="{{ h.intolerancias or '' }}" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400">
+                        <input type="text" {% if not editar %}readonly{% endif %} name="intolerancias" value="{{ h.intolerancias or '' }}" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400">
                     </div>
                     <div>
                         <label class="block text-sm text-gray-700 mb-1">Alimentos que no le gustan o prefiere evitar</label>
-                        <textarea name="alimentos_evitar" rows="2" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400">{{ h.alimentos_evitar or '' }}</textarea>
+                        <textarea {% if not editar %}readonly{% endif %} name="alimentos_evitar" rows="2" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400">{{ h.alimentos_evitar or '' }}</textarea>
                     </div>
                     <div>
                         <label class="block text-sm text-gray-700 mb-1">Restricciones por elección, cultura o religión</label>
-                        <input type="text" name="restricciones_eleccion" value="{{ h.restricciones_eleccion or '' }}" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400">
+                        <input type="text" {% if not editar %}readonly{% endif %} name="restricciones_eleccion" value="{{ h.restricciones_eleccion or '' }}" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400">
                     </div>
                 </div>
             </div>
@@ -296,28 +315,28 @@
                 <div class="space-y-4">
                     <div>
                         <label class="block text-sm text-gray-700 mb-1">Desayuno</label>
-                        <textarea name="recordatorio_desayuno" rows="2" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400">{{ h.recordatorio_desayuno or '' }}</textarea>
+                        <textarea {% if not editar %}readonly{% endif %} name="recordatorio_desayuno" rows="2" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400">{{ h.recordatorio_desayuno or '' }}</textarea>
                     </div>
                     <div>
                         <label class="block text-sm text-gray-700 mb-1">Comida</label>
-                        <textarea name="recordatorio_comida" rows="2" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400">{{ h.recordatorio_comida or '' }}</textarea>
+                        <textarea {% if not editar %}readonly{% endif %} name="recordatorio_comida" rows="2" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400">{{ h.recordatorio_comida or '' }}</textarea>
                     </div>
                     <div>
                         <label class="block text-sm text-gray-700 mb-1">Cena</label>
-                        <textarea name="recordatorio_cena" rows="2" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400">{{ h.recordatorio_cena or '' }}</textarea>
+                        <textarea {% if not editar %}readonly{% endif %} name="recordatorio_cena" rows="2" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400">{{ h.recordatorio_cena or '' }}</textarea>
                     </div>
                     <div>
                         <label class="block text-sm text-gray-700 mb-1">Snacks o colaciones</label>
-                        <textarea name="recordatorio_snacks" rows="2" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400">{{ h.recordatorio_snacks or '' }}</textarea>
+                        <textarea {% if not editar %}readonly{% endif %} name="recordatorio_snacks" rows="2" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400">{{ h.recordatorio_snacks or '' }}</textarea>
                     </div>
                     <div class="grid grid-cols-2 gap-4">
                         <div>
                             <label class="block text-sm text-gray-700 mb-1">Hidratación (litros al día)</label>
-                            <input type="text" name="hidratacion" value="{{ h.hidratacion or '' }}" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400">
+                            <input type="text" {% if not editar %}readonly{% endif %} name="hidratacion" value="{{ h.hidratacion or '' }}" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400">
                         </div>
                         <div>
                             <label class="block text-sm text-gray-700 mb-1">¿Quién cocina? ¿Come fuera?</label>
-                            <input type="text" name="quien_cocina" value="{{ h.quien_cocina or '' }}" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400">
+                            <input type="text" {% if not editar %}readonly{% endif %} name="quien_cocina" value="{{ h.quien_cocina or '' }}" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400">
                         </div>
                     </div>
                 </div>
@@ -329,25 +348,25 @@
                 <div class="space-y-4">
                     <div>
                         <label class="block text-sm text-gray-700 mb-1">¿Hace ejercicio? ¿Cómo es su rutina?</label>
-                        <textarea name="ejercicio_rutina" rows="2" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400">{{ h.ejercicio_rutina or '' }}</textarea>
+                        <textarea {% if not editar %}readonly{% endif %} name="ejercicio_rutina" rows="2" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400">{{ h.ejercicio_rutina or '' }}</textarea>
                     </div>
                     <div class="grid grid-cols-2 gap-4">
                         <div>
                             <label class="block text-sm text-gray-700 mb-1">Alcohol</label>
-                            <input type="text" name="alcohol" value="{{ h.alcohol or '' }}" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400">
+                            <input type="text" {% if not editar %}readonly{% endif %} name="alcohol" value="{{ h.alcohol or '' }}" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400">
                         </div>
                         <div>
                             <label class="block text-sm text-gray-700 mb-1">Tabaco</label>
-                            <input type="text" name="tabaco" value="{{ h.tabaco or '' }}" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400">
+                            <input type="text" {% if not editar %}readonly{% endif %} name="tabaco" value="{{ h.tabaco or '' }}" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400">
                         </div>
                     </div>
                     <div>
                         <label class="block text-sm text-gray-700 mb-1">Sueño: horas, calidad, si duerme de corrido</label>
-                        <input type="text" name="sueno" value="{{ h.sueno or '' }}" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400">
+                        <input type="text" {% if not editar %}readonly{% endif %} name="sueno" value="{{ h.sueno or '' }}" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400">
                     </div>
                     <div>
                         <label class="block text-sm text-gray-700 mb-1">Nivel de estrés (1 al 10)</label>
-                        <input type="number" min="1" max="10" name="nivel_estres" value="{{ h.nivel_estres or '' }}" class="w-32 border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400">
+                        <input type="number" min="1" max="10" {% if not editar %}readonly{% endif %} name="nivel_estres" value="{{ h.nivel_estres or '' }}" class="w-32 border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400">
                     </div>
                 </div>
             </div>
@@ -358,11 +377,11 @@
                 <div class="space-y-4">
                     <div>
                         <label class="block text-sm text-gray-700 mb-1">Suplementos y vitaminas</label>
-                        <textarea name="suplementos" rows="2" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400">{{ h.suplementos or '' }}</textarea>
+                        <textarea {% if not editar %}readonly{% endif %} name="suplementos" rows="2" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400">{{ h.suplementos or '' }}</textarea>
                     </div>
                     <div>
                         <label class="block text-sm text-gray-700 mb-1">Medicamentos</label>
-                        <textarea name="medicamentos" rows="2" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400">{{ h.medicamentos or '' }}</textarea>
+                        <textarea {% if not editar %}readonly{% endif %} name="medicamentos" rows="2" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400">{{ h.medicamentos or '' }}</textarea>
                     </div>
                 </div>
             </div>
@@ -371,6 +390,7 @@
 
     </div>
 
+    {% if editar %}
     <div class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 shadow-lg">
         <div class="max-w-3xl mx-auto">
             <button type="submit" form="" onclick="document.querySelector('form').submit()"
@@ -379,6 +399,7 @@
             </button>
         </div>
     </div>
+    {% endif %}
 
 </body>
 </html>
