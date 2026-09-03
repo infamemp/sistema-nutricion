@@ -98,7 +98,7 @@
       "buscar_como": "quinoa cocida",
       "estado": "cocido",
       "buscar_en": "usda",
-      "buscar_como_usda": "quinoa cooked"
+      "buscar_como_usda": "quinoa no added fat"
     },
     "avena cruda": {
       "taza_g": 80,
@@ -657,7 +657,7 @@
         "1 cdita": 5
       },
       "buscar_en": "usda",
-      "buscar_como_usda": "mustard prepared"
+      "buscar_como_usda": "mustard"
     },
     "amaranto": {
       "taza_g": 30,
@@ -731,12 +731,12 @@
         "10 nueces de la india": 15
       },
       "buscar_en": "usda",
-      "buscar_como_usda": "cashew nuts"
+      "buscar_como_usda": "cashews"
     },
     "semillas de girasol": {
       "cucharada_g": 9,
       "buscar_en": "usda",
-      "buscar_como_usda": "sunflower seed kernels"
+      "buscar_como_usda": "sunflower seeds"
     },
     "ajonjoli": {
       "cucharada_g": 9
@@ -761,7 +761,7 @@
     "leche de coco": {
       "taza_ml": 240,
       "buscar_en": "usda",
-      "buscar_como_usda": "coconut milk beverage",
+      "buscar_como_usda": "coconut milk",
       "taza_g": 240
     },
     "bebida vegetal": {
@@ -840,7 +840,7 @@
       },
       "estado": "cocido",
       "buscar_en": "usda",
-      "buscar_como_usda": "pork loin cooked"
+      "buscar_como_usda": "pork tenderloin"
     },
     "huevo duro": {
       "pieza_g": 50,
@@ -1035,7 +1035,7 @@
         "4 datiles": 28
       },
       "buscar_en": "usda",
-      "buscar_como_usda": "dates medjool"
+      "buscar_como_usda": "dates"
     },
     "almendra": {
       "pieza_g": 1.2,
@@ -1052,7 +1052,7 @@
         "10 nueces": 20
       },
       "buscar_en": "usda",
-      "buscar_como_usda": "walnuts english"
+      "buscar_como_usda": "walnuts excluding honey"
     },
     "frutos secos": {
       "taza_g": 140,

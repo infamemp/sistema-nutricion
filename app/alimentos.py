@@ -1,18 +1,21 @@
 """
 Punto unico de consulta de alimentos del sistema.
 
-Jerarquia de fuentes (actualizada tras migracion a base Marifer, sep 2026):
+Jerarquia de fuentes (final tras migracion Marifer + FNDDS, sep 2026):
 
 1. MARIFER (local)      Base de equivalencias propia de la nutriologa,
                         clasificada por grupo SMAE real. Fuente principal.
                         2342 alimentos, sin internet, sin limites.
 
-2. USDA (API o local)   Alimentos que Marifer no cubre bien. Hoy via API
-                        (1000 consultas/hora); pasara a ser local (FNDDS)
-                        en cuanto se complete esa migracion.
+2. FNDDS (local)        Alimentos que Marifer no cubre bien (salmon,
+                        quinoa, kale, pistaches, y en general alimentos
+                        no tradicionales en Mexico). Reemplaza a la API
+                        en linea de USDA: mismo origen de datos, ahora
+                        local, sin limite de 1000 consultas/hora y sin
+                        depender de internet. 5431 alimentos.
 
-3. BAM (local)          Ultimo respaldo local si ni Marifer ni USDA
-                        tienen el alimento. 2045 alimentos.
+3. BAM (local)          Ultimo respaldo local si ninguna de las dos
+                        anteriores tiene el alimento. 2045 alimentos.
 
 4. OpenFoodFacts (API)  SOLO productos de marca, cuando la nutriologa
                         indica un nombre comercial especifico
@@ -34,25 +37,22 @@ un resultado unico automatico.
 """
 
 import bam
+import fndds
 import marifer
 
 
 def buscar_generico(termino, limite=10):
     """
-    Busca un alimento generico. Consulta Marifer primero, luego USDA,
+    Busca un alimento generico. Consulta Marifer primero, luego FNDDS,
     y a BAM solo si ninguna de las dos anteriores devuelve nada.
     """
     resultados = marifer.buscar_palabras(termino, limite=limite)
     if resultados:
         return resultados
 
-    try:
-        import usda
-        resultados = usda.buscar(termino, limite=limite)
-        if resultados:
-            return resultados
-    except Exception:
-        pass
+    resultados = fndds.buscar_palabras(termino, limite=limite)
+    if resultados:
+        return resultados
 
     return bam.buscar_palabras(termino, limite=limite)
 
@@ -78,41 +78,31 @@ def buscar_todo(termino, limite=10):
     resultados agrupados por fuente, para que quede claro de donde
     viene cada dato.
     """
-    salida = {
+    return {
         "marifer": marifer.buscar_palabras(termino, limite=limite),
-        "generico_internacional": [],
+        "fndds": fndds.buscar_palabras(termino, limite=limite),
         "bam": bam.buscar_palabras(termino, limite=limite),
         "productos_de_marca": [],
     }
 
-    try:
-        import usda
-        salida["generico_internacional"] = usda.buscar(termino, limite=5)
-    except Exception:
-        pass
-
-    return salida
-
 
 def resumen_fuentes():
     """Estado de las fuentes disponibles, util para diagnostico."""
-    import os
-
     estado = {
         "marifer": {
             "disponible": True,
             "alimentos": marifer.total_alimentos(),
             "tipo": "local",
         },
+        "fndds": {
+            "disponible": True,
+            "alimentos": fndds.total_alimentos(),
+            "tipo": "local",
+        },
         "bam": {
             "disponible": True,
             "alimentos": bam.total_alimentos(),
             "tipo": "local",
-        },
-        "usda": {
-            "disponible": bool(os.environ.get("USDA_API_KEY")),
-            "tipo": "api",
-            "nota": "requiere USDA_API_KEY en el archivo .env",
         },
         "openfoodfacts": {
             "disponible": True,

@@ -17,6 +17,7 @@ en silencio.
 """
 
 import bam
+import fndds
 import marifer
 import medidas
 
@@ -30,9 +31,9 @@ TOLERANCIA_PROTEINA = 0.15
 UMBRAL_GRAMOS_PROTEINA = 4
 
 
-# Cache de consultas al USDA. Sin esto, cada verificacion repetiria las
-# mismas peticiones a la API y agotaria el limite de 1000 por hora.
-_cache_usda = {}
+# Cache de consultas a FNDDS. Aunque ya es local (sin limite de API),
+# se conserva para no repetir la busqueda en el mismo proceso.
+_cache_fndds = {}
 
 
 # Proteina maxima esperada por 100 g, segun el tipo de alimento.
@@ -98,19 +99,22 @@ def _buscar_datos_nutricionales(nombre, entrada_medidas):
     """
     Busca los datos nutricionales de un alimento en la fuente correcta.
 
-    Jerarquia (actualizada sep 2026, migracion a base Marifer):
+    Jerarquia (final tras migracion Marifer + FNDDS, sep 2026):
       1. MARIFER, base de equivalencias propia de la nutriologa
       2. BAM, para alimentos genericos mexicanos que Marifer no cubre
-      3. USDA, para los que ninguna de las dos anteriores cubre
+      3. FNDDS, para los que ninguna de las dos anteriores cubre
          (quinoa, pistaches, pepitas, pan de masa madre y otros no
-         tradicionales en Mexico)
+         tradicionales en Mexico). Reemplaza a la API en linea de USDA:
+         mismo origen de datos, ahora local y sin limite de consultas.
 
     La tabla de medidas indica con 'buscar_en': 'usda' cuales van directo
-    al USDA, para no gastar una consulta fallida en las fuentes locales.
+    a FNDDS, para no gastar una busqueda fallida en las fuentes locales
+    en espanol. El nombre del campo se conserva ('usda'/'buscar_como_usda')
+    para no tener que tocar medidas_caseras.json en esta migracion.
     """
-    prefiere_usda = entrada_medidas.get("buscar_en") == "usda"
+    prefiere_fndds = entrada_medidas.get("buscar_en") == "usda"
 
-    if not prefiere_usda:
+    if not prefiere_fndds:
         datos = medidas.buscar_en_bam(nombre, marifer)
         if datos:
             return datos, "MARIFER"
@@ -119,21 +123,17 @@ def _buscar_datos_nutricionales(nombre, entrada_medidas):
         if datos:
             return datos, "BAM"
 
-    termino_usda = entrada_medidas.get("buscar_como_usda")
-    if not termino_usda:
+    termino_fndds = entrada_medidas.get("buscar_como_usda")
+    if not termino_fndds:
         return None, None
 
-    if termino_usda in _cache_usda:
-        return _cache_usda[termino_usda], "USDA"
+    if termino_fndds in _cache_fndds:
+        return _cache_fndds[termino_fndds], "FNDDS"
 
-    try:
-        import usda
-        resultados = usda.buscar(termino_usda, limite=1)
-        if resultados and usda.tiene_datos_completos(resultados[0]):
-            _cache_usda[termino_usda] = resultados[0]
-            return resultados[0], "USDA"
-    except Exception:
-        pass
+    resultados = fndds.buscar_palabras(termino_fndds, limite=1)
+    if resultados and fndds.tiene_datos_completos(resultados[0]):
+        _cache_fndds[termino_fndds] = resultados[0]
+        return resultados[0], "FNDDS"
 
     return None, None
 
