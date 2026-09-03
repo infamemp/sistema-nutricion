@@ -1,16 +1,20 @@
 """
 Punto unico de consulta de alimentos del sistema.
 
-Jerarquia de fuentes, decidida tras probar la cobertura real (ago 2026):
+Jerarquia de fuentes (actualizada tras migracion a base Marifer, sep 2026):
 
-1. BAM (local)          Alimentos genericos mexicanos. Fuente principal.
-                        2045 alimentos, sin internet, sin limites.
+1. MARIFER (local)      Base de equivalencias propia de la nutriologa,
+                        clasificada por grupo SMAE real. Fuente principal.
+                        2342 alimentos, sin internet, sin limites.
 
-2. USDA (API)           Alimentos genericos no mexicanos que la BAM no
-                        cubre bien: salmon, quinoa, kale, pistaches.
-                        Dominio publico, 1000 consultas por hora.
+2. USDA (API o local)   Alimentos que Marifer no cubre bien. Hoy via API
+                        (1000 consultas/hora); pasara a ser local (FNDDS)
+                        en cuanto se complete esa migracion.
 
-3. OpenFoodFacts (API)  SOLO productos de marca, cuando la nutriologa
+3. BAM (local)          Ultimo respaldo local si ni Marifer ni USDA
+                        tienen el alimento. 2045 alimentos.
+
+4. OpenFoodFacts (API)  SOLO productos de marca, cuando la nutriologa
                         indica un nombre comercial especifico
                         ("tostadas Sanissimo", "yogurt Yoplait").
                         NUNCA se consulta automaticamente para alimentos
@@ -30,23 +34,27 @@ un resultado unico automatico.
 """
 
 import bam
+import marifer
 
 
 def buscar_generico(termino, limite=10):
     """
-    Busca un alimento generico. Consulta la BAM primero y solo recurre
-    al USDA si la BAM no devuelve nada.
+    Busca un alimento generico. Consulta Marifer primero, luego USDA,
+    y a BAM solo si ninguna de las dos anteriores devuelve nada.
     """
-    resultados = bam.buscar_palabras(termino, limite=limite)
-
+    resultados = marifer.buscar_palabras(termino, limite=limite)
     if resultados:
         return resultados
 
     try:
         import usda
-        return usda.buscar(termino, limite=limite)
+        resultados = usda.buscar(termino, limite=limite)
+        if resultados:
+            return resultados
     except Exception:
-        return []
+        pass
+
+    return bam.buscar_palabras(termino, limite=limite)
 
 
 def buscar_marca(termino, limite=5):
@@ -71,8 +79,9 @@ def buscar_todo(termino, limite=10):
     viene cada dato.
     """
     salida = {
-        "generico_mexicano": bam.buscar_palabras(termino, limite=limite),
+        "marifer": marifer.buscar_palabras(termino, limite=limite),
         "generico_internacional": [],
+        "bam": bam.buscar_palabras(termino, limite=limite),
         "productos_de_marca": [],
     }
 
@@ -90,6 +99,11 @@ def resumen_fuentes():
     import os
 
     estado = {
+        "marifer": {
+            "disponible": True,
+            "alimentos": marifer.total_alimentos(),
+            "tipo": "local",
+        },
         "bam": {
             "disponible": True,
             "alimentos": bam.total_alimentos(),
