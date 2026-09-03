@@ -17,6 +17,7 @@ en silencio.
 """
 
 import bam
+import marifer
 import medidas
 
 
@@ -97,17 +98,23 @@ def _buscar_datos_nutricionales(nombre, entrada_medidas):
     """
     Busca los datos nutricionales de un alimento en la fuente correcta.
 
-    Jerarquia:
-      1. BAM, para alimentos genericos mexicanos
-      2. USDA, para los que la BAM no cubre (quinoa, pistaches, pepitas,
-         pan de masa madre y otros no tradicionales en Mexico)
+    Jerarquia (actualizada sep 2026, migracion a base Marifer):
+      1. MARIFER, base de equivalencias propia de la nutriologa
+      2. BAM, para alimentos genericos mexicanos que Marifer no cubre
+      3. USDA, para los que ninguna de las dos anteriores cubre
+         (quinoa, pistaches, pepitas, pan de masa madre y otros no
+         tradicionales en Mexico)
 
     La tabla de medidas indica con 'buscar_en': 'usda' cuales van directo
-    al USDA, para no gastar una consulta fallida a la BAM.
+    al USDA, para no gastar una consulta fallida en las fuentes locales.
     """
     prefiere_usda = entrada_medidas.get("buscar_en") == "usda"
 
     if not prefiere_usda:
+        datos = medidas.buscar_en_bam(nombre, marifer)
+        if datos:
+            return datos, "MARIFER"
+
         datos = medidas.buscar_en_bam(nombre, bam)
         if datos:
             return datos, "BAM"
