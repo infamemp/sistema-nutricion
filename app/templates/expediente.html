@@ -2,11 +2,32 @@
 <html lang="es">
 <head>
     <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
-    <link rel="apple-touch-icon" href="/static/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/static/favicon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png">
+    <link rel="manifest" href="/static/site.webmanifest">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ paciente.nombre_completo }}</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        green: {
+                            50: "#f1f9eb",
+                            100: "#deefd1",
+                            400: "#93c66b",
+                            600: "#65a035",
+                            700: "#518329",
+                            800: "#395b1e"
+                        }
+                    }
+                }
+            }
+        }
+    </script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
     <style>
         @media print {
@@ -328,7 +349,7 @@
         </div>
 
         <!-- 6. Dietas -->
-        <div class="tarjeta-colapsable bg-white rounded-xl shadow-sm p-6 mb-6">
+        <div id="seccion-dietas" class="tarjeta-colapsable bg-white rounded-xl shadow-sm p-6 mb-6">
             <div class="flex justify-between items-center border-b-2 border-blue-500 pb-2 mb-4">
                 <h2 class="text-lg font-medium text-green-700">Dietas</h2>
                 <div class="flex items-center gap-2">

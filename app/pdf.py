@@ -25,7 +25,8 @@ de comida nunca se parte entre dos hojas.
 
 import os
 import base64
-from datetime import date
+from datetime import date, datetime
+from zoneinfo import ZoneInfo
 
 from jinja2 import Environment, FileSystemLoader
 from weasyprint import HTML
@@ -35,7 +36,7 @@ RUTA_PLANTILLAS = os.path.join(BASE_DIR, "templates")
 # Logo con el tagline vigente "Nutricion y Salud Hormonal".
 # NO usar Mafer_Logo_Grande.png: ese trae el tagline antiguo
 # "Nutricion y Vida en Equilibrio", que ya no se usa.
-RUTA_LOGO = os.path.join(BASE_DIR, "assets", "logo", "logo_marifer.svg")
+RUTA_LOGO = os.path.join(BASE_DIR, "static", "marifer-logo.png")
 RUTA_SALIDA = os.path.join(BASE_DIR, "pdfs")
 
 # Datos de contacto confirmados por la nutriologa
@@ -59,7 +60,7 @@ TITULOS_TIEMPO = {
 
 
 def _fecha_larga(f=None):
-    f = f or date.today()
+    f = f or datetime.now(ZoneInfo("America/Mexico_City")).date()
     return str(f.day) + " de " + MESES[f.month - 1] + " de " + str(f.year)
 
 
@@ -169,7 +170,7 @@ def generar(documento, nombre_paciente, proxima_cita=None,
         limpio = "".join(
             c for c in nombre_paciente if c.isalnum() or c in (" ", "_")
         ).strip().replace(" ", "_")
-        nombre = "plan_" + limpio + "_" + date.today().isoformat() + ".pdf"
+        nombre = "plan_" + limpio + "_" + datetime.now(ZoneInfo("America/Mexico_City")).date().isoformat() + ".pdf"
         ruta_salida = os.path.join(RUTA_SALIDA, nombre)
 
     HTML(string=html, base_url=BASE_DIR).write_pdf(ruta_salida)

@@ -1355,4 +1355,4 @@ def eliminar_dieta(paciente_id: int, dieta_id: int, db: Session = Depends(get_db
         db.delete(dieta)
         db.commit()
 
-    return RedirectResponse(url="/pacientes/" + str(paciente_id), status_code=303)
+    return RedirectResponse(url="/pacientes/" + str(paciente_id) + "#seccion-dietas", status_code=303)
