@@ -75,14 +75,38 @@ def buscar(termino, limite=10):
     return [_limpiar(a) for a in resultados[:limite]]
 
 
+def _sin_plural(palabra):
+    """
+    Reduce un plural simple a su forma singular aproximada, para que
+    "nopales" encuentre "nopal" y "tortillas" encuentre "tortilla".
+    Marifer prescribe en vocabulario coloquial, y el plural/singular no
+    deberia impedir el match.
+
+    Cubre los dos patrones de plural del espanol:
+      - vocal + s:        tortillas -> tortilla
+      - consonante + es:  nopales -> nopal, papeles -> papel
+
+    No toca palabras de 4 letras o menos, para no danar cosas como "gas"
+    o "mes".
+    """
+    if len(palabra) <= 4:
+        return palabra
+    if palabra.endswith("es"):
+        return palabra[:-2]
+    if palabra.endswith("s"):
+        return palabra[:-1]
+    return palabra
+
+
 def buscar_palabras(termino, limite=10):
     """
     Busqueda mas flexible: encuentra alimentos que contengan todas las
-    palabras del termino, sin importar el orden.
+    palabras del termino, sin importar el orden, y tolerando plural o
+    singular ("nopales" encuentra "Nopal cocido").
     Util para "pollo pechuga" o "frijol negro cocido".
     """
     alimentos = _cargar()
-    palabras = _normalizar_texto(termino).split()
+    palabras = [_sin_plural(p) for p in _normalizar_texto(termino).split()]
 
     if not palabras:
         return []
