@@ -345,6 +345,51 @@
             {% else %}
             <p class="text-sm text-gray-500">Aún no hay suficientes mediciones para graficar.</p>
             {% endif %}
+
+            {% if mediciones %}
+            <div class="mt-6">
+                <p class="text-sm text-gray-500 mb-2">Historial de mediciones</p>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-xs">
+                        <thead class="bg-green-100 text-green-800 border-b-2 border-blue-500">
+                            <tr>
+                                <th class="text-left px-2 py-2">Fecha</th>
+                                <th class="text-left px-2 py-2">Peso</th>
+                                <th class="text-left px-2 py-2">IMC</th>
+                                <th class="text-left px-2 py-2">% Grasa</th>
+                                <th class="text-left px-2 py-2">Masa grasa</th>
+                                <th class="text-left px-2 py-2">MME</th>
+                                <th class="text-left px-2 py-2">G. Visceral</th>
+                                <th class="text-left px-2 py-2">Origen</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for m in mediciones|reverse %}
+                            <tr class="border-t border-gray-100">
+                                <td class="px-2 py-2">{{ m.fecha_medicion.strftime('%d/%m/%Y') if m.fecha_medicion else '' }}</td>
+                                <td class="px-2 py-2">{{ m.peso if m.peso is not none else '—' }}</td>
+                                <td class="px-2 py-2">{{ m.imc if m.imc is not none else '—' }}</td>
+                                <td class="px-2 py-2">{{ m.porcentaje_grasa if m.porcentaje_grasa is not none else '—' }}</td>
+                                <td class="px-2 py-2">{{ m.masa_grasa_kg if m.masa_grasa_kg is not none else '—' }}</td>
+                                <td class="px-2 py-2">{{ m.mme if m.mme is not none else '—' }}</td>
+                                <td class="px-2 py-2">{{ m.grasa_visceral if m.grasa_visceral is not none else '—' }}</td>
+                                <td class="px-2 py-2">{{ m.origen }}</td>
+                                <td class="px-2 py-2">
+                                    <form method="post" action="/pacientes/{{ paciente.id }}/medicion/{{ m.id }}/eliminar" class="inline">
+                                        <button type="submit" onclick="return confirm('¿Eliminar esta medición?')"
+                                                class="text-xs text-gray-400 hover:text-red-600 whitespace-nowrap">
+                                            Eliminar
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            {% endif %}
             </div>
         </div>
 

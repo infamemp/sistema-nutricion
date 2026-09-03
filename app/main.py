@@ -640,18 +640,23 @@ async def guardar_historia(paciente_id: int, request: Request, db: Session = Dep
     estres = form.get("nivel_estres")
     historia.nivel_estres = int(estres) if estres else None
 
-    # Peso actual capturado a mano en la Historia Clinica: crea una
-    # medicion real (misma tabla que usan las graficas de Progreso y la
-    # generacion de dietas), no solo una nota de referencia. Resuelve el
-    # caso de un paciente sin InBody que necesita su primer peso registrado.
-    peso_actual = form.get("peso_actual")
-    if peso_actual:
-        db.add(models.MedicionInBody(
-            paciente_id=paciente_id,
-            peso=float(peso_actual),
-            origen="manual",
-        ))
+    # Medicion capturada a mano en la Historia Clinica (bloque identico al
+    # de Follow-up): crea una medicion real (misma tabla que usan las
+    # graficas de Progreso y la generacion de dietas), no solo una nota de
+    # referencia. Resuelve el caso del paciente que llega a su primera
+    # consulta ya con InBody o bascula tomados antes de sentarse con
+    # Marifer. Si se llena aunque sea un campo, se crea el registro.
+    campos_medicion = ["peso", "imc", "porcentaje_grasa", "masa_grasa_kg", "mme", "grasa_visceral"]
+    if any(form.get(c) for c in campos_medicion):
+        medicion = models.MedicionInBody(paciente_id=paciente_id, origen="manual")
+        for campo in campos_medicion:
+            valor = form.get(campo)
+            setattr(medicion, campo, float(valor) if valor else None)
+        db.add(medicion)
 
+    # La estatura, a diferencia del peso, es un dato fijo del paciente (no
+    # una serie de tiempo): siempre se actualiza con lo que se capture aqui,
+    # nunca solo "la primera vez".
     estatura_actual = form.get("estatura_actual")
     if estatura_actual:
         paciente.estatura = float(estatura_actual)
@@ -659,6 +664,21 @@ async def guardar_historia(paciente_id: int, request: Request, db: Session = Dep
     db.commit()
 
     return RedirectResponse(url="/pacientes/" + str(paciente_id), status_code=303)
+
+
+@app.post("/pacientes/{paciente_id}/medicion/{medicion_id}/eliminar")
+def eliminar_medicion(paciente_id: int, medicion_id: int, db: Session = Depends(get_db)):
+    medicion = (
+        db.query(models.MedicionInBody)
+        .filter(models.MedicionInBody.id == medicion_id)
+        .filter(models.MedicionInBody.paciente_id == paciente_id)
+        .first()
+    )
+    if medicion:
+        db.delete(medicion)
+        db.commit()
+
+    return RedirectResponse(url="/pacientes/" + str(paciente_id) + "#seccion-progreso", status_code=303)
 
 
 def _sincronizar_creacion_google(db, cita, paciente, ya_en_google):
