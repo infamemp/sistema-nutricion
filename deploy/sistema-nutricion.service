@@ -2,13 +2,46 @@
 Description=Sistema de Nutricion Marifer Utrilla
 After=network.target
 
+# ANTES de aplicar este archivo, una sola vez en el servidor:
+#
+#   useradd --system --home-dir /opt/sistema-nutricion \
+#           --shell /usr/sbin/nologin sistema-nutricion
+#   chown -R sistema-nutricion:sistema-nutricion /opt/sistema-nutricion
+#   chmod 600 /opt/sistema-nutricion/.env
+#   systemctl daemon-reload
+#   systemctl restart sistema-nutricion
+#   systemctl status sistema-nutricion
+#
+# El usuario necesita ESCRITURA en /opt/sistema-nutricion completo, no
+# solo lectura: ahi viven la base de datos (y sus archivos -wal/-journal,
+# que SQLite crea en el mismo directorio), la carpeta pdfs/, y el .env,
+# que la app reescribe al cambiar la contrasena.
+#
+# El respaldo (sistema-nutricion-backup.service) sigue corriendo como
+# root aparte, asi que .backup_passphrase no cambia de dueno.
+
 [Service]
 Type=simple
-User=root
+
+# Antes corria como root. No lo necesita: no abre puertos privilegiados
+# (el 8000 esta por encima de 1024) y solo toca su propio directorio.
+# Como root, cualquier fallo de la app era un fallo con permiso para
+# tocar todo el servidor.
+User=sistema-nutricion
+Group=sistema-nutricion
+
 WorkingDirectory=/opt/sistema-nutricion
-EnvironmentFile=/opt/sistema-nutricion/.env
 Environment="PATH=/opt/sistema-nutricion/venv/bin"
-ExecStart=/opt/sistema-nutricion/venv/bin/uvicorn main:app --host 0.0.0.0 --port 8000
+EnvironmentFile=/opt/sistema-nutricion/.env
+
+# --host 127.0.0.1, no 0.0.0.0: nginx es quien atiende desde afuera y
+# hace proxy_pass a 127.0.0.1:8000. Escuchando en 0.0.0.0 la app quedaba
+# ademas expuesta directo en el puerto 8000, sin TLS y sin pasar por
+# nginx, para cualquiera que llegara a la IP del droplet.
+ExecStart=/opt/sistema-nutricion/venv/bin/uvicorn main:app --host 127.0.0.1 --port 8000
+
+NoNewPrivileges=yes
+
 Restart=always
 RestartSec=5
 

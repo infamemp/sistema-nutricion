@@ -221,3 +221,13 @@ google-service-account.json
 .backup_passphrase
 google-token-privado.json
 google-token-unido.json
+
+# Datos de pacientes. NUNCA deben salir del servidor.
+# La base de datos trae el expediente clinico completo y la carpeta
+# pdfs/ los planes generados, con el nombre del paciente en el archivo.
+sistema_nutricion.db
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+pdfs/

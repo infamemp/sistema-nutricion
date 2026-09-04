@@ -36,6 +36,17 @@ RUTAS_PUBLICAS = {"/login", "/olvide-password", "/restablecer-password"}
 # al usuario: "llevo mas de una hora sin tocar la app".
 LIMITE_INACTIVIDAD_SEGUNDOS = 60 * 60  # 1 hora
 
+# La cookie de sesion se marca como Secure: el navegador solo la manda
+# por HTTPS. En el servidor no cambia nada visible, porque nginx ya
+# redirige de 80 a 443; lo que evita es que la cookie viaje en claro si
+# alguien llega por http o si el redirect deja de estar.
+#
+# En desarrollo local se entra por http://127.0.0.1:8000, donde el
+# navegador NO manda cookies Secure y el login quedaria en un bucle.
+# Para eso, y solo para eso, existe COOKIE_INSEGURA=1 en el .env local.
+# Nunca poner esa variable en el servidor.
+COOKIE_SOLO_HTTPS = os.environ.get("COOKIE_INSEGURA") != "1"
+
 
 class RequiereLoginMiddleware(BaseHTTPMiddleware):
     """
@@ -78,6 +89,8 @@ app.add_middleware(
     SessionMiddleware,
     secret_key=os.environ["SESSION_SECRET_KEY"],
     max_age=60 * 60 * 12,  # 12 horas
+    https_only=COOKIE_SOLO_HTTPS,
+    same_site="lax",
 )
 
 
