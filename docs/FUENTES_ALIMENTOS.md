@@ -1,30 +1,59 @@
 # Fuentes de datos de alimentos
 
-**Versión:** 1.0
-**Fecha:** 30 de agosto de 2026
+**Versión:** 2.0
+**Fecha:** 4 de septiembre de 2026
 **Estado:** implementado y verificado en el servidor
 
 ---
 
 ## 1. Jerarquía de fuentes
 
-El sistema consulta tres fuentes con prioridades distintas. La lógica vive en `alimentos.py`, que es el único punto de entrada para el resto del sistema.
+El sistema consulta cuatro fuentes con prioridades distintas. La lógica vive en `alimentos.py`, que es el único punto de entrada para el resto del sistema.
 
 | Prioridad | Fuente | Para qué | Tipo |
 |---|---|---|---|
-| 1 | **BAM 18.1.1** | Alimentos genéricos mexicanos | Archivo local |
-| 2 | **USDA FoodData Central** | Alimentos genéricos no mexicanos | API |
-| 3 | **OpenFoodFacts** | Solo productos de marca, con verificación humana | API |
+| 1 | **Marifer** | Base de equivalencias propia de la nutrióloga, clasificada por grupo SMAE real. Fuente principal | Archivo local |
+| 2 | **FNDDS** | Alimentos que Marifer no cubre bien (salmón, quinoa, kale, pistaches, y en general alimentos no tradicionales en México) | Archivo local |
+| 3 | **BAM 18.1.1** | Último respaldo local si ninguna de las dos anteriores tiene el alimento | Archivo local |
+| 4 | **OpenFoodFacts** | Solo productos de marca, con verificación humana | API |
+
+Esta jerarquía reemplazó a la anterior (BAM → USDA en línea → OpenFoodFacts) el 3 de septiembre de 2026. El cliente de la API del USDA (`usda.py`) sigue en el repositorio pero **ya no lo usa ningún módulo** — quedó reemplazado por la versión local de FNDDS.
 
 ---
 
-## 2. BAM, Base de Alimentos de México
+## 2. Marifer — fuente principal
+
+**Qué es:** base de equivalencias propia de la nutrióloga, clasificada según el Sistema Mexicano de Alimentos Equivalentes (SMAE). Cada alimento trae su grupo real (AOAMBG, CerealesSG, Frutas, etc.), su porción casera típica, y sus valores nutricionales por 100 g de porción neta para poder escalar a cualquier cantidad.
+
+**Cobertura:** 2,342 alimentos, sin internet, sin límites de velocidad.
+
+**Nota de calidad:** el campo `hierro_mg` viene anulado (`None`) en aproximadamente 967 alimentos porque el dato original tenía errores de captura (valores fisiológicamente imposibles). Cualquier campo en `None` significa "sin dato confiable", nunca cero.
+
+**Módulo:** `marifer.py`. Búsqueda insensible a acentos, por palabras sueltas en cualquier orden.
+
+---
+
+## 3. FNDDS — reemplazo local del USDA
+
+**Qué es:** Food and Nutrient Database for Dietary Studies del USDA, en versión local simplificada. Reemplaza al cliente en línea que antes vivía en `usda.py`.
+
+**Ventajas sobre la API en línea:** archivo local, sin API key, sin el límite de 1,000 consultas por hora, sin depender de internet ni de la disponibilidad del servicio.
+
+**Cobertura:** 5,431 alimentos, filtrados a los conjuntos `Foundation` y `SR Legacy` (alimentos genéricos analizados en laboratorio, no productos de marca). Valores por 100 g, igual que la BAM y Marifer.
+
+**Nota de idioma:** los nombres vienen en inglés, tal como los publica el USDA. Esta fuente es para el **cálculo interno** del verificador, no para mostrarse en documentos del paciente sin traducir primero.
+
+**Nota de calidad:** revisado contra rangos fisiológicos plausibles antes de la conversión (septiembre 2026). Sin errores de captura encontrados; los únicos valores atípicos (manteca de cerdo, cereal de bebé fortificado, salsa de pescado, té instantáneo concentrado) son correctos.
+
+**Módulo:** `fndds.py`.
+
+---
+
+## 4. BAM, Base de Alimentos de México — respaldo
 
 **Qué es:** proyecto conjunto del INCMNSZ y el INSP, con participación de la Universidad Iberoamericana y el CIAD. Es la base con la que el INSP estima el consumo dietético en sus estudios publicados, incluida la ENSANUT.
 
-**Cobertura:** 2,045 alimentos con 19 campos nutricionales cada uno. Incluye preparaciones tradicionales mexicanas (tinga de pollo, cecina en jitomate, atole de frijol) y alimentos regionales (quelites, papaloquelite, tejocote, chinchayote, pulque) que ninguna otra fuente tiene.
-
-**Formato:** archivo local `datos/alimentos_bam.json` (1.1 MB), convertido desde el Excel oficial. Sin API, sin límites de velocidad, sin dependencia de internet.
+**Cobertura:** 2,045 alimentos con 19 campos nutricionales cada uno. Incluye preparaciones tradicionales mexicanas (tinga de pollo, cecina en jitomate, atole de frijol) y alimentos regionales (quelites, papaloquelite, tejocote, chinchayote, pulque) que ninguna otra fuente tiene. Con la migración a Marifer y FNDDS, la BAM pasó de fuente principal a último respaldo local.
 
 **Cita obligatoria:**
 > Ramírez Silva, I.; Barragán-Vázquez, S.; Rodríguez Ramírez, S.; Rivera Dommarco, J.A.; Mejía-Rodríguez, F.; Barquera Cervera, S.; Tolentino Mayo, L.; Flores Aldana, M.; Villalpando Hernández, S.; Ancira Moreno, M.; et al. Base de Alimentos de México (BAM): Compilación de la Composición de los Alimentos Frecuentemente Consumidos en el país, Versión 18.1.1, 2021.
@@ -33,25 +62,7 @@ El sistema consulta tres fuentes con prioridades distintas. La lógica vive en `
 
 ---
 
-## 3. USDA FoodData Central
-
-**Qué es:** base de composición de alimentos del Departamento de Agricultura de Estados Unidos. Referencia mundial para alimentos genéricos.
-
-**Para qué la usamos:** alimentos que la BAM no cubre bien, típicamente no mexicanos: quinoa, kale, pistaches, arándanos.
-
-**Licencia:** dominio público (CC0). Uso comercial permitido sin restricciones.
-
-**Acceso:** API key gratuita de api.data.gov. Límite de 1,000 consultas por hora por IP.
-
-**Filtrado:** se consultan solo los conjuntos `Foundation` y `SR Legacy`, que son alimentos genéricos analizados en laboratorio. Se excluye `Branded` (productos de marca) porque para eso ya existe OpenFoodFacts.
-
-**Módulo:** `usda.py`. La clave se lee de la variable de entorno `USDA_API_KEY`, definida en `.env`, **nunca en el repositorio**.
-
-**Nota técnica:** los nutrientes se identifican por `nutrientId` y no por `nutrientNumber`, porque el endpoint de búsqueda devuelve la numeración antigua ("431") mientras que el de detalle usa la moderna ("1008"). El `nutrientId` es estable en ambos.
-
----
-
-## 4. OpenFoodFacts, con restricciones
+## 5. OpenFoodFacts, con restricciones
 
 **Qué es:** base colaborativa de productos empacados con código de barras.
 
@@ -81,7 +92,7 @@ La causa es estructural: es una base de **productos con código de barras**, no 
 
 ---
 
-## 5. Fuente de respaldo documental
+## 6. Fuente de respaldo documental
 
 **Tablas de Composición de Alimentos del INCMNSZ**, versión condensada 2015 (PDF, 666 páginas, ISBN 978-607-7797-19-7).
 
@@ -89,28 +100,32 @@ Es el antecedente directo de la BAM, del mismo grupo institucional. Se conserva 
 
 ---
 
-## 6. Archivos del módulo
+## 7. Archivos del módulo
 
 | Archivo | Qué hace |
 |---|---|
 | `alimentos.py` | Punto único de entrada. Aplica la jerarquía de fuentes |
-| `bam.py` | Búsqueda en la BAM local |
-| `usda.py` | Cliente de la API del USDA |
+| `marifer.py` | Búsqueda en la base propia de la nutrióloga (fuente principal) |
+| `fndds.py` | Búsqueda en la versión local del FNDDS |
+| `bam.py` | Búsqueda en la BAM local (respaldo) |
 | `openfoodfacts.py` | Cliente de OpenFoodFacts, uso restringido |
+| `usda.py` | Cliente de la API en línea del USDA. **Ya no se usa** — reemplazado por `fndds.py` |
+| `datos/alimentos_marifer.json` | Los 2,342 alimentos de Marifer |
+| `datos/alimentos_fndds.json` | Los 5,431 alimentos del FNDDS |
 | `datos/alimentos_bam.json` | Los 2,045 alimentos de la BAM |
 | `probar_openfoodfacts.py` | Diagnóstico de cobertura, para referencia |
 
 **Funciones principales de `alimentos.py`:**
-- `buscar_generico(termino)` — BAM primero, USDA si la BAM no tiene nada
-- `buscar_marca(termino)` — OpenFoodFacts, devuelve candidatos para elegir
-- `buscar_todo(termino)` — resultados agrupados por fuente, para la pantalla de consulta manual
-- `resumen_fuentes()` — estado de las tres fuentes, para diagnóstico
+- `buscar_generico(termino, limite=10)` — Marifer primero, FNDDS si Marifer no tiene nada, BAM si ninguna de las dos anteriores tiene nada
+- `buscar_marca(termino, limite=5)` — OpenFoodFacts, devuelve candidatos para elegir
+- `buscar_todo(termino, limite=10)` — resultados agrupados por fuente (Marifer, FNDDS, BAM), para la pantalla de consulta manual
+- `resumen_fuentes()` — estado de las cuatro fuentes, para diagnóstico
 
 ---
 
-## 7. Verificación realizada
+## 8. Verificación realizada
 
-Prueba de jerarquía ejecutada en el servidor el 30 de agosto de 2026:
+Prueba de jerarquía ejecutada en el servidor el 30 de agosto de 2026 (jerarquía anterior, BAM como principal):
 
 | Búsqueda | Fuente usada | Resultado |
 |---|---|---|
@@ -118,10 +133,16 @@ Prueba de jerarquía ejecutada en el servidor el 30 de agosto de 2026:
 | quinoa | USDA (la BAM no lo tiene) | Quinoa cooked, 120 kcal |
 | salmon | BAM (sí lo tiene, tiene prioridad) | SALMON COCIDO, 156 kcal |
 
+*Pendiente: repetir esta prueba con la jerarquía actual (Marifer → FNDDS → BAM) para tener una verificación vigente.*
+
 ---
 
-## 8. Bitácora
+## 9. Bitácora
 
 | Fecha | Cambio |
 |---|---|
 | 2026-08-30 | v1.0. Se probó OpenFoodFacts como fuente principal y se descartó por baja precisión (3 de 20). Se adoptó la BAM como fuente principal y el USDA como fuente activa secundaria. OpenFoodFacts queda restringido a productos de marca con verificación humana |
+| 2026-09-03 | Migración de fuente principal: Marifer (base propia de la nutrióloga, 2,342 alimentos) pasa a ser la fuente #1; BAM baja a respaldo |
+| 2026-09-03 | Corrección de datos y búsqueda: se anulan valores erróneos detectados por validación cruzada; se mejora la detección de plurales en la búsqueda |
+| 2026-09-03 | FNDDS local reemplaza a la API en línea del USDA como fuente #2; se corrigen 7 términos de búsqueda; se documentan 5 alimentos sin cobertura en ninguna fuente |
+| 2026-09-04 | v2.0. Documento actualizado para reflejar la jerarquía real del código (estaba desactualizado desde la migración del 3 de septiembre) |

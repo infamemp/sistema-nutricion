@@ -13,10 +13,14 @@ pydantic-core==2.46.5
 python-dotenv==1.2.3
 python-multipart==0.0.32
 pyyaml==6.0.3
+requests==2.34.2
+resend==2.42.0
+SQLAlchemy==2.0.52
 starlette==1.6.0
 typing-extensions==4.16.0
 typing-inspection==0.4.4
 uvicorn==0.52.4
 uvloop==0.22.1
 watchfiles==1.2.0
+weasyprint==69.0
 websockets==17.1
