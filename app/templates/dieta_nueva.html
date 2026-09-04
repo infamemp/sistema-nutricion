@@ -91,5 +91,18 @@
 
     </div>
 
+    <script>
+        // Evita doble envio: la generacion con IA puede tardar varios
+        // segundos y sin esto un doble clic crea dos versiones de dieta.
+        document.querySelectorAll('form').forEach(function (form) {
+            form.addEventListener('submit', function () {
+                var boton = form.querySelector('button[type="submit"]');
+                if (!boton) return;
+                boton.disabled = true;
+                boton.textContent = 'Generando...';
+            });
+        });
+    </script>
+
 </body>
 </html>

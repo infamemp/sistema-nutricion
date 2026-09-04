@@ -112,7 +112,7 @@
             <form method="post" action="/pacientes/{{ paciente.id }}/dieta/{{ dieta.id }}/ajustar" class="space-y-3">
                 <textarea name="instruccion" rows="2" placeholder="Ej. quita el aguacate del desayuno, o cambia las colaciones por opciones frías"
                           class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-400"></textarea>
-                <button type="submit" class="bg-white border border-green-600 text-green-700 hover:bg-green-50 text-sm font-medium px-4 py-2 rounded-lg transition">
+                <button type="submit" data-cargando="Ajustando..." class="bg-white border border-green-600 text-green-700 hover:bg-green-50 text-sm font-medium px-4 py-2 rounded-lg transition">
                     Regenerar con este ajuste
                 </button>
             </form>
@@ -128,7 +128,7 @@
                 Descargar PDF
             </a>
             <form method="post" action="/pacientes/{{ paciente.id }}/dieta/{{ dieta.id }}/enviar-correo" class="flex-1">
-                <button type="submit" class="w-full bg-white border border-green-600 text-green-700 hover:bg-green-50 font-medium py-3 rounded-lg transition">
+                <button type="submit" data-cargando="Enviando..." class="w-full bg-white border border-green-600 text-green-700 hover:bg-green-50 font-medium py-3 rounded-lg transition">
                     Enviar por correo
                 </button>
             </form>
@@ -138,13 +138,27 @@
                 Editar
             </a>
             <form method="post" action="/pacientes/{{ paciente.id }}/dieta/{{ dieta.id }}/aprobar" class="flex-1">
-                <button type="submit" class="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-3 rounded-lg transition">
+                <button type="submit" data-cargando="Aprobando..." class="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-3 rounded-lg transition">
                     Aprobar
                 </button>
             </form>
             {% endif %}
         </div>
     </div>
+
+    <script>
+        // Evita doble envio en cualquiera de los 3 formularios de esta
+        // pantalla: ajustar (llama a la IA, puede tardar), enviar por
+        // correo, y aprobar.
+        document.querySelectorAll('form').forEach(function (form) {
+            form.addEventListener('submit', function () {
+                var boton = form.querySelector('button[type="submit"]');
+                if (!boton) return;
+                boton.disabled = true;
+                boton.textContent = boton.dataset.cargando || 'Procesando...';
+            });
+        });
+    </script>
 
 </body>
 </html>
