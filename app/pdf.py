@@ -43,6 +43,11 @@ RUTA_SALIDA = os.path.join(BASE_DIR, "pdfs")
 PIE_NOMBRE = "Marifer Utrilla Lack"
 PIE_TITULO = "Nutrióloga y Especialista en Salud Hormonal, Educadora en Diabetes"
 PIE_TELEFONO = "+52 238 390 0875"
+# Version corta para la barra angosta del pie de pagina; el titulo completo
+# (PIE_TITULO) es muy largo y se parte en dos lineas ahi. Se conserva
+# PIE_TITULO para contextos donde si cabe el titulo completo (ej. la firma
+# de una carta al medico).
+PIE_TITULO_CORTO = "Nutrición y Salud Hormonal"
 
 MESES = [
     "enero", "febrero", "marzo", "abril", "mayo", "junio",
@@ -137,7 +142,8 @@ def _armar_bloques(documento):
 
 
 def generar(documento, nombre_paciente, proxima_cita=None,
-            fecha_documento=None, ruta_salida=None):
+            fecha_documento=None, ruta_salida=None,
+            tipo_documento="PLAN NUTRICIONAL", saludo=None, despedida=None):
     """
     Genera el PDF del paciente.
 
@@ -159,9 +165,13 @@ def generar(documento, nombre_paciente, proxima_cita=None,
         paciente=nombre_paciente,
         fecha=_fecha_larga(fecha_documento),
         proxima_cita=proxima_cita,
+        tipo_documento=tipo_documento,
+        saludo=saludo,
+        despedida=despedida,
         logo=_logo_embebido(),
         pie_nombre=PIE_NOMBRE,
         pie_titulo=PIE_TITULO,
+        pie_titulo_corto=PIE_TITULO_CORTO,
         pie_telefono=PIE_TELEFONO,
     )
 
@@ -179,7 +189,8 @@ def generar(documento, nombre_paciente, proxima_cita=None,
 
 
 def generar_html(documento, nombre_paciente, proxima_cita=None,
-                 fecha_documento=None):
+                 fecha_documento=None,
+                 tipo_documento="PLAN NUTRICIONAL", saludo=None, despedida=None):
     """
     Devuelve el HTML sin convertirlo a PDF.
     Util para la vista previa en pantalla antes de aprobar.
@@ -194,66 +205,79 @@ def generar_html(documento, nombre_paciente, proxima_cita=None,
         paciente=nombre_paciente,
         fecha=_fecha_larga(fecha_documento),
         proxima_cita=proxima_cita,
+        tipo_documento=tipo_documento,
+        saludo=saludo,
+        despedida=despedida,
         logo=_logo_embebido(),
         pie_nombre=PIE_NOMBRE,
         pie_titulo=PIE_TITULO,
+        pie_titulo_corto=PIE_TITULO_CORTO,
         pie_telefono=PIE_TELEFONO,
     )
 
 
 def _armar_bloques_porciones(documento):
     """
-    Convierte el documento de una Tabla de Porciones en la misma lista de
-    bloques generica que usa el Menu, para reutilizar la plantilla del PDF
-    sin cambios. Cada fila alimento/cantidad se convierte en una linea de
-    texto simple ("Alimento — Cantidad").
+    Convierte el documento de una Tabla de Porciones en la lista de bloques
+    generica que usa la plantilla. Las 4 categorias (proteinas, carbohidratos,
+    grasas, verduras) se agrupan en un solo bloque "grid_categorias" -- la
+    rejilla de tarjetas de color que se ve en pantalla -- en vez de listas
+    separadas.
     """
     bloques = []
 
-    intro = []
+    if documento.get("metas_diarias"):
+        bloques.append({"tipo": "lista", "titulo": "METAS DIARIAS", "elementos": documento["metas_diarias"]})
+
+    tip = []
     if documento.get("meta_proteina"):
-        intro.append(documento["meta_proteina"])
+        tip.append(documento["meta_proteina"])
     if documento.get("instruccion_general"):
-        intro.append(documento["instruccion_general"])
+        tip.append(documento["instruccion_general"])
     if documento.get("objetivo_distribucion"):
-        intro.extend(documento["objetivo_distribucion"])
-    if intro:
-        bloques.append({"tipo": "lista", "titulo": "TABLA DE PORCIONES", "elementos": intro})
+        tip.extend(documento["objetivo_distribucion"])
+
+    categorias = []
 
     if documento.get("tabla_proteinas"):
         elementos = [
-            (f.get("alimento", "") + " — " + f.get("cantidad", "")).strip(" —")
+            (f.get("alimento", "") + " - " + f.get("cantidad", "")).strip(" -")
             for f in documento["tabla_proteinas"]
         ]
-        bloques.append({"tipo": "lista", "titulo": "PROTEÍNAS", "elementos": elementos})
+        categorias.append({"clave": "proteinas", "titulo": "PROTEÍNAS", "elementos": elementos})
 
     carbohidratos = documento.get("tabla_carbohidratos") or {}
     if carbohidratos.get("alimentos"):
         elementos = []
         if carbohidratos.get("instruccion"):
-            elementos.append(carbohidratos["instruccion"])
+            tip.append(carbohidratos["instruccion"])
         elementos.extend(
-            (f.get("alimento", "") + " — " + f.get("cantidad", "")).strip(" —")
+            (f.get("alimento", "") + " - " + f.get("cantidad", "")).strip(" -")
             for f in carbohidratos["alimentos"]
         )
-        bloques.append({"tipo": "lista", "titulo": "CARBOHIDRATOS", "elementos": elementos})
+        categorias.append({"clave": "carbohidratos", "titulo": "CARBOHIDRATOS", "elementos": elementos})
 
     grasas = documento.get("tabla_grasas") or {}
     if grasas.get("alimentos"):
         elementos = []
         if grasas.get("instruccion"):
-            elementos.append(grasas["instruccion"])
+            tip.append(grasas["instruccion"])
         elementos.extend(
-            (f.get("alimento", "") + " — " + f.get("cantidad", "")).strip(" —")
+            (f.get("alimento", "") + " - " + f.get("cantidad", "")).strip(" -")
             for f in grasas["alimentos"]
         )
-        bloques.append({"tipo": "lista", "titulo": "GRASAS", "elementos": elementos})
+        categorias.append({"clave": "grasas", "titulo": "GRASAS", "elementos": elementos})
 
     if documento.get("nota_verduras"):
-        bloques.append({"tipo": "texto", "titulo": "VERDURAS", "texto": documento["nota_verduras"]})
+        categorias.append({"clave": "verduras", "titulo": "VERDURAS", "elementos": [documento["nota_verduras"]]})
 
-    if documento.get("metas_diarias"):
-        bloques.append({"tipo": "lista", "titulo": "METAS DIARIAS", "elementos": documento["metas_diarias"]})
+    if categorias:
+        bloques.append({
+            "tipo": "grid_categorias",
+            "titulo": "TABLA DE PORCIONES",
+            "instruccion": " ".join(tip) if tip else None,
+            "categorias": categorias,
+        })
 
     ejemplos = documento.get("ejemplos") or {}
     for tiempo, titulo in [
@@ -268,7 +292,8 @@ def _armar_bloques_porciones(documento):
 
 
 def generar_porciones(documento, nombre_paciente, proxima_cita=None,
-                      fecha_documento=None, ruta_salida=None):
+                      fecha_documento=None, ruta_salida=None,
+                      tipo_documento="PLAN NUTRICIONAL", saludo=None, despedida=None):
     """
     Igual que generar(), pero para el documento de una Tabla de Porciones.
     Reutiliza la misma plantilla plan_pdf.html sin ningun cambio.
@@ -283,9 +308,13 @@ def generar_porciones(documento, nombre_paciente, proxima_cita=None,
         paciente=nombre_paciente,
         fecha=_fecha_larga(fecha_documento),
         proxima_cita=proxima_cita,
+        tipo_documento=tipo_documento,
+        saludo=saludo,
+        despedida=despedida,
         logo=_logo_embebido(),
         pie_nombre=PIE_NOMBRE,
         pie_titulo=PIE_TITULO,
+        pie_titulo_corto=PIE_TITULO_CORTO,
         pie_telefono=PIE_TELEFONO,
     )
     if not ruta_salida:

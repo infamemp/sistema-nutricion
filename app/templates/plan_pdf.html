@@ -1,31 +1,36 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
-    <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32x32.png">
-    <link rel="icon" type="image/png" sizes="16x16" href="/static/favicon-16x16.png">
-    <link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png">
-    <link rel="manifest" href="/static/site.webmanifest">
 <meta charset="UTF-8">
 <style>
-  /* Lamina de Marifer Utrilla.
-
-     Estructura: el fondo verde lo pinta @page. El encabezado blanco y
-     el pie verde ocupan los margenes superior e inferior de la pagina,
-     con su propio fondo. Sin margenes negativos ni trucos de posicion,
-     que es lo que rompio el intento anterior. */
+  :root {
+    /* Verdes calibrados contra los pixeles reales de marifer-logo.png
+       (familia bosque/salvia, mas apagada que el verde brillante anterior). */
+    --verde-50:  #f2f6ec;
+    --verde-100: #e3ecd4;
+    --verde-400: #8fb56a;
+    --verde-600: #5c8a3f;
+    --verde-700: #3f6b34;
+    --verde-800: #2c4d27;
+    --verde-900: #24401f;
+    --azul-100:  #e7f0f5;
+    --azul-600:  #3d7ea6;
+    --azul-700:  #2f6a8a;
+    --fondo:     #faf9f6;
+    --texto:     #4a4a48;
+    --texto-suave: #6d6b66;
+  }
 
   @page {
     size: letter;
-    margin: 44mm 0 16mm 0;
-    background: #deefd1;
+    margin: 40mm 0 16mm 0;
+    background: var(--fondo);
 
     @top-center {
       content: element(encabezado);
       width: 100%;
       vertical-align: top;
     }
-
     @bottom-center {
       content: element(pie);
       width: 100%;
@@ -39,61 +44,95 @@
     margin: 0;
     padding: 0;
     font-family: "DejaVu Sans", sans-serif;
-    color: #4a4a48;
+    color: var(--texto);
     font-size: 10pt;
   }
 
-  /* El contenido lleva su propio margen lateral, porque la pagina no
-     tiene margen izquierdo ni derecho (para que el encabezado y el pie
-     ocupen todo el ancho). */
-  /* Sin padding vertical: el aire superior lo da el margen de @page,
-     que si se aplica en todas las hojas. El padding del cuerpo solo
-     funcionaba en la primera. */
   .cuerpo { padding: 0 14mm; }
 
+  /* ---------- ENCABEZADO ---------- */
   #encabezado {
     position: running(encabezado);
-    background: #ffffff;
-    border-bottom: 3px solid #65a035;
-    height: 38mm;
-    padding: 4mm 14mm;
+    background: var(--fondo);
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+  }
+  .barra-degradado {
+    height: 3mm;
+    width: 100%;
+    flex-shrink: 0;
+    background: linear-gradient(90deg, var(--verde-400) 0%, var(--verde-700) 65%, var(--azul-700) 100%);
+  }
+  .encabezado-contenido {
+    flex: 1;
+    padding: 0 14mm;
     display: flex;
     justify-content: space-between;
     align-items: center;
   }
-  .datos-encabezado { font-size: 10.5pt; line-height: 1.55; }
-  .datos-encabezado .etiqueta {
-    color: #6D5C4D;
+  .eyebrow {
+    color: var(--azul-700);
+    font-size: 8pt;
     font-weight: bold;
-    letter-spacing: 0.4px;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    margin: 0 0 1.5mm 0;
   }
-  .datos-encabezado .valor { color: #518329; font-weight: bold; }
-  /* El logo se limita por ALTURA. Es casi cuadrado (proporcion 1.6),
-     asi que necesita un encabezado alto. Con 38mm de encabezado menos
-     8mm de padding quedan 30mm utiles; se piden 26mm para dejar aire.
-     Fijar el ancho o pedir mas altura corta las hojitas de arriba y el
-     circulo de acuarela de abajo. */
-  .logo { max-height: 26mm; width: auto; }
+  .eyebrow .separador { color: var(--verde-400); margin: 0 2mm; }
+  .nombre-paciente {
+    font-family: "DejaVu Serif", serif;
+    color: var(--verde-800);
+    font-size: 19pt;
+    font-weight: bold;
+    margin: 0;
+  }
+  .logo-encabezado {
+    max-height: 22mm;
+    width: auto;
+    margin-right: 4mm;
+    margin-top: 1mm;
+  }
+  .linea-divisoria {
+    border: none;
+    border-top: 0.6pt solid #e2e0d8;
+    margin: 0 14mm;
+  }
 
+  /* ---------- PIE ---------- */
   #pie {
     position: running(pie);
-    background: #518329;
+    background: linear-gradient(90deg, var(--verde-400) 0%, var(--verde-700) 65%, var(--azul-700) 100%);
     color: #ffffff;
-    height: 16mm;
+    height: 14mm;
     padding: 0 14mm;
     font-size: 7.5pt;
     display: flex;
     justify-content: space-between;
     align-items: center;
   }
-  #pie .nombre { font-weight: bold; font-size: 8.5pt; }
-  #pie .contacto { text-align: right; line-height: 1.4; }
+  #pie .marca { font-weight: bold; letter-spacing: 0.4px; text-transform: uppercase; }
+  #pie .contacto { display: flex; align-items: center; gap: 2mm; white-space: nowrap; }
+  #pie .icono-telefono { width: 3mm; height: 3mm; flex-shrink: 0; }
+  .num-pagina::before { content: counter(page) "/" counter(pages); }
 
-  /* Cada seccion es una tabla sin apariencia de tabla. El motivo: el
-     <thead> de una tabla se repite automaticamente cuando el contenido
-     se parte entre hojas, que es justo lo que queremos para el titulo.
-     Con un div normal, el titulo se queda en la primera hoja y las
-     opciones continuadas aparecen huerfanas, sin contexto. */
+  /* ---------- TITULOS DE SECCION ---------- */
+  h2.titulo-seccion {
+    color: var(--verde-700);
+    font-size: 13pt;
+    font-weight: bold;
+    margin: 0 0 1mm 0;
+    letter-spacing: 0.2px;
+    break-after: avoid;
+  }
+  .subrayado {
+    width: 16mm;
+    height: 0.9mm;
+    background: var(--verde-400);
+    border-radius: 1mm;
+    margin-bottom: 4mm;
+  }
+
   table.seccion {
     width: 100%;
     border-collapse: collapse;
@@ -106,148 +145,244 @@
     text-align: left;
   }
 
-  /* El aviso de continuacion solo se ve en las repeticiones del
-     encabezado, nunca en la primera. */
-  .continua { display: none; }
+  /* ---------- CAJA TIP ---------- */
+  .caja-tip {
+    background: linear-gradient(90deg, var(--verde-50), var(--azul-100));
+    border-radius: 2.5mm;
+    padding: 3.5mm 5mm;
+    margin-bottom: 4mm;
+    display: flex;
+    align-items: flex-start;
+    gap: 3mm;
+    break-inside: avoid;
+  }
+  .caja-tip .etiqueta-tip {
+    background: var(--azul-700);
+    color: #ffffff;
+    font-size: 6.5pt;
+    font-weight: bold;
+    letter-spacing: 0.5px;
+    border-radius: 1.5mm;
+    padding: 1mm 2mm;
+    flex-shrink: 0;
+    margin-top: 0.5mm;
+  }
+  .caja-tip .texto-tip { font-size: 9.5pt; line-height: 1.5; }
 
-  .seccion-vieja {
-    margin-bottom: 7mm;
-    /* Sin break-inside: avoid. Si el bloque entero no cabe, es preferible
-       que se parta de forma limpia a dejar un tercio de hoja vacio. Lo que
-       si se protege es que un renglon no se corte, y que el titulo no
-       quede huerfano al final de una hoja. */
+  /* ---------- LISTA CON CHECKS (checklist) ---------- */
+  ul.checklist { margin: 0 0 2mm 0; padding: 0; list-style: none; }
+  ul.checklist li {
+    display: flex;
+    align-items: flex-start;
+    gap: 2.5mm;
+    padding: 1.6mm 0;
+    line-height: 1.5;
+    break-inside: avoid;
+  }
+  .check {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--verde-100);
+    color: var(--verde-700);
+    font-weight: bold;
+    font-size: 7.5pt;
+    width: 4.6mm;
+    height: 4.6mm;
+    border-radius: 50%;
+    flex-shrink: 0;
+    margin-top: 0.3mm;
   }
 
-  h2 {
-    color: #518329;
-    font-size: 12.5pt;
-    margin: 0 0 3mm 0;
-    letter-spacing: 0.3px;
-    break-after: avoid;
-  }
-
-  .tarjeta {
-    background: #ffffff;
-    border-radius: 3mm;
-    padding: 5mm 6mm;
-    /* Al partirse entre hojas, la parte continuada conserva el mismo
-       padding superior. Sin esto, el texto quedaria pegado al borde
-       de la tarjeta en la segunda hoja. */
-    /* Si la tarjeta se parte entre hojas, deja al menos 3 lineas de cada
-       lado. Evita que quede un renglon suelto. */
-    orphans: 3;
-    widows: 3;
-  }
-
-  .instruccion {
-    color: #6D5C4D;
-    font-size: 9pt;
-    font-style: italic;
-    margin: 0 0 3.5mm 0;
-  }
-
+  /* ---------- OPCIONES NUMERADAS (menu) ---------- */
   ul.opciones { margin: 0; padding: 0; list-style: none; }
   ul.opciones li {
+    display: flex;
+    align-items: flex-start;
+    gap: 3mm;
     padding: 3mm 0;
-    border-bottom: 1px solid #eeeeee;
-    line-height: 1.5;
+    border-bottom: 0.5pt solid #ececE4;
+    line-height: 1.55;
     break-inside: avoid;
   }
   ul.opciones li:last-child { border-bottom: none; padding-bottom: 0; }
   ul.opciones li:first-child { padding-top: 0; }
-
   .num {
-    display: inline-block;
-    background: #f1f9eb;
-    color: #518329;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--azul-100);
+    color: var(--azul-700);
     font-weight: bold;
-    font-size: 8.5pt;
+    font-size: 8pt;
     width: 5.5mm;
     height: 5.5mm;
-    line-height: 5.5mm;
-    text-align: center;
     border-radius: 50%;
-    margin-right: 2mm;
+    flex-shrink: 0;
+    margin-top: 0.3mm;
   }
 
-  ul.lista { margin: 0; padding-left: 6mm; }
-  ul.lista li {
-    line-height: 1.55;
-    margin-bottom: 2.5mm;
+  /* ---------- REJILLA DE CATEGORIAS (tabla de porciones) ---------- */
+  .rejilla-categorias {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4mm;
+    margin-bottom: 2mm;
+  }
+  .categoria {
+    width: calc(50% - 2mm);
+    border-radius: 3mm;
+    padding: 4mm 5mm;
     break-inside: avoid;
   }
-  ul.lista li:last-child { margin-bottom: 0; }
+  .categoria h3 {
+    font-size: 9pt;
+    font-weight: bold;
+    letter-spacing: 0.4px;
+    margin: 0 0 2.5mm 0;
+  }
+  .categoria ul { margin: 0; padding: 0; list-style: none; }
+  .categoria ul li {
+    font-size: 9pt;
+    line-height: 1.55;
+    padding-left: 3.5mm;
+    position: relative;
+    margin-bottom: 1.3mm;
+  }
+  .categoria ul li::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 1.9mm;
+    width: 2mm;
+    height: 2mm;
+    border-radius: 0.5mm;
+  }
+  .categoria.c-proteinas { background: var(--verde-100); }
+  .categoria.c-proteinas h3 { color: var(--verde-700); }
+  .categoria.c-proteinas ul li::before { background: var(--verde-600); }
 
-  .cierre { line-height: 1.55; margin: 0; }
+  .categoria.c-carbohidratos { background: var(--azul-100); }
+  .categoria.c-carbohidratos h3 { color: var(--azul-700); }
+  .categoria.c-carbohidratos ul li::before { background: var(--azul-600); }
+
+  .categoria.c-grasas { background: var(--verde-50); }
+  .categoria.c-grasas h3 { color: var(--verde-800); }
+  .categoria.c-grasas ul li::before { background: var(--verde-800); }
+
+  .categoria.c-verduras { background: #eaf2ef; }
+  .categoria.c-verduras h3 { color: #2d6b5c; }
+  .categoria.c-verduras ul li::before { background: #2d6b5c; }
+
+  /* ---------- TEXTO SIMPLE ---------- */
+  p.parrafo { line-height: 1.6; margin: 0 0 3mm 0; }
+  p.saludo { margin-bottom: 5mm; }
+  p.despedida { margin-top: 5mm; }
 </style>
 </head>
 <body>
 
 <div id="encabezado">
-  <div class="datos-encabezado">
-    <div><span class="etiqueta">NOMBRE:</span> <span class="valor">{{ paciente }}</span></div>
-    <div><span class="etiqueta">FECHA:</span> <span class="valor">{{ fecha }}</span></div>
-    {% if proxima_cita %}
-    <div><span class="etiqueta">PRÓXIMA CITA:</span> <span class="valor">{{ proxima_cita }}</span></div>
-    {% endif %}
+  <div class="barra-degradado"></div>
+  <div class="encabezado-contenido">
+    <div>
+      <p class="eyebrow">{{ tipo_documento or 'PLAN NUTRICIONAL' }}<span class="separador">|</span>{{ fecha }}</p>
+      <h1 class="nombre-paciente">{{ paciente }}</h1>
+    </div>
+    {% if logo %}<img class="logo-encabezado" src="{{ logo }}">{% endif %}
   </div>
-  {% if logo %}<img class="logo" src="{{ logo }}">{% endif %}
+  <hr class="linea-divisoria">
 </div>
 
 <div id="pie">
-  <div class="nombre">{{ pie_nombre }}</div>
+  <div class="marca">{{ pie_nombre }} &bull; {{ pie_titulo_corto or pie_titulo }}</div>
   <div class="contacto">
-    {{ pie_titulo }}<br>
-    {{ pie_telefono }}
-  </div>
+      <svg class="icono-telefono" viewBox="0 0 24 24" fill="#ffffff"><path d="M6.6 10.8c1.4 2.8 3.8 5.1 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1-9.4 0-17-7.6-17-17 0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.3.2 2.5.6 3.6.1.4 0 .8-.2 1L6.6 10.8z"/></svg>
+      <span>{{ pie_telefono }}</span><span class="separador-pie">&bull;</span><span class="num-pagina"></span></div>
 </div>
 
 <div class="cuerpo">
+{% if saludo %}
+<p class="parrafo saludo">{{ saludo }}</p>
+{% endif %}
 {% for bloque in bloques %}
 
-  {% if bloque.tipo == 'menu' %}
+  {% if bloque.tipo == 'lista' %}
   <table class="seccion">
-    <thead><tr><th><h2>{{ bloque.titulo }}</h2></th></tr></thead>
+    <thead><tr><th>
+      <h2 class="titulo-seccion">{{ bloque.titulo }}</h2>
+      <div class="subrayado"></div>
+    </th></tr></thead>
     <tbody><tr><td>
-      <div class="tarjeta">
-        {% if bloque.instruccion %}
-        <p class="instruccion">{{ bloque.instruccion }}</p>
-        {% endif %}
-        <ul class="opciones">
-          {% for op in bloque.opciones %}
-          <li><span class="num">{{ loop.index }}</span>{{ op }}</li>
-          {% endfor %}
-        </ul>
-      </div>
+      {% if bloque.instruccion %}
+      <div class="caja-tip"><span class="etiqueta-tip">TIP</span><span class="texto-tip">{{ bloque.instruccion }}</span></div>
+      {% endif %}
+      <ul class="checklist">
+        {% for item in bloque.elementos %}
+        <li><span class="check">&#10003;</span><span>{{ item }}</span></li>
+        {% endfor %}
+      </ul>
     </td></tr></tbody>
   </table>
 
-  {% elif bloque.tipo == 'lista' %}
+  {% elif bloque.tipo == 'menu' %}
   <table class="seccion">
-    <thead><tr><th><h2>{{ bloque.titulo }}</h2></th></tr></thead>
+    <thead><tr><th>
+      <h2 class="titulo-seccion">{{ bloque.titulo }}</h2>
+      <div class="subrayado"></div>
+    </th></tr></thead>
     <tbody><tr><td>
-      <div class="tarjeta">
-        <ul class="lista">
-          {% for item in bloque.elementos %}
-          <li>{{ item }}</li>
-          {% endfor %}
-        </ul>
-      </div>
+      {% if bloque.instruccion %}
+      <div class="caja-tip"><span class="etiqueta-tip">TIP</span><span class="texto-tip">{{ bloque.instruccion }}</span></div>
+      {% endif %}
+      <ul class="opciones">
+        {% for op in bloque.opciones %}
+        <li><span class="num">{{ loop.index }}</span><span>{{ op }}</span></li>
+        {% endfor %}
+      </ul>
     </td></tr></tbody>
   </table>
 
   {% elif bloque.tipo == 'texto' %}
   <table class="seccion">
-    <thead><tr><th><h2>{{ bloque.titulo }}</h2></th></tr></thead>
+    <thead><tr><th>
+      <h2 class="titulo-seccion">{{ bloque.titulo }}</h2>
+      <div class="subrayado"></div>
+    </th></tr></thead>
     <tbody><tr><td>
-      <div class="tarjeta">
-        <p class="cierre">{{ bloque.texto }}</p>
+      <p class="parrafo">{{ bloque.texto }}</p>
+    </td></tr></tbody>
+  </table>
+
+  {% elif bloque.tipo == 'grid_categorias' %}
+  <table class="seccion">
+    <thead><tr><th>
+      <h2 class="titulo-seccion">{{ bloque.titulo }}</h2>
+      <div class="subrayado"></div>
+    </th></tr></thead>
+    <tbody><tr><td>
+      {% if bloque.instruccion %}
+      <div class="caja-tip"><span class="etiqueta-tip">TIP</span><span class="texto-tip">{{ bloque.instruccion }}</span></div>
+      {% endif %}
+      <div class="rejilla-categorias">
+        {% for cat in bloque.categorias %}
+        <div class="categoria c-{{ cat.clave }}">
+          <h3>{{ cat.titulo }}</h3>
+          <ul>{% for item in cat.elementos %}<li>{{ item }}</li>{% endfor %}</ul>
+        </div>
+        {% endfor %}
       </div>
     </td></tr></tbody>
   </table>
+
+  {% elif bloque.tipo == 'parrafo' %}
+  <p class="parrafo">{{ bloque.texto }}</p>
   {% endif %}
 
 {% endfor %}
+{% if despedida %}
+<p class="parrafo despedida">{{ despedida }}</p>
+{% endif %}
 </div>
 
 </body>
