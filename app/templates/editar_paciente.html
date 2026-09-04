@@ -41,7 +41,7 @@
             <h1 class="text-2xl font-medium text-green-800">Editar datos del paciente</h1>
         </div>
 
-        <form method="post" action="/pacientes/{{ paciente.id }}/editar" class="bg-white rounded-xl shadow-sm p-6 space-y-4">
+        <form data-autoguardar method="post" action="/pacientes/{{ paciente.id }}/editar" class="bg-white rounded-xl shadow-sm p-6 space-y-4">
 
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Nombre completo *</label>
@@ -115,6 +115,92 @@
         </form>
 
     </div>
+
+    <script>
+        // Mantiene viva la sesion mientras esta pantalla este abierta
+        // (evita el cierre por "1 hora de inactividad" cuando en
+        // realidad se esta escribiendo, solo que sin mandar peticiones
+        // al servidor).
+        setInterval(function () {
+            fetch('/ping', { method: 'POST' }).catch(function () {});
+        }, 5 * 60 * 1000);
+
+        // Borrador local de respaldo: guarda el formulario en este
+        // navegador cada pocos segundos. Si la sesion se pierde o se
+        // cierra la pestaña antes de guardar, al volver a abrir esta
+        // misma pantalla se puede recuperar.
+        (function () {
+            var form = document.querySelector('form[data-autoguardar]');
+            if (!form) return;
+
+            var clave = 'borrador:' + window.location.pathname;
+
+            function leerFormulario() {
+                var datos = {};
+                Array.from(form.elements).forEach(function (el) {
+                    if (!el.name) return;
+                    if (el.type === 'checkbox' || el.type === 'radio') {
+                        if (el.checked) datos[el.name] = el.value;
+                    } else {
+                        datos[el.name] = el.value;
+                    }
+                });
+                return datos;
+            }
+
+            function guardarBorrador() {
+                localStorage.setItem(clave, JSON.stringify({ fecha: Date.now(), datos: leerFormulario() }));
+            }
+
+            function aplicarBorrador(datos) {
+                Array.from(form.elements).forEach(function (el) {
+                    if (!el.name || !(el.name in datos)) return;
+                    if (el.type === 'checkbox' || el.type === 'radio') {
+                        el.checked = (el.value === datos[el.name]);
+                    } else {
+                        el.value = datos[el.name];
+                    }
+                });
+            }
+
+            function mostrarAvisoBorrador(payload) {
+                var minutos = Math.max(1, Math.round((Date.now() - payload.fecha) / 60000));
+                var aviso = document.createElement('div');
+                aviso.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:50;background:#fef3c7;border-bottom:1px solid #f59e0b;padding:12px 16px;font-size:14px;color:#78350f;text-align:center;';
+                aviso.innerHTML = 'Se encontró un borrador sin guardar de hace ' + minutos + ' min. ' +
+                    '<button type="button" id="btn-recuperar-borrador" style="margin-left:8px;background:#f59e0b;color:white;border:none;padding:4px 10px;border-radius:6px;cursor:pointer;">Recuperar</button> ' +
+                    '<button type="button" id="btn-descartar-borrador" style="margin-left:6px;background:white;border:1px solid #f59e0b;padding:4px 10px;border-radius:6px;cursor:pointer;">Descartar</button>';
+                document.body.prepend(aviso);
+                document.getElementById('btn-recuperar-borrador').addEventListener('click', function () {
+                    aplicarBorrador(payload.datos);
+                    aviso.remove();
+                });
+                document.getElementById('btn-descartar-borrador').addEventListener('click', function () {
+                    localStorage.removeItem(clave);
+                    aviso.remove();
+                });
+            }
+
+            var guardado = localStorage.getItem(clave);
+            if (guardado) {
+                try {
+                    mostrarAvisoBorrador(JSON.parse(guardado));
+                } catch (e) {
+                    localStorage.removeItem(clave);
+                }
+            }
+
+            var temporizador;
+            form.addEventListener('input', function () {
+                clearTimeout(temporizador);
+                temporizador = setTimeout(guardarBorrador, 2000);
+            });
+
+            form.addEventListener('submit', function () {
+                localStorage.removeItem(clave);
+            });
+        })();
+    </script>
 
 </body>
 </html>

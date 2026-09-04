@@ -94,6 +94,20 @@ app.add_middleware(
 )
 
 
+@app.post("/ping")
+def ping(request: Request):
+    """
+    Peticion minima para mantener viva la sesion mientras alguien esta
+    escribiendo en un formulario largo (Historia Clinica, Seguimiento,
+    etc). No hace nada por si sola: RequiereLoginMiddleware ya renueva
+    "ultima_actividad" con cualquier peticion autenticada. Este endpoint
+    solo le da al frontend algo barato a donde apuntar cada pocos
+    minutos mientras la pestaña esta abierta y hay actividad de teclado,
+    para no perder el trabajo de mas de una hora sin guardar.
+    """
+    return {"ok": True}
+
+
 @app.get("/login", response_class=HTMLResponse)
 def formulario_login(request: Request):
     if request.session.get("autenticado"):
