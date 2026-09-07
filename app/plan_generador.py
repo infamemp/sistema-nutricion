@@ -601,17 +601,33 @@ def construir_prompt_porciones(paciente, historia, medicion, incluir_ejemplos, p
         '  "objetivo_distribucion": ["Desayuno: 1 opcion", "Comida: 1 opcion", "Cena: 1 opcion", "Colacion: ..."],\n'
         '  "tabla_carbohidratos": {\n'
         '    "instruccion": "texto tipo \'Desayuno: 2 opciones (ejemplo: 1 tortilla + 1/2 taza de papaya)...\'",\n'
-        '    "alimentos": [{"alimento": "...", "cantidad": "..."}]\n'
+        '    "alimentos": [{"alimento": "...", "cantidad": "medida casera SIN gramos, ej. \'1 a 2 piezas\' o \'1/2 taza\'"}]\n'
         "  },\n"
         '  "tabla_grasas": {\n'
         '    "instruccion": "texto tipo \'GRASAS: 3 PORCIONES AL DIA DISTRIBUIDAS\'",\n'
-        '    "alimentos": [{"alimento": "...", "cantidad": "..."}]\n'
+        '    "alimentos": [{"alimento": "...", "cantidad": "medida casera SIN gramos, ej. \'10 piezas\' o \'1 cucharadita\'"}]\n'
         "  },\n"
         '  "nota_verduras": "texto recomendando tazas de verdura al dia, repartidas en las comidas",\n'
         '  "metas_diarias": ["3 porciones buenas de proteina", "2-3 frutas", "3-4 tazas de verduras", "2-3 L de agua", "Fuerza X veces/semana", "X pasos diarios"],\n'
         '  "ejemplos": {"desayuno": ["..."], "comida": ["..."], "cena": ["..."]}\n'
         "}\n\n"
         + instruccion_ejemplos + "\n\n"
+        "FORMATO DE CANTIDAD SEGUN LA TABLA (esto es distinto para cada una):\n"
+        "- tabla_proteinas: la cantidad SIEMPRE lleva su gramaje (ej. '120 g', "
+        "'1 lata de 140 g'), ademas de la medida casera si aplica. Esto no cambia, "
+        "la proteina si necesita precisarse en gramos.\n"
+        "- tabla_carbohidratos y tabla_grasas: la cantidad NUNCA lleva gramos ni "
+        "menciona el tamano de empaque comercial (paquetito, bolsa). Usa "
+        "unicamente la medida casera que el paciente puede contar sin bascula: "
+        "pieza, taza, cucharada o cucharadita. Motivo: el gramo invita al "
+        "paciente a pesar su porcion, y una variacion normal de peso (una "
+        "almendra un poco mas grande, un aguacate un poco mas chico) no cambia "
+        "el resultado de la dieta, pero si genera angustia innecesaria si el "
+        "numero exacto no cuadra en la bascula.\n"
+        "   MAL: 'Almendras - 10 piezas (10 a 12 g)', "
+        "'Salmas - 1 paquetito = 30 g (5 piezas)', 'Arroz - 1/2 taza (79 a 98 g)'\n"
+        "   BIEN: 'Almendras - 10 piezas', 'Salmas - 5 piezas', "
+        "'Tortilla de maiz - 1 a 2 piezas', 'Arroz - 1/2 taza'\n\n"
         "REGLA DE PORCIONES: cada renglon de tabla_proteinas debe aportar "
         "aproximadamente la misma cantidad de proteina por porcion (la que "
         "definas en meta_proteina, dividida entre el numero de comidas). Usa "
