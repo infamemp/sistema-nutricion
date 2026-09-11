@@ -393,6 +393,13 @@ def ver_expediente(paciente_id: int, request: Request, db: Session = Depends(get
         .all()
     )
 
+    notas = (
+        db.query(models.NotaPaciente)
+        .filter(models.NotaPaciente.paciente_id == paciente_id)
+        .order_by(models.NotaPaciente.fecha_creacion.desc())
+        .all()
+    )
+
     return templates.TemplateResponse(
         request,
         "expediente.html",
@@ -405,6 +412,7 @@ def ver_expediente(paciente_id: int, request: Request, db: Session = Depends(get
             "mediciones": mediciones,
             "mediciones_json": mediciones_json,
             "laboratorios": laboratorios,
+            "notas": notas,
             "mensaje": mensaje,
         },
     )
@@ -649,10 +657,17 @@ def ver_historia(paciente_id: int, request: Request, editar: int = 0, db: Sessio
     if not historia:
         historia = models.HistoriaClinica(paciente_id=paciente_id)
 
+    notas = (
+        db.query(models.NotaPaciente)
+        .filter(models.NotaPaciente.paciente_id == paciente_id)
+        .order_by(models.NotaPaciente.fecha_creacion.desc())
+        .all()
+    )
+
     return templates.TemplateResponse(
         request,
         "historia_clinica.html",
-        {"paciente": paciente, "h": historia, "editar": bool(editar)},
+        {"paciente": paciente, "h": historia, "editar": bool(editar), "notas": notas},
     )
 
 
@@ -740,6 +755,42 @@ def eliminar_medicion(paciente_id: int, medicion_id: int, db: Session = Depends(
         db.commit()
 
     return RedirectResponse(url="/pacientes/" + str(paciente_id) + "#seccion-progreso", status_code=303)
+
+
+@app.post("/pacientes/{paciente_id}/notas")
+def guardar_nota(
+    paciente_id: int,
+    texto: str = Form(...),
+    volver: str = Form(...),
+    db: Session = Depends(get_db),
+):
+    obtener_paciente(db, paciente_id)
+
+    if texto.strip():
+        db.add(models.NotaPaciente(paciente_id=paciente_id, texto=texto.strip()))
+        db.commit()
+
+    return RedirectResponse(url=volver, status_code=303)
+
+
+@app.post("/pacientes/{paciente_id}/notas/{nota_id}/eliminar")
+def eliminar_nota(
+    paciente_id: int,
+    nota_id: int,
+    volver: str = Form(...),
+    db: Session = Depends(get_db),
+):
+    nota = (
+        db.query(models.NotaPaciente)
+        .filter(models.NotaPaciente.id == nota_id)
+        .filter(models.NotaPaciente.paciente_id == paciente_id)
+        .first()
+    )
+    if nota:
+        db.delete(nota)
+        db.commit()
+
+    return RedirectResponse(url=volver, status_code=303)
 
 
 def _sincronizar_creacion_google(db, cita, paciente, ya_en_google):
@@ -882,6 +933,13 @@ def formulario_followup(paciente_id: int, request: Request, db: Session = Depend
 
     numero_consulta = (anterior.numero_consulta + 1) if anterior else 1
 
+    notas = (
+        db.query(models.NotaPaciente)
+        .filter(models.NotaPaciente.paciente_id == paciente_id)
+        .order_by(models.NotaPaciente.fecha_creacion.desc())
+        .all()
+    )
+
     return templates.TemplateResponse(
         request,
         "follow_up.html",
@@ -890,6 +948,7 @@ def formulario_followup(paciente_id: int, request: Request, db: Session = Depend
             "anterior": anterior,
             "numero_consulta": numero_consulta,
             "hoy": date.today().isoformat(),
+            "notas": notas,
         },
     )
 

@@ -28,6 +28,7 @@ class Paciente(Base):
     dietas = relationship("DietaVersion", back_populates="paciente")
     laboratorios = relationship("Laboratorio", back_populates="paciente")
     citas = relationship("Cita", back_populates="paciente")
+    notas = relationship("NotaPaciente", back_populates="paciente")
 
 
 class HistoriaClinica(Base):
@@ -212,3 +213,14 @@ class Cita(Base):
     fecha_creacion = Column(DateTime, default=datetime.utcnow)
 
     paciente = relationship("Paciente", back_populates="citas")
+
+
+class NotaPaciente(Base):
+    __tablename__ = "notas_pacientes"
+
+    id = Column(Integer, primary_key=True, index=True)
+    paciente_id = Column(Integer, ForeignKey("pacientes.id"), nullable=False)
+    texto = Column(Text, nullable=False)
+    fecha_creacion = Column(DateTime, default=datetime.utcnow)
+
+    paciente = relationship("Paciente", back_populates="notas")
