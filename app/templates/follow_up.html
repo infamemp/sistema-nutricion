@@ -61,23 +61,63 @@
         </div>
         {% endif %}
 
-        <form data-autoguardar method="post" action="/pacientes/{{ paciente.id }}/followup" class="space-y-6">
-
-            <div class="bg-white rounded-xl shadow-sm p-6">
-                <h2 class="text-lg font-medium text-green-700 border-b-2 border-blue-500 pb-2 mb-4">Datos de la consulta</h2>
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-sm text-gray-700 mb-1">Fecha de esta consulta</label>
-                        <input type="date" name="fecha_consulta" value="{{ hoy }}"
-                               class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400">
-                    </div>
-                    <div>
-                        <label class="block text-sm text-gray-700 mb-1">Próxima cita</label>
-                        <input type="date" name="proxima_cita"
-                               class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400">
-                    </div>
+        <div class="bg-white rounded-xl shadow-sm p-6">
+            <h2 class="text-lg font-medium text-green-700 border-b-2 border-blue-500 pb-2 mb-4">Datos de la consulta</h2>
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm text-gray-700 mb-1">Fecha de esta consulta</label>
+                    <input type="date" name="fecha_consulta" value="{{ hoy }}" form="form-seguimiento"
+                           class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400">
+                </div>
+                <div>
+                    <label class="block text-sm text-gray-700 mb-1">Próxima cita</label>
+                    <input type="date" name="proxima_cita" form="form-seguimiento"
+                           class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400">
                 </div>
             </div>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-sm p-6">
+            <h2 class="text-lg font-medium text-green-700 border-b-2 border-blue-500 pb-2 mb-4">Notas</h2>
+            <form method="post" action="/pacientes/{{ paciente.id }}/notas" class="mb-4">
+                <input type="hidden" name="volver" value="/pacientes/{{ paciente.id }}/followup/nuevo">
+                <textarea name="texto" rows="2" placeholder="Agregar una nota..."
+                          class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400 mb-2"></textarea>
+                <button type="submit" class="text-sm bg-green-600 hover:bg-green-700 text-white rounded-lg px-4 py-2">Agregar nota</button>
+            </form>
+
+            <button type="button"
+                    onclick="this.nextElementSibling.classList.toggle('hidden'); this.querySelector('svg').classList.toggle('rotate-180')"
+                    class="flex items-center gap-1 text-sm text-green-700 hover:underline">
+                Ver notas guardadas ({{ notas|length }})
+                <svg class="w-4 h-4 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+            </button>
+            <div class="hidden mt-3">
+                {% if notas %}
+                <ul class="space-y-3">
+                    {% for nota in notas %}
+                    <li class="border-t border-gray-100 pt-3">
+                        <div class="flex justify-between items-start gap-3">
+                            <p class="text-xs text-gray-400 mb-1">{{ nota.fecha_creacion.strftime('%d/%m/%Y %H:%M') if nota.fecha_creacion else '' }}</p>
+                            <form method="post" action="/pacientes/{{ paciente.id }}/notas/{{ nota.id }}/eliminar" class="inline">
+                                <input type="hidden" name="volver" value="/pacientes/{{ paciente.id }}/followup/nuevo">
+                                <button type="submit" onclick="return confirm('¿Eliminar esta nota?')"
+                                        class="text-xs text-gray-400 hover:text-red-600 hover:underline whitespace-nowrap">
+                                    Eliminar
+                                </button>
+                            </form>
+                        </div>
+                        <p class="text-sm text-gray-700 whitespace-pre-line">{{ nota.texto }}</p>
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <p class="text-sm text-gray-500">Sin notas todavía.</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <form id="form-seguimiento" data-autoguardar method="post" action="/pacientes/{{ paciente.id }}/followup" class="space-y-6">
 
             <div class="bg-white rounded-xl shadow-sm p-6">
                 <h2 class="text-lg font-medium text-green-700 border-b-2 border-blue-500 pb-2 mb-4">Continuidad del plan anterior</h2>
@@ -159,12 +199,8 @@
             </div>
 
             <div class="bg-white rounded-xl shadow-sm p-6">
-                <h2 class="text-lg font-medium text-green-700 border-b-2 border-blue-500 pb-2 mb-4">Notas y ajustes</h2>
+                <h2 class="text-lg font-medium text-green-700 border-b-2 border-blue-500 pb-2 mb-4">Ajustes</h2>
                 <div class="space-y-4">
-                    <div>
-                        <label class="block text-sm text-gray-700 mb-1">Notas libres</label>
-                        <textarea name="notas_libres" rows="3" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400"></textarea>
-                    </div>
                     <div>
                         <label class="block text-sm text-gray-700 mb-1">Ajustes acordados para el siguiente periodo</label>
                         <textarea name="ajustes_acordados" rows="3" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400"></textarea>
@@ -210,43 +246,11 @@
         </script>
         {% endif %}
 
-        <div class="bg-white rounded-xl shadow-sm p-6 mt-6">
-            <h2 class="text-lg font-medium text-green-700 border-b-2 border-blue-500 pb-2 mb-4">Notas</h2>
-            <form method="post" action="/pacientes/{{ paciente.id }}/notas" class="mb-4">
-                <input type="hidden" name="volver" value="/pacientes/{{ paciente.id }}/followup/nuevo">
-                <textarea name="texto" rows="2" placeholder="Agregar una nota..."
-                          class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400 mb-2"></textarea>
-                <button type="submit" class="text-sm bg-green-600 hover:bg-green-700 text-white rounded-lg px-4 py-2">Agregar nota</button>
-            </form>
-
-            {% if notas %}
-            <ul class="space-y-3">
-                {% for nota in notas %}
-                <li class="border-t border-gray-100 pt-3">
-                    <div class="flex justify-between items-start gap-3">
-                        <p class="text-xs text-gray-400 mb-1">{{ nota.fecha_creacion.strftime('%d/%m/%Y %H:%M') if nota.fecha_creacion else '' }}</p>
-                        <form method="post" action="/pacientes/{{ paciente.id }}/notas/{{ nota.id }}/eliminar" class="inline">
-                            <input type="hidden" name="volver" value="/pacientes/{{ paciente.id }}/followup/nuevo">
-                            <button type="submit" onclick="return confirm('¿Eliminar esta nota?')"
-                                    class="text-xs text-gray-400 hover:text-red-600 hover:underline whitespace-nowrap">
-                                Eliminar
-                            </button>
-                        </form>
-                    </div>
-                    <p class="text-sm text-gray-700 whitespace-pre-line">{{ nota.texto }}</p>
-                </li>
-                {% endfor %}
-            </ul>
-            {% else %}
-            <p class="text-sm text-gray-500">Sin notas todavía.</p>
-            {% endif %}
-        </div>
-
     </div>
 
     <div class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 shadow-lg">
         <div class="max-w-3xl mx-auto">
-            <button onclick="document.querySelector('form').requestSubmit()"
+            <button onclick="document.getElementById('form-seguimiento').requestSubmit()"
                     class="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-3 rounded-lg transition">
                 Guardar consulta
             </button>
