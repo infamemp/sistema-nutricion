@@ -457,6 +457,7 @@ async def procesar_inbody(
     paciente_id: int,
     request: Request,
     archivo: UploadFile = File(...),
+    origen: Optional[str] = Form(None),
     db: Session = Depends(get_db),
 ):
     paciente = obtener_paciente(db, paciente_id)
@@ -516,6 +517,7 @@ async def procesar_inbody(
             "resultado": resultado,
             "advertencias": advertencias,
             "datos_json": json.dumps(resultado, ensure_ascii=False),
+            "origen": origen,
         },
     )
 
@@ -524,6 +526,7 @@ async def procesar_inbody(
 def confirmar_inbody(
     paciente_id: int,
     datos_json: str = Form(...),
+    origen: Optional[str] = Form(None),
     db: Session = Depends(get_db),
 ):
     paciente = obtener_paciente(db, paciente_id)
@@ -569,6 +572,11 @@ def confirmar_inbody(
         paciente.estatura = resultado["estatura_cm"]
 
     db.commit()
+
+    if origen == "seguimiento":
+        return RedirectResponse(
+            url="/pacientes/" + str(paciente_id) + "/followup/nuevo", status_code=303
+        )
 
     return RedirectResponse(url="/pacientes/" + str(paciente_id), status_code=303)
 

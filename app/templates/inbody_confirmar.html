@@ -31,10 +31,13 @@
 </head>
 <body class="bg-green-50 min-h-screen">
 
+    {% set volver_url = '/pacientes/' ~ paciente.id ~ '/followup/nuevo' if origen == 'seguimiento' else '/pacientes/' ~ paciente.id %}
+    {% set volver_texto = 'Volver a la consulta de seguimiento' if origen == 'seguimiento' else 'Volver al expediente' %}
+
     <div class="max-w-2xl mx-auto p-6">
 
         <div class="mb-4">
-            <a href="/pacientes/{{ paciente.id }}" class="text-sm text-green-700 hover:underline">&larr; Volver al expediente</a>
+            <a href="{{ volver_url }}" class="text-sm text-green-700 hover:underline">&larr; {{ volver_texto }}</a>
         </div>
 
         <div class="bg-white rounded-xl shadow-sm p-6 mb-6">
@@ -120,8 +123,9 @@
 
         <form method="post" action="/pacientes/{{ paciente.id }}/inbody/confirmar">
             <input type="hidden" name="datos_json" value='{{ datos_json }}'>
+            <input type="hidden" name="origen" value="{{ origen or '' }}">
             <div class="flex gap-3">
-                <a href="/pacientes/{{ paciente.id }}"
+                <a href="{{ volver_url }}"
                    class="flex-1 text-center border border-gray-300 text-gray-700 font-medium py-3 rounded-lg hover:bg-gray-50 transition">
                     Cancelar
                 </a>

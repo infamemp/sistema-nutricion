@@ -158,6 +158,42 @@
                 </div>
             </div>
 
+            {% if paciente.origen_consulta == 'unido' %}
+            <div class="bg-white rounded-xl shadow-sm p-6">
+                <h2 class="text-lg font-medium text-green-700 border-b-2 border-blue-500 pb-2 mb-4">Reporte InBody</h2>
+                <p class="text-xs text-gray-500 mb-4">Si subes la foto del reporte, esa lectura se guarda por separado; no hace falta llenar también los campos de arriba a mano.</p>
+                <form id="form-inbody" method="post" action="/pacientes/{{ paciente.id }}/inbody/procesar" enctype="multipart/form-data">
+                    <input type="hidden" name="origen" value="seguimiento">
+                    <label id="zona-inbody"
+                           class="flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-lg p-8 text-center cursor-pointer hover:border-blue-400 hover:bg-blue-50 transition">
+                        <span class="text-sm text-gray-600">Arrastra aquí la imagen del reporte InBody, o haz clic para seleccionarla</span>
+                        <input type="file" name="archivo" accept="image/*" class="hidden" onchange="document.getElementById('form-inbody').submit()">
+                    </label>
+                </form>
+                <script>
+                    (function() {
+                        const zona = document.getElementById('zona-inbody');
+                        const input = zona.querySelector('input[type="file"]');
+                        zona.addEventListener('dragover', function(e) {
+                            e.preventDefault();
+                            zona.classList.add('border-blue-400', 'bg-blue-50');
+                        });
+                        zona.addEventListener('dragleave', function() {
+                            zona.classList.remove('border-blue-400', 'bg-blue-50');
+                        });
+                        zona.addEventListener('drop', function(e) {
+                            e.preventDefault();
+                            zona.classList.remove('border-blue-400', 'bg-blue-50');
+                            if (e.dataTransfer.files.length) {
+                                input.files = e.dataTransfer.files;
+                                document.getElementById('form-inbody').submit();
+                            }
+                        });
+                    })();
+                </script>
+            </div>
+            {% endif %}
+
             <div class="bg-white rounded-xl shadow-sm p-6">
                 <h2 class="text-lg font-medium text-green-700 border-b-2 border-blue-500 pb-2 mb-4">Notas y ajustes</h2>
                 <div class="space-y-4">
