@@ -108,7 +108,7 @@
             </div>
         </div>
 
-        <form data-autoguardar method="post" action="/pacientes/{{ paciente.id }}/historia" class="space-y-6">
+        <form id="form-historia" data-autoguardar method="post" action="/pacientes/{{ paciente.id }}/historia" class="space-y-6">
 
             <!-- 2. Objetivos -->
             <div class="bg-white rounded-xl shadow-sm p-6">
@@ -434,7 +434,7 @@
     {% if editar %}
     <div class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 shadow-lg">
         <div class="max-w-3xl mx-auto">
-            <button type="submit" form="" onclick="document.querySelector('form').requestSubmit()"
+            <button type="submit" form="" onclick="document.getElementById('form-historia').requestSubmit()"
                     class="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-3 rounded-lg transition">
                 Guardar historia clínica
             </button>
