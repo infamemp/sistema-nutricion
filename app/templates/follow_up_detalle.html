@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/static/favicon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png">
+    <link rel="manifest" href="/static/site.webmanifest">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Consulta {{ f.numero_consulta }} - {{ paciente.nombre_completo }}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        green: {
+                            50: "#f1f9eb",
+                            100: "#deefd1",
+                            400: "#93c66b",
+                            600: "#65a035",
+                            700: "#518329",
+                            800: "#395b1e"
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-green-50 min-h-screen pb-12">
+
+    <div class="max-w-3xl mx-auto p-6">
+
+        <div class="mb-4">
+            <a href="/pacientes/{{ paciente.id }}" class="text-sm text-green-700 hover:underline">&larr; Volver al expediente</a>
+        </div>
+
+        <div class="mb-6 flex justify-between items-start">
+            <div>
+                <h1 class="text-2xl font-medium text-green-800">Consulta de seguimiento</h1>
+                <p class="text-sm text-gray-600 mt-1">
+                    {{ paciente.nombre_completo }} &middot; Consulta número {{ f.numero_consulta }}
+                    &middot; {{ f.fecha_consulta.strftime('%d/%m/%Y') if f.fecha_consulta else 'sin fecha' }}
+                </p>
+            </div>
+            <span class="text-xs bg-gray-100 text-gray-500 px-3 py-1 rounded-full">Solo lectura</span>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-sm p-6 mb-6">
+            <h2 class="text-lg font-medium text-green-700 border-b-2 border-blue-500 pb-2 mb-4">Datos de la consulta</h2>
+            <dl class="grid grid-cols-2 gap-x-6 gap-y-4 text-sm">
+                <div>
+                    <dt class="text-gray-500">Fecha de esta consulta</dt>
+                    <dd class="text-gray-800 mt-0.5">{{ f.fecha_consulta.strftime('%d/%m/%Y') if f.fecha_consulta else 'No registrada' }}</dd>
+                </div>
+                <div>
+                    <dt class="text-gray-500">Próxima cita</dt>
+                    <dd class="text-gray-800 mt-0.5">{{ f.proxima_cita.strftime('%d/%m/%Y') if f.proxima_cita else 'No registrada' }}</dd>
+                </div>
+            </dl>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-sm p-6 mb-6">
+            <h2 class="text-lg font-medium text-green-700 border-b-2 border-blue-500 pb-2 mb-4">Continuidad del plan anterior</h2>
+            <dl class="space-y-4 text-sm">
+                <div class="grid grid-cols-2 gap-x-6">
+                    <div>
+                        <dt class="text-gray-500">Apego al plan</dt>
+                        <dd class="text-gray-800 mt-0.5">{{ (f.porcentaje_apego|int|string ~ ' %') if f.porcentaje_apego is not none else 'No registrado' }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-gray-500">Días de ejercicio por semana (promedio)</dt>
+                        <dd class="text-gray-800 mt-0.5">{{ f.promedio_dias_ejercicio if f.promedio_dias_ejercicio is not none else 'No registrado' }}</dd>
+                    </div>
+                </div>
+                <div>
+                    <dt class="text-gray-500">¿Qué le gustó del plan anterior?</dt>
+                    <dd class="text-gray-800 mt-0.5 whitespace-pre-line">{{ f.que_le_gusto or 'No registrado' }}</dd>
+                </div>
+                <div>
+                    <dt class="text-gray-500">¿Qué no le gustó o le costó trabajo?</dt>
+                    <dd class="text-gray-800 mt-0.5 whitespace-pre-line">{{ f.que_no_le_gusto or 'No registrado' }}</dd>
+                </div>
+                <div>
+                    <dt class="text-gray-500">Cambios que hizo</dt>
+                    <dd class="text-gray-800 mt-0.5 whitespace-pre-line">{{ f.cambios_que_hizo or 'No registrado' }}</dd>
+                </div>
+                <div>
+                    <dt class="text-gray-500">En qué puede mejorar</dt>
+                    <dd class="text-gray-800 mt-0.5 whitespace-pre-line">{{ f.en_que_puede_mejorar or 'No registrado' }}</dd>
+                </div>
+            </dl>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-sm p-6 mb-6">
+            <h2 class="text-lg font-medium text-green-700 border-b-2 border-blue-500 pb-2 mb-4">Estatus médico</h2>
+            <p class="text-sm text-gray-800 whitespace-pre-line">{{ f.estatus_tratamiento_medico or 'No registrado' }}</p>
+        </div>
+
+        {% if medicion %}
+        <div class="bg-white rounded-xl shadow-sm p-6 mb-6">
+            <h2 class="text-lg font-medium text-green-700 border-b-2 border-blue-500 pb-2 mb-4">Medición InBody de esta consulta</h2>
+            <dl class="grid grid-cols-2 gap-x-6 gap-y-4 text-sm">
+                <div>
+                    <dt class="text-gray-500">Fecha de la medición</dt>
+                    <dd class="text-gray-800 mt-0.5">{{ medicion.fecha_medicion.strftime('%d/%m/%Y') if medicion.fecha_medicion else 'No registrada' }}</dd>
+                </div>
+                <div>
+                    <dt class="text-gray-500">Peso</dt>
+                    <dd class="text-gray-800 mt-0.5">{{ medicion.peso ~ ' kg' if medicion.peso is not none else 'No registrado' }}</dd>
+                </div>
+                <div>
+                    <dt class="text-gray-500">IMC</dt>
+                    <dd class="text-gray-800 mt-0.5">{{ medicion.imc if medicion.imc is not none else 'No registrado' }}</dd>
+                </div>
+                <div>
+                    <dt class="text-gray-500">% Grasa corporal</dt>
+                    <dd class="text-gray-800 mt-0.5">{{ (medicion.porcentaje_grasa ~ ' %') if medicion.porcentaje_grasa is not none else 'No registrado' }}</dd>
+                </div>
+                <div>
+                    <dt class="text-gray-500">Masa grasa</dt>
+                    <dd class="text-gray-800 mt-0.5">{{ (medicion.masa_grasa_kg ~ ' kg') if medicion.masa_grasa_kg is not none else 'No registrado' }}</dd>
+                </div>
+                <div>
+                    <dt class="text-gray-500">Masa muscular esquelética (MME)</dt>
+                    <dd class="text-gray-800 mt-0.5">{{ (medicion.mme ~ ' kg') if medicion.mme is not none else 'No registrado' }}</dd>
+                </div>
+                <div>
+                    <dt class="text-gray-500">Grasa visceral</dt>
+                    <dd class="text-gray-800 mt-0.5">{{ medicion.grasa_visceral if medicion.grasa_visceral is not none else 'No registrado' }}</dd>
+                </div>
+                <div>
+                    <dt class="text-gray-500">Tasa metabólica basal</dt>
+                    <dd class="text-gray-800 mt-0.5">{{ (medicion.tasa_metabolica_basal ~ ' kcal') if medicion.tasa_metabolica_basal is not none else 'No registrado' }}</dd>
+                </div>
+            </dl>
+        </div>
+        {% endif %}
+
+        <div class="bg-white rounded-xl shadow-sm p-6 mb-6">
+            <h2 class="text-lg font-medium text-green-700 border-b-2 border-blue-500 pb-2 mb-4">Ajustes acordados para el siguiente periodo</h2>
+            <p class="text-sm text-gray-800 whitespace-pre-line">{{ f.ajustes_acordados or 'No registrado' }}</p>
+        </div>
+
+    </div>
+</body>
+</html>

@@ -1018,6 +1018,39 @@ async def guardar_followup(paciente_id: int, request: Request, db: Session = Dep
     return RedirectResponse(url="/pacientes/" + str(paciente_id), status_code=303)
 
 
+@app.get("/pacientes/{paciente_id}/followup/{followup_id}", response_class=HTMLResponse)
+def ver_followup(
+    paciente_id: int,
+    followup_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+):
+    paciente = obtener_paciente(db, paciente_id)
+
+    followup = (
+        db.query(models.FollowUp)
+        .filter(models.FollowUp.id == followup_id)
+        .filter(models.FollowUp.paciente_id == paciente_id)
+        .first()
+    )
+    if not followup:
+        raise HTTPException(status_code=404, detail="Consulta de seguimiento no encontrada")
+
+    medicion = None
+    if followup.medicion_inbody_id:
+        medicion = (
+            db.query(models.MedicionInBody)
+            .filter(models.MedicionInBody.id == followup.medicion_inbody_id)
+            .first()
+        )
+
+    return templates.TemplateResponse(
+        request,
+        "follow_up_detalle.html",
+        {"paciente": paciente, "f": followup, "medicion": medicion},
+    )
+
+
 def _cargar_contenido(dieta):
     """El campo contenido de DietaVersion guarda un JSON con el
     documento redactado mas el resumen de verificacion."""

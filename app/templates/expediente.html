@@ -191,18 +191,20 @@
                 <ul class="space-y-4">
                     {% for f in followups %}
                     <li class="border-b border-gray-100 pb-4 last:border-0 last:pb-0">
-                        <div class="flex justify-between items-baseline mb-1">
-                            <p class="text-sm font-medium text-gray-800">
-                                Consulta {{ f.numero_consulta }}
-                                <span class="font-normal text-gray-500">&middot; {{ f.fecha_consulta.strftime('%d/%m/%Y') }}</span>
-                            </p>
-                            {% if f.porcentaje_apego is not none %}
-                            <span class="text-xs text-gray-500">Apego {{ f.porcentaje_apego|int }}%</span>
+                        <a href="/pacientes/{{ paciente.id }}/followup/{{ f.id }}" class="block hover:bg-gray-50 -mx-2 px-2 py-1 rounded-lg transition">
+                            <div class="flex justify-between items-baseline mb-1">
+                                <p class="text-sm font-medium text-green-700 hover:underline">
+                                    Consulta {{ f.numero_consulta }}
+                                    <span class="font-normal text-gray-500">&middot; {{ f.fecha_consulta.strftime('%d/%m/%Y') }}</span>
+                                </p>
+                                {% if f.porcentaje_apego is not none %}
+                                <span class="text-xs text-gray-500">Apego {{ f.porcentaje_apego|int }}%</span>
+                                {% endif %}
+                            </div>
+                            {% if f.ajustes_acordados %}
+                            <p class="text-sm text-gray-600 mt-1">{{ f.ajustes_acordados }}</p>
                             {% endif %}
-                        </div>
-                        {% if f.ajustes_acordados %}
-                        <p class="text-sm text-gray-600 mt-1">{{ f.ajustes_acordados }}</p>
-                        {% endif %}
+                        </a>
                     </li>
                     {% endfor %}
                 </ul>

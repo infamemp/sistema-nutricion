@@ -45,9 +45,10 @@
         </div>
 
         {% if anterior %}
-        <div class="bg-white border-l-4 border-blue-500 rounded-lg p-4 mb-6 shadow-sm">
+        <a href="/pacientes/{{ paciente.id }}/followup/{{ anterior.id }}"
+           class="block bg-white border-l-4 border-blue-500 rounded-lg p-4 mb-6 shadow-sm hover:bg-gray-50 transition">
             <p class="text-xs font-medium text-green-700 mb-2">
-                De la consulta anterior ({{ anterior.fecha_consulta.strftime('%d/%m/%Y') }})
+                De la consulta anterior ({{ anterior.fecha_consulta.strftime('%d/%m/%Y') }}) &middot; <span class="underline">ver completa</span>
             </p>
             {% if anterior.ajustes_acordados %}
             <p class="text-sm text-gray-700"><span class="text-gray-500">Ajustes acordados:</span> {{ anterior.ajustes_acordados }}</p>
@@ -58,7 +59,7 @@
             {% if not anterior.ajustes_acordados and not anterior.en_que_puede_mejorar %}
             <p class="text-sm text-gray-500">Sin notas de seguimiento registradas.</p>
             {% endif %}
-        </div>
+        </a>
         {% endif %}
 
         <div class="bg-white rounded-xl shadow-sm p-6">
