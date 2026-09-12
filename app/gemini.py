@@ -21,7 +21,7 @@ NOTA SOBRE MODELOS (verificado ago 2026):
 - La generacion vigente es la 3.x. El modelo se define en MODELO_ANALISIS
   y se puede cambiar sin tocar el resto del codigo.
 - Usar listar_modelos() para ver que hay disponible con la clave actual.
-- gemini-3.7-flash es multimodal (texto + imagen en la misma peticion),
+- gemini-3.8-flash es multimodal (texto + imagen en la misma peticion),
   se reutiliza el mismo modelo para leer reportes de InBody.
 
 La API key se lee de GEMINI_API_KEY en el archivo .env, nunca del codigo.
@@ -36,7 +36,7 @@ import urllib.error
 BASE = "https://generativelanguage.googleapis.com/v1beta"
 
 # Modelo para el analisis. Cambiar aqui si Google descontinua o mejora.
-MODELO_ANALISIS = "gemini-3.7-flash"
+MODELO_ANALISIS = "gemini-3.8-flash"
 
 # Alternativas conocidas, por si el alias deja de funcionar.
 MODELOS_ALTERNATIVOS = [

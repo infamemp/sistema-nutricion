@@ -29,12 +29,12 @@ BASE = "https://api.anthropic.com/v1/messages"
 VERSION_API = "2023-06-01"
 
 # Modelo para la redaccion. Se puede cambiar sin tocar el resto del codigo.
-MODELO_REDACCION = "claude-sonnet-4-5"
+MODELO_REDACCION = "claude-sonnet-5"
 
 MODELOS_ALTERNATIVOS = [
-    "claude-sonnet-4-5",
-    "claude-opus-4-5",
-    "claude-haiku-4-5",
+    "claude-sonnet-5",
+    "claude-opus-5",
+    "claude-haiku-4-5-20251001",
 ]
 
 
