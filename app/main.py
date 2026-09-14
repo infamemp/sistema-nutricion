@@ -1561,7 +1561,6 @@ def ajustar_dieta(
     nuevo_documento = claude_api.generar_json(
         prompt_ajuste,
         sistema=redactor._sistema(),
-        temperatura=0.5,
     )
 
     # Salvaguarda: si a pesar de la instruccion Claude devuelve el menu

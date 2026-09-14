@@ -200,7 +200,6 @@ def redactar(plan, nombre_paciente=None, idioma="es"):
     documento = claude_api.generar_json(
         prompt,
         sistema=_sistema(),
-        temperatura=0.7,
     )
 
     return {

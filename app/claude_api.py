@@ -70,23 +70,33 @@ def _peticion(cuerpo):
         )
 
 
-def generar(prompt, sistema=None, modelo=None, temperatura=0.7, max_tokens=8000):
+def generar(prompt, sistema=None, modelo=None, temperatura=None, max_tokens=12000):
     """
     Envia un prompt a Claude y devuelve el texto de la respuesta.
 
     sistema: instrucciones de rol y estilo. Aqui es donde va el
     STYLE_SPEC.md, porque son reglas que aplican a toda la respuesta.
 
-    temperatura: 0.7 por defecto. Mas alta que en el analisis, porque la
-    redaccion se beneficia de algo de variedad. Las dietas no deben
-    sonar identicas entre pacientes.
+    temperatura: NO se manda por defecto. Claude Sonnet 5 (el modelo
+    vigente) elimino los parametros de muestreo (temperature/top_p/top_k):
+    si se manda un valor distinto al predeterminado, la API responde
+    error 400 "temperature is deprecated for this model". Se conserva el
+    parametro solo por si se usa un modelo alterno mas viejo que si lo
+    soporte; con el modelo por defecto, dejarlo en None.
+
+    thinking: se manda deshabilitado porque este modelo activa "adaptive
+    thinking" por defecto, y aqui no hace falta (es redaccion, no
+    razonamiento) y consumiria parte de max_tokens.
     """
     cuerpo = {
         "model": modelo or MODELO_REDACCION,
         "max_tokens": max_tokens,
-        "temperature": temperatura,
+        "thinking": {"type": "disabled"},
         "messages": [{"role": "user", "content": prompt}],
     }
+
+    if temperatura is not None:
+        cuerpo["temperature"] = temperatura
 
     if sistema:
         cuerpo["system"] = sistema
@@ -106,10 +116,14 @@ def generar(prompt, sistema=None, modelo=None, temperatura=0.7, max_tokens=8000)
     return texto
 
 
-def generar_json(prompt, sistema=None, modelo=None, temperatura=0.4, max_tokens=8000):
+def generar_json(prompt, sistema=None, modelo=None, temperatura=None, max_tokens=12000):
     """
     Como generar(), pero espera y parsea una respuesta en JSON.
     Reintenta una vez si el JSON viene malformado.
+
+    max_tokens sube de 8000 a 12000 (~30% de margen): el tokenizador de
+    Claude Sonnet 5 produce mas tokens que el de Sonnet 4.5 para el mismo
+    texto, y el documento del Menu (4 tiempos x 3-4 opciones) es largo.
     """
     instruccion = (
         "\n\nResponde unicamente con JSON valido, sin texto antes ni despues, "
@@ -162,7 +176,6 @@ def probar_conexion():
     try:
         respuesta = generar(
             "Responde unicamente con la palabra: listo",
-            temperatura=0,
             max_tokens=20,
         )
         resultado["prueba_generacion"] = respuesta.strip()[:50]
