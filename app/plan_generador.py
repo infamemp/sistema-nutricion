@@ -593,24 +593,27 @@ def construir_prompt_porciones(paciente, historia, medicion, incluir_ejemplos, p
         "INSTRUCCIONES DE SALIDA\n\n"
         "Devuelve UNICAMENTE un JSON con este esquema exacto, sin texto fuera del JSON:\n\n"
         "{\n"
-        '  "meta_proteina": "texto tipo \'Meta: 25 g de proteina por comida (4 veces al dia) = 100g de proteina diaria.\'",\n'
-        '  "instruccion_general": "texto tipo \'Elige 1 opcion en desayuno, comida y cena + 1 colacion.\'",\n'
+        '  "meta_proteina": "texto tipo \'Meta: 25 g de proteína por comida (4 veces al día) = 100g de proteína diaria.\'",\n'
+        '  "instruccion_general": "texto tipo \'Elige 1 opción en desayuno, comida y cena + 1 colación.\'",\n'
         '  "tabla_proteinas": [\n'
         '    {"alimento": "nombre del alimento", "cantidad": "medida casera y/o gramos, ej. \'90 g\' o \'1 lata de 140g\'"}\n'
         "  ],\n"
-        '  "objetivo_distribucion": ["Desayuno: 1 opcion", "Comida: 1 opcion", "Cena: 1 opcion", "Colacion: ..."],\n'
+        '  "objetivo_distribucion": ["Desayuno: 1 opción", "Comida: 1 opción", "Cena: 1 opción", "Colación: ..."],\n'
         '  "tabla_carbohidratos": {\n'
         '    "instruccion": "texto tipo \'Desayuno: 2 opciones (ejemplo: 1 tortilla + 1/2 taza de papaya)...\'",\n'
         '    "alimentos": [{"alimento": "...", "cantidad": "medida casera SIN gramos, ej. \'1 a 2 piezas\' o \'1/2 taza\'"}]\n'
         "  },\n"
         '  "tabla_grasas": {\n'
-        '    "instruccion": "texto tipo \'GRASAS: 3 PORCIONES AL DIA DISTRIBUIDAS\'",\n'
+        '    "instruccion": "texto tipo \'GRASAS: 3 PORCIONES AL DÍA DISTRIBUIDAS\'",\n'
         '    "alimentos": [{"alimento": "...", "cantidad": "medida casera SIN gramos, ej. \'10 piezas\' o \'1 cucharadita\'"}]\n'
         "  },\n"
-        '  "nota_verduras": "texto recomendando tazas de verdura al dia, repartidas en las comidas",\n'
-        '  "metas_diarias": ["3 porciones buenas de proteina", "2-3 frutas", "3-4 tazas de verduras", "2-3 L de agua", "Fuerza X veces/semana", "X pasos diarios"],\n'
+        '  "nota_verduras": "texto recomendando tazas de verdura al día, repartidas en las comidas",\n'
+        '  "metas_diarias": ["3 porciones buenas de proteína", "2-3 frutas", "3-4 tazas de verduras", "2-3 L de agua", "Fuerza X veces/semana", "X pasos diarios"],\n'
         '  "ejemplos": {"desayuno": ["..."], "comida": ["..."], "cena": ["..."]}\n'
         "}\n\n"
+        "IMPORTANTE: escribe todo el texto en español correcto, con acentos y "
+        "tildes donde corresponda (proteína, colación, día, opción, después, "
+        "según, etc.). No generes texto sin acentos.\n\n"
         + instruccion_ejemplos + "\n\n"
         "FORMATO DE CANTIDAD SEGUN LA TABLA (esto es distinto para cada una):\n"
         "- tabla_proteinas: la cantidad SIEMPRE lleva su gramaje (ej. '120 g', "
