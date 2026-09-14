@@ -44,16 +44,16 @@ def _sistema():
     porque aplican a toda la respuesta, no a un mensaje puntual.
     """
     return (
-        "Escribes documentos de nutricion para los pacientes de Marifer "
-        "Utrilla, nutriologa en Puebla, Mexico.\n\n"
-        "Tu unico trabajo es la REDACCION. El analisis clinico y los "
-        "calculos ya estan hechos y verificados. NO cambies cantidades, NO "
-        "recalcules proteinas, NO agregues ni quites alimentos. Si el plan "
+        "Escribes documentos de nutrición para los pacientes de Marifer "
+        "Utrilla, nutrióloga en Puebla, México.\n\n"
+        "Tu único trabajo es la REDACCIÓN. El análisis clínico y los "
+        "cálculos ya están hechos y verificados. NO cambies cantidades, NO "
+        "recalcules proteínas, NO agregues ni quites alimentos. Si el plan "
         "dice 27 g, escribes 27 g.\n\n"
-        "Lo que si haces: escribir en la voz de Marifer, con su vocabulario, "
+        "Lo que sí haces: escribir en la voz de Marifer, con su vocabulario, "
         "sus construcciones y su tono. El paciente debe reconocer a su "
-        "nutriologa en cada linea.\n\n"
-        "A continuacion, el contrato de estilo completo. Cumplelo al pie de "
+        "nutrióloga en cada línea.\n\n"
+        "A continuación, el contrato de estilo completo. Cúmplelo al pie de "
         "la letra.\n\n"
         + ("=" * 70) + "\n\n"
         + cargar_estilo()
@@ -73,13 +73,13 @@ def _resumen_del_plan(plan):
     prot = plan.get("objetivo_proteina_g")
     dist = plan.get("distribucion_proteina") or {}
     if prot:
-        partes.append("META DE PROTEINA (dato interno, NO lo escribas en el "
-                      "documento): " + str(prot) + " g al dia")
+        partes.append("META DE PROTEÍNA (dato interno, NO lo escribas en el "
+                      "documento): " + str(prot) + " g al día")
         partes.append("")
 
     est = plan.get("estructura_diaria") or {}
     if est:
-        partes.append("ESTRUCTURA DEL DIA:")
+        partes.append("ESTRUCTURA DEL DÍA:")
         if est.get("verdura_tazas"):
             partes.append("  Verdura: " + str(est["verdura_tazas"]) + " tazas")
         if est.get("fruta_piezas"):
@@ -90,7 +90,7 @@ def _resumen_del_plan(plan):
 
     partes.append("OPCIONES POR TIEMPO DE COMIDA")
     partes.append("Estas son las opciones ya calculadas y verificadas.")
-    partes.append("Escribelas con el estilo de Marifer, sin cambiar cantidades.")
+    partes.append("Escríbelas con el estilo de Marifer, sin cambiar cantidades.")
     partes.append("")
 
     for tiempo, opciones in (plan.get("opciones_por_tiempo") or {}).items():
@@ -98,7 +98,7 @@ def _resumen_del_plan(plan):
             continue
         partes.append(tiempo.upper())
         for i, o in enumerate(opciones, 1):
-            partes.append("  Opcion " + str(i) + ":")
+            partes.append("  Opción " + str(i) + ":")
             partes.append("    " + str(o.get("descripcion", "")))
         partes.append("")
 
@@ -109,7 +109,7 @@ def _resumen_del_plan(plan):
         partes.append("")
 
     if plan.get("suplementacion_sugerida"):
-        partes.append("SUPLEMENTACION:")
+        partes.append("SUPLEMENTACIÓN:")
         for s in plan["suplementacion_sugerida"]:
             linea = "  - " + str(s.get("suplemento", ""))
             if s.get("dosis"):
@@ -124,17 +124,17 @@ def _resumen_del_plan(plan):
 
 ESQUEMA_DOCUMENTO = """{
   "objetivos_clave": ["objetivo redactado en su estilo", "otro"],
-  "suplementacion": ["suplemento con dosis y momento, como lo escribiria ella"],
+  "suplementacion": ["suplemento con dosis y momento, como lo escribiría ella"],
   "menu": {
     "desayuno": {
-      "encabezado": "instruccion breve, ej. 'Elige una opcion y acompana con cafe o te sin azucar'",
-      "opciones": ["opcion 1 redactada", "opcion 2 redactada"]
+      "encabezado": "instrucción breve, ej. 'Elige una opción y acompaña con café o té sin azúcar'",
+      "opciones": ["opción 1 redactada", "opción 2 redactada"]
     },
     "colacion": {"encabezado": "", "opciones": []},
     "comida": {"encabezado": "", "opciones": []},
     "cena": {"encabezado": "", "opciones": []}
   },
-  "recomendaciones": ["recomendacion redactada en su voz"],
+  "recomendaciones": ["recomendación redactada en su voz"],
   "cierre": "una o dos frases finales, si aplica"
 }"""
 
@@ -149,7 +149,7 @@ def redactar(plan, nombre_paciente=None, idioma="es"):
     prompt_partes = []
 
     prompt_partes.append(
-        "Redacta el documento de alimentacion para este paciente.\n\n"
+        "Redacta el documento de alimentación para este paciente.\n\n"
     )
 
     if nombre_paciente:
@@ -171,21 +171,23 @@ def redactar(plan, nombre_paciente=None, idioma="es"):
         + ESQUEMA_DOCUMENTO +
         "\n\nReglas:\n"
         "- Las cantidades del plan se copian TAL CUAL. No las cambies.\n"
-        "- Agrega la sazon y preparacion que caracteriza a Marifer: 'con "
-        "limon, sal, pimienta y ajo', 'a la plancha', 'al gusto'.\n"
-        "- Los encabezados de cada tiempo llevan su bebida de acompanamiento "
-        "cuando aplique: 'acompana con agua de jamaica sin azucar', 'con te "
+        "- Agrega la sazón y preparación que caracteriza a Marifer: 'con "
+        "limón, sal, pimienta y ajo', 'a la plancha', 'al gusto'.\n"
+        "- Los encabezados de cada tiempo llevan su bebida de acompañamiento "
+        "cuando aplique: 'acompaña con agua de jamaica sin azúcar', 'con té "
         "de canela sin endulzar'.\n"
         "- Puedes nombrar las opciones cuando tenga sentido: 'Bowl de "
-        "salmon', 'Avotoast', 'Ensalada de atun'.\n"
-        "- Frases cortas y directas. Nada de parrafos largos.\n"
-        "- NUNCA escribas los gramos totales de proteina de una comida. "
-        "Nada de 'Proteina: 30 g' al final de una opcion. El calculo es "
-        "interno, de verificacion para la nutriologa, y el paciente no lo "
-        "necesita. Lo unico que puede llevar gramos es la porcion de un "
+        "salmón', 'Avotoast', 'Ensalada de atún'.\n"
+        "- Frases cortas y directas. Nada de párrafos largos.\n"
+        "- NUNCA escribas los gramos totales de proteína de una comida. "
+        "Nada de 'Proteína: 30 g' al final de una opción. El cálculo es "
+        "interno, de verificación para la nutrióloga, y el paciente no lo "
+        "necesita. Lo único que puede llevar gramos es la porción de un "
         "alimento concreto, como '120 g de pechuga de pollo'.\n"
-        "- Sin frases motivacionales genericas.\n"
-        "- Sin calorias ni macros, salvo la proteina en gramos.\n"
+        "- Sin frases motivacionales genéricas.\n"
+        "- Sin calorías ni macros, salvo la proteína en gramos.\n"
+        "- Escribe en español correcto, con acentos y tildes donde "
+        "corresponda. No generes texto sin acentos.\n"
     )
 
     if idioma == "en":
