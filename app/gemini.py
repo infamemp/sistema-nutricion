@@ -93,11 +93,16 @@ def listar_modelos():
     return modelos
 
 
-def _generar_parts(parts, modelo=None, json_estricto=False, temperatura=0.4):
+def _generar_parts(parts, modelo=None, json_estricto=False):
     """
     Version de bajo nivel: envia una lista de "parts" ya armada (texto,
     imagen, o ambos) y devuelve el texto de la respuesta. generar() y
     generar_con_imagen() son atajos sobre esta funcion.
+
+    No se manda "temperature": desde la generacion 3.x, Gemini la ignora
+    en silencio (no da error, pero tampoco hace nada), asi que mandarla
+    solo confundia sobre que estaba controlando el comportamiento del
+    modelo.
     """
     modelo = modelo or MODELO_ANALISIS
     url = BASE + "/models/" + modelo + ":generateContent"
@@ -105,7 +110,6 @@ def _generar_parts(parts, modelo=None, json_estricto=False, temperatura=0.4):
     cuerpo = {
         "contents": [{"parts": parts}],
         "generationConfig": {
-            "temperature": temperatura,
             "maxOutputTokens": 32768,
         },
     }
@@ -129,7 +133,7 @@ def _generar_parts(parts, modelo=None, json_estricto=False, temperatura=0.4):
     return texto
 
 
-def generar(prompt, modelo=None, json_estricto=False, temperatura=0.4):
+def generar(prompt, modelo=None, json_estricto=False):
     """
     Envia un prompt de solo texto a Gemini y devuelve el texto de la
     respuesta.
@@ -138,12 +142,10 @@ def generar(prompt, modelo=None, json_estricto=False, temperatura=0.4):
     usamos para el plan tecnico, porque ese documento lo consume Claude
     despues, no un humano.
     """
-    return _generar_parts(
-        [{"text": prompt}], modelo=modelo, json_estricto=json_estricto, temperatura=temperatura
-    )
+    return _generar_parts([{"text": prompt}], modelo=modelo, json_estricto=json_estricto)
 
 
-def generar_con_imagen(prompt, imagen_bytes, mime_type, modelo=None, json_estricto=False, temperatura=0.2):
+def generar_con_imagen(prompt, imagen_bytes, mime_type, modelo=None, json_estricto=False):
     """
     Como generar(), pero adjunta una imagen junto con el prompt de texto.
     Se usa para leer reportes de InBody (fotografia o captura de pantalla).
@@ -156,7 +158,7 @@ def generar_con_imagen(prompt, imagen_bytes, mime_type, modelo=None, json_estric
         {"text": prompt},
         {"inline_data": {"mime_type": mime_type, "data": imagen_b64}},
     ]
-    return _generar_parts(parts, modelo=modelo, json_estricto=json_estricto, temperatura=temperatura)
+    return _generar_parts(parts, modelo=modelo, json_estricto=json_estricto)
 
 
 def _parsear_json_con_reintento(generador_texto):
@@ -185,25 +187,23 @@ def _parsear_json_con_reintento(generador_texto):
             )
 
 
-def generar_json(prompt, modelo=None, temperatura=0.4):
+def generar_json(prompt, modelo=None):
     """
     Como generar(), pero devuelve el resultado ya parseado como
     diccionario. Si el JSON viene malformado, reintenta una vez.
     """
     return _parsear_json_con_reintento(
-        lambda: generar(prompt, modelo=modelo, json_estricto=True, temperatura=temperatura)
+        lambda: generar(prompt, modelo=modelo, json_estricto=True)
     )
 
 
-def generar_json_con_imagen(prompt, imagen_bytes, mime_type, modelo=None, temperatura=0.2):
+def generar_json_con_imagen(prompt, imagen_bytes, mime_type, modelo=None):
     """
     Como generar_json(), pero adjuntando una imagen (ej. reporte de
     InBody). Si el JSON viene malformado, reintenta una vez.
     """
     return _parsear_json_con_reintento(
-        lambda: generar_con_imagen(
-            prompt, imagen_bytes, mime_type, modelo=modelo, json_estricto=True, temperatura=temperatura
-        )
+        lambda: generar_con_imagen(prompt, imagen_bytes, mime_type, modelo=modelo, json_estricto=True)
     )
 
 

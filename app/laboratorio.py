@@ -38,4 +38,4 @@ def analizar(archivo_bytes, mime_type):
     eso lo resuelve quien llama a esta funcion, una vez que Marifer
     confirme que quiere guardarlo.
     """
-    return gemini.generar_con_imagen(PROMPT_ANALISIS, archivo_bytes, mime_type, temperatura=0.3)
+    return gemini.generar_con_imagen(PROMPT_ANALISIS, archivo_bytes, mime_type)
