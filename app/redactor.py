@@ -13,7 +13,7 @@ Division de trabajo:
 Claude NO calcula ni cambia cantidades. Si recibe 27 g de proteina en el
 desayuno, escribe 27 g. Su unico trabajo es la redaccion.
 
-El contrato de estilo vive en datos/estilo/STYLE_SPEC.md, derivado de 24
+El contrato de estilo vive en docs/STYLE_SPEC.md, derivado de 24
 documentos reales de la nutriologa.
 """
 
@@ -23,7 +23,7 @@ import os
 import claude_api
 
 RUTA_ESTILO = os.path.join(
-    os.path.dirname(__file__), "datos", "estilo", "STYLE_SPEC.md"
+    os.path.dirname(__file__), "..", "docs", "STYLE_SPEC.md"
 )
 
 _estilo = None
