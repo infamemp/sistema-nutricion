@@ -15,6 +15,13 @@ desayuno, escribe 27 g. Su unico trabajo es la redaccion.
 
 El contrato de estilo vive en docs/STYLE_SPEC.md, derivado de 24
 documentos reales de la nutriologa.
+
+Nota sobre despliegue: el repositorio usa la carpeta app/ con docs/
+como hermana, pero el servidor de produccion historicamente corre el
+codigo sin esa carpeta app/ (todo junto en un solo directorio, con
+datos/estilo/STYLE_SPEC.md ahi mismo). Por eso se prueban varias rutas
+candidatas en vez de una sola fija: el mismo archivo debe funcionar en
+ambos layouts sin tener que recordar cual toca en cada lugar.
 """
 
 import json
@@ -22,19 +29,28 @@ import os
 
 import claude_api
 
-RUTA_ESTILO = os.path.join(
-    os.path.dirname(__file__), "..", "docs", "STYLE_SPEC.md"
-)
+_CANDIDATOS_ESTILO = [
+    os.path.join(os.path.dirname(__file__), "..", "docs", "STYLE_SPEC.md"),
+    os.path.join(os.path.dirname(__file__), "datos", "estilo", "STYLE_SPEC.md"),
+]
 
 _estilo = None
 
 
 def cargar_estilo():
-    """Lee el contrato de estilo. Se cachea en memoria."""
+    """Lee el contrato de estilo de la primera ruta candidata que exista. Se cachea en memoria."""
     global _estilo
     if _estilo is None:
-        with open(RUTA_ESTILO, encoding="utf-8") as f:
-            _estilo = f.read()
+        for ruta in _CANDIDATOS_ESTILO:
+            if os.path.exists(ruta):
+                with open(ruta, encoding="utf-8") as f:
+                    _estilo = f.read()
+                break
+        else:
+            raise FileNotFoundError(
+                "No se encontro STYLE_SPEC.md en ninguna ruta conocida: "
+                + ", ".join(_CANDIDATOS_ESTILO)
+            )
     return _estilo
 
 
