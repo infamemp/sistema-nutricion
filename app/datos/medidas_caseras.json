@@ -2,15 +2,15 @@
   "_meta": {
     "version": "2.1",
     "fecha": "2026-08-30",
-    "proposito": "Traducir entre las medidas caseras que usa Marifer en sus dietas y los gramos que necesita el sistema para consultar la BAM. Sin esta tabla el sistema no puede verificar si una dieta cumple el objetivo de proteina.",
-    "nota": "Los pesos son aproximados y sirven para calculo interno. El paciente siempre ve la medida casera, nunca los gramos.",
-    "fuentes": "Medidas observadas en las 24 dietas reales de la nutriologa, complementadas con equivalencias de uso comun en Mexico",
-    "advertencia_crudo_cocido": "CRITICO: muchos alimentos cambian su densidad nutricional al cocerse. El arroz crudo tiene 363 kcal por 100 g y cocido 123. Los cereales, leguminosas y pastas absorben agua y triplican su peso. Al consultar la BAM hay que usar el alimento en el MISMO estado que la medida casera. El campo 'buscar_como' de cada alimento indica el termino correcto para la BAM.",
+    "proposito": "Traducir entre las medidas caseras que usa Marifer en sus dietas y los gramos que necesita el sistema para consultar la BAM. Sin esta tabla el sistema no puede verificar si una dieta cumple el objetivo de proteína.",
+    "nota": "Los pesos son aproximados y sirven para cálculo interno. El paciente siempre ve la medida casera, nunca los gramos.",
+    "fuentes": "Medidas observadas en las 24 dietas reales de la nutrióloga, complementadas con equivalencias de uso común en México",
+    "advertencia_crudo_cocido": "CRÍTICO: muchos alimentos cambian su densidad nutricional al cocerse. El arroz crudo tiene 363 kcal por 100 g y cocido 123. Los cereales, leguminosas y pastas absorben agua y triplican su peso. Al consultar la BAM hay que usar el alimento en el MISMO estado que la medida casera. El campo 'buscar_como' de cada alimento indica el término correcto para la BAM.",
     "nota_pesos": "Los pesos de este archivo son la referencia autoritativa del sistema. La IA NO debe estimar gramajes de memoria, debe usar estos valores.",
-    "nota_fuentes": "Campo 'buscar_como': termino para la BAM. Campo 'buscar_como_usda' mas 'buscar_en': usar cuando el alimento no existe en la BAM (quinoa, pistaches, pepitas, pan de masa madre y otros no tradicionales en Mexico). El verificador prueba BAM primero y USDA como respaldo.",
-    "nota_terminos": "REGLA: todo termino de 'buscar_como' debe verificarse contra la BAM real antes de registrarlo, con bam.buscar_palabras(). En la version 1.5 se registraron cinco terminos inventados (jitomate saladette, pepino crudo, champinon crudo, tortilla de maiz nixtamalizada, aceite de aguacate) que no existian y dejaban esos alimentos sin verificar. El nombre correcto suele diferir: la BAM dice 'JITOMATE SALADET' sin doble t, y 'CHAMPINONES NATURALES' en plural.",
-    "origen": "Alimentos extraidos de los 24 documentos reales de Marifer, mas los de uso comun en Mexico. Cubre el universo de lo que ella prescribe, no el universo completo de alimentos mexicanos.",
-    "tabla_viva": "Esta tabla crece con la practica. Cuando el verificador reporte un alimento desconocido, se agrega aqui. Correr validar_tabla.py despues de cada cambio para confirmar que los terminos existen en las fuentes."
+    "nota_fuentes": "Campo 'buscar_como': término para la BAM. Campo 'buscar_como_usda' más 'buscar_en': usar cuando el alimento no existe en la BAM (quinoa, pistaches, pepitas, pan de masa madre y otros no tradicionales en México). El verificador prueba BAM primero y USDA como respaldo.",
+    "nota_terminos": "REGLA: todo término de 'buscar_como' debe verificarse contra la BAM real antes de registrarlo, con bam.buscar_palabras(). En la versión 1.5 se registraron cinco términos inventados (jitomate saladette, pepino crudo, champiñón crudo, tortilla de maíz nixtamalizada, aceite de aguacate) que no existían y dejaban esos alimentos sin verificar. El nombre correcto suele diferir: la BAM dice 'JITOMATE SALADET' sin doble t, y 'CHAMPIÑONES NATURALES' en plural.",
+    "origen": "Alimentos extraídos de los 24 documentos reales de Marifer, más los de uso común en México. Cubre el universo de lo que ella prescribe, no el universo completo de alimentos mexicanos.",
+    "tabla_viva": "Esta tabla crece con la práctica. Cuando el verificador reporte un alimento desconocido, se agrega aquí. Correr validar_tabla.py después de cada cambio para confirmar que los términos existen en las fuentes."
   },
   "volumen_a_ml": {
     "taza": 240,
@@ -34,7 +34,7 @@
       },
       "nota": "Marifer usa mucho el tercio de aguacate"
     },
-    "tortilla de maiz": {
+    "tortilla de maíz": {
       "pieza_g": 30,
       "porciones_usuales": {
         "1 tortilla": 30,
@@ -168,7 +168,7 @@
       },
       "buscar_como": "pollo pechuga sin piel",
       "estado": "cocido",
-      "nota": "Marifer prescribe pechuga sin piel. Con piel tiene mas grasa."
+      "nota": "Marifer prescribe pechuga sin piel. Con piel tiene más grasa."
     },
     "carne de res": {
       "porciones_usuales": {
@@ -183,7 +183,7 @@
         "1 filete": 130
       }
     },
-    "salmon": {
+    "salmón": {
       "filete_g": 140,
       "buscar_como": "salmon cocido",
       "estado": "cocido"
@@ -251,7 +251,7 @@
     },
     "proteina en polvo": {
       "scoop_g": 30,
-      "nota": "Varia por marca, 30 g es el promedio",
+      "nota": "Varía por marca, 30 g es el promedio",
       "buscar_en": "usda",
       "buscar_como_usda": "whey protein powder",
       "porciones_usuales": {
@@ -342,7 +342,7 @@
       },
       "buscar_como": "nopales cocidos",
       "estado": "cocido",
-      "nota": "En la practica mexicana se cuentan por pieza (2 nopales asados), no por taza"
+      "nota": "En la práctica mexicana se cuentan por pieza (2 nopales asados), no por taza"
     },
     "verdura cruda": {
       "taza_g": 80,
@@ -375,19 +375,19 @@
       "pieza_g": 60,
       "buscar_como": "zanahoria"
     },
-    "jicama": {
+    "jícama": {
       "taza_g": 130
     },
-    "brocoli": {
+    "brócoli": {
       "taza_g": 90
     },
     "manzana": {
       "pieza_g": 180
     },
-    "platano": {
+    "plátano": {
       "pieza_g": 120,
       "porciones_usuales": {
-        "1/2 platano": 60
+        "1/2 plátano": 60
       }
     },
     "papaya": {
@@ -436,7 +436,7 @@
       "porciones_usuales": {
         "1/2 taza": 75
       },
-      "nota": "Generico. Usar la fruta especifica cuando se conozca.",
+      "nota": "Genérico. Usar la fruta específica cuando se conozca.",
       "buscar_como": "papaya"
     },
     "pechuga de pavo natural": {
@@ -459,7 +459,7 @@
     },
     "guisado con verdura": {
       "taza_g": 200,
-      "nota": "Medida de la mezcla completa. Los gramos de proteina se cuentan aparte."
+      "nota": "Medida de la mezcla completa. Los gramos de proteína se cuentan aparte."
     },
     "sabana de res": {
       "pieza_g": 120,
@@ -506,7 +506,7 @@
       },
       "buscar_como": "tinga pollo",
       "estado": "cocido",
-      "nota": "Preparacion con pollo deshebrado, jitomate y chipotle"
+      "nota": "Preparación con pollo deshebrado, jitomate y chipotle"
     },
     "picadillo": {
       "taza_g": 200,
@@ -531,7 +531,7 @@
       "buscar_como": "tilapia",
       "estado": "cocido"
     },
-    "camaron": {
+    "camarón": {
       "taza_g": 145,
       "buscar_como": "camaron",
       "estado": "cocido"
@@ -564,7 +564,7 @@
       "taza_g": 150,
       "buscar_como": "pimiento morron rojo"
     },
-    "champinones": {
+    "champiñones": {
       "taza_g": 70,
       "buscar_como": "champinones naturales"
     },
@@ -573,11 +573,11 @@
       "buscar_como": "ejotes",
       "estado": "cocido"
     },
-    "esparragos": {
+    "espárragos": {
       "pieza_g": 15,
       "taza_g": 134,
       "porciones_usuales": {
-        "6 esparragos": 90
+        "6 espárragos": 90
       },
       "estado": "cocido"
     },
@@ -700,10 +700,10 @@
     "kiwi": {
       "pieza_g": 75
     },
-    "melon": {
+    "melón": {
       "taza_g": 160
     },
-    "sandia": {
+    "sandía": {
       "taza_g": 152
     },
     "durazno": {
@@ -738,7 +738,7 @@
       "buscar_en": "usda",
       "buscar_como_usda": "sunflower seeds"
     },
-    "ajonjoli": {
+    "ajonjolí": {
       "cucharada_g": 9
     },
     "aceite de aguacate": {
@@ -783,7 +783,7 @@
       },
       "buscar_como": "queso mozzarella"
     },
-    "requeson": {
+    "requesón": {
       "taza_g": 226,
       "porciones_usuales": {
         "1/2 taza": 113
@@ -811,7 +811,7 @@
       "buscar_como": "atun fresco",
       "estado": "cocido"
     },
-    "salmon ahumado": {
+    "salmón ahumado": {
       "porciones_usuales": {
         "30 g": 30,
         "60 g": 60
@@ -881,7 +881,7 @@
       "taza_g": 240,
       "buscar_como": "sopa verduras",
       "estado": "cocido",
-      "nota": "Caldo casero. La BAM solo tiene la version industrializada, que no corresponde."
+      "nota": "Caldo casero. La BAM solo tiene la versión industrializada, que no corresponde."
     },
     "sopa de verdura": {
       "taza_g": 240,
@@ -1018,7 +1018,7 @@
       "buscar_en": "usda",
       "buscar_como_usda": "blueberries raw"
     },
-    "arandanos": {
+    "arándanos": {
       "taza_g": 148,
       "buscar_en": "usda",
       "buscar_como_usda": "blueberries raw"
@@ -1028,11 +1028,11 @@
       "buscar_en": "usda",
       "buscar_como_usda": "pomegranate raw"
     },
-    "datiles": {
+    "dátiles": {
       "pieza_g": 7,
       "porciones_usuales": {
-        "3 datiles": 21,
-        "4 datiles": 28
+        "3 dátiles": 21,
+        "4 dátiles": 28
       },
       "buscar_en": "usda",
       "buscar_como_usda": "dates"
@@ -1092,34 +1092,34 @@
       "porciones_usuales": {
         "240 ml": 240
       },
-      "nota": "Preparacion con pepino, apio, espinaca, limon",
+      "nota": "Preparación con pepino, apio, espinaca, limón",
       "sin_aporte_nutricional": true
     },
     "te de canela": {
       "taza_ml": 240,
-      "nota": "Sin aporte calorico",
+      "nota": "Sin aporte calórico",
       "sin_aporte_nutricional": true
     },
     "te verde": {
       "taza_ml": 240,
-      "nota": "Sin aporte calorico",
+      "nota": "Sin aporte calórico",
       "sin_aporte_nutricional": true
     },
     "agua de jamaica": {
       "taza_ml": 240,
-      "nota": "Sin azucar, sin aporte calorico",
+      "nota": "Sin azúcar, sin aporte calórico",
       "sin_aporte_nutricional": true
     },
     "cafe": {
       "taza_ml": 240,
-      "nota": "Sin aporte calorico si es sin azucar",
+      "nota": "Sin aporte calórico si es sin azúcar",
       "sin_aporte_nutricional": true
     },
     "electrolitos": {
       "porciones_usuales": {
         "1 sobre": 1
       },
-      "nota": "Suplemento de hidratacion",
+      "nota": "Suplemento de hidratación",
       "sin_aporte_nutricional": true
     }
   }

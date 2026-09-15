@@ -9,6 +9,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse, FileResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 from datetime import datetime, date
+from zoneinfo import ZoneInfo
 from typing import Optional
 
 from database import get_db, engine
@@ -453,8 +454,21 @@ def guardar_edicion_paciente(
     return RedirectResponse(url="/pacientes/" + str(paciente_id), status_code=303)
 
 
+def _hoy_mexico():
+    """
+    Fecha de hoy en hora de Ciudad de Mexico, no la del servidor.
+
+    El droplet corre en UTC. Mexico esta en UTC-6, asi que despues de
+    las 6pm hora CDMX, date.today() en el servidor ya cayo en el dia
+    siguiente. Sin esto, cualquier fecha que se precargue por defecto
+    (edad, fecha de consulta) sale como "manana" en las horas de la
+    tarde/noche.
+    """
+    return datetime.now(ZoneInfo("America/Mexico_City")).date()
+
+
 def _calcular_edad(fecha_nacimiento):
-    hoy = date.today()
+    hoy = _hoy_mexico()
     return hoy.year - fecha_nacimiento.year - (
         (hoy.month, hoy.day) < (fecha_nacimiento.month, fecha_nacimiento.day)
     )
@@ -947,7 +961,7 @@ def formulario_followup(paciente_id: int, request: Request, db: Session = Depend
             "paciente": paciente,
             "anterior": anterior,
             "numero_consulta": numero_consulta,
-            "hoy": date.today().isoformat(),
+            "hoy": _hoy_mexico().isoformat(),
             "notas": notas,
         },
     )
@@ -1561,7 +1575,6 @@ def ajustar_dieta(
     nuevo_documento = claude_api.generar_json(
         prompt_ajuste,
         sistema=redactor._sistema(),
-        temperatura=0.5,
     )
 
     # Salvaguarda: si a pesar de la instruccion Claude devuelve el menu

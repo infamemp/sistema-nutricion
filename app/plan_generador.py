@@ -152,17 +152,17 @@ def _seccion_expediente(paciente, historia, medicion):
     if paciente:
         lineas.append("Sexo: " + str(paciente.get("sexo") or "no especificado"))
         if paciente.get("edad"):
-            lineas.append("Edad: " + str(paciente["edad"]) + " anos")
+            lineas.append("Edad: " + str(paciente["edad"]) + " años")
 
     if medicion:
         lineas.append("")
-        lineas.append("MEDICION MAS RECIENTE")
+        lineas.append("MEDICIÓN MÁS RECIENTE")
         for campo, etiqueta in [
             ("peso", "Peso (kg)"),
             ("imc", "IMC"),
             ("porcentaje_grasa", "Grasa corporal (%)"),
             ("masa_grasa_kg", "Masa grasa (kg)"),
-            ("mme", "Masa muscular esqueletica (kg)"),
+            ("mme", "Masa muscular esquelética (kg)"),
             ("grasa_visceral", "Grasa visceral"),
         ]:
             valor = medicion.get(campo)
@@ -171,24 +171,24 @@ def _seccion_expediente(paciente, historia, medicion):
 
     if historia:
         lineas.append("")
-        lineas.append("HISTORIA CLINICA")
+        lineas.append("HISTORIA CLÍNICA")
 
         bloques = [
             ("Objetivos del paciente", ["objetivo_que_espera", "objetivo_importante"]),
             ("Padecimientos", ["padecimientos_diagnosticados"]),
-            ("Tratamiento medico actual", ["tratamiento_medico_actual"]),
+            ("Tratamiento médico actual", ["tratamiento_medico_actual"]),
             ("Medicamentos", ["medicamentos"]),
             ("Suplementos", ["suplementos"]),
             ("Alergias", ["alergias"]),
             ("Intolerancias", ["intolerancias"]),
             ("Alimentos que evita", ["alimentos_evitar"]),
-            ("Restricciones por eleccion", ["restricciones_eleccion"]),
-            ("Que come normalmente", ["recordatorio_desayuno", "recordatorio_comida",
+            ("Restricciones por elección", ["restricciones_eleccion"]),
+            ("Qué come normalmente", ["recordatorio_desayuno", "recordatorio_comida",
                                       "recordatorio_cena", "recordatorio_snacks"]),
-            ("Quien cocina", ["quien_cocina"]),
-            ("Hidratacion", ["hidratacion"]),
+            ("Quién cocina", ["quien_cocina"]),
+            ("Hidratación", ["hidratacion"]),
             ("Ejercicio", ["ejercicio_rutina"]),
-            ("Sueno", ["sueno"]),
+            ("Sueño", ["sueno"]),
             ("Historia de peso", ["peso_maximo", "peso_minimo", "dietas_previas"]),
         ]
 
@@ -200,10 +200,10 @@ def _seccion_expediente(paciente, historia, medicion):
         sintomas = []
         for campo, nombre in [
             ("sint_gastrointestinal", "gastrointestinales"),
-            ("sint_distension", "distension"),
+            ("sint_distension", "distensión"),
             ("sint_hormigueo", "hormigueo"),
-            ("sint_caida_pelo", "caida de pelo"),
-            ("sint_unas_debiles", "unas debiles"),
+            ("sint_caida_pelo", "caída de pelo"),
+            ("sint_unas_debiles", "uñas débiles"),
             ("sint_dolor_cabeza", "dolor de cabeza"),
             ("sint_memoria", "memoria"),
             ("sint_fatiga", "fatiga"),
@@ -214,18 +214,18 @@ def _seccion_expediente(paciente, historia, medicion):
             if historia.get(campo):
                 sintomas.append(nombre + ": " + str(historia[campo]))
         if sintomas:
-            lineas.append("  Sintomas: " + " | ".join(sintomas))
+            lineas.append("  Síntomas: " + " | ".join(sintomas))
 
     return "\n".join(lineas)
 
 
 ESQUEMA_PLAN = """{
-  "resumen_del_caso": "2 o 3 frases sobre la situacion del paciente y el enfoque elegido",
+  "resumen_del_caso": "2 o 3 frases sobre la situación del paciente y el enfoque elegido",
   "banderas_clinicas": [
     {"tipo": "medicamento | padecimiento | laboratorio | sintoma",
-     "detalle": "que se detecto",
-     "implicacion_nutricional": "que significa para el plan",
-     "accion": "que hace el plan al respecto"}
+     "detalle": "qué se detectó",
+     "implicacion_nutricional": "qué significa para el plan",
+     "accion": "qué hace el plan al respecto"}
   ],
   "objetivos_del_plan": ["objetivo 1", "objetivo 2"],
   "objetivo_proteina_g": 0,
@@ -247,12 +247,12 @@ ESQUEMA_PLAN = """{
     "comida": [],
     "cena": []
   },
-  "recomendaciones": ["recomendacion practica 1", "recomendacion 2"],
+  "recomendaciones": ["recomendación práctica 1", "recomendación 2"],
   "suplementacion_sugerida": [
-    {"suplemento": "nombre", "dosis": "cantidad", "momento": "cuando", "motivo": "por que"}
+    {"suplemento": "nombre", "dosis": "cantidad", "momento": "cuando", "motivo": "por qué"}
   ],
   "notas_para_la_nutriologa": ["algo que conviene que revise o considere"],
-  "advertencias": ["si algo del expediente requiere atencion medica, no nutricional"]
+  "advertencias": ["si algo del expediente requiere atención médica, no nutricional"]
 }"""
 
 
@@ -275,23 +275,23 @@ def construir_prompt(paciente, historia, medicion, padecimientos=None,
     partes = []
 
     partes.append(
-        "Eres el motor de analisis nutricional de la consulta de Marifer Utrilla, "
-        "nutriologa en Puebla, Mexico, especializada en obesidad, diabetes, "
+        "Eres el motor de análisis nutricional de la consulta de Marifer Utrilla, "
+        "nutrióloga en Puebla, México, especializada en obesidad, diabetes, "
         "resistencia a la insulina, SOP, endometriosis, salud hormonal, fertilidad "
         "y embarazo.\n\n"
-        "Tu trabajo es ANALIZAR el caso y producir un PLAN TECNICO en JSON. "
-        "No escribes para el paciente; otro sistema se encarga de la redaccion final. "
-        "Tu salida es un documento de trabajo para la nutriologa.\n\n"
+        "Tu trabajo es ANALIZAR el caso y producir un PLAN TÉCNICO en JSON. "
+        "No escribes para el paciente; otro sistema se encarga de la redacción final. "
+        "Tu salida es un documento de trabajo para la nutrióloga.\n\n"
         "REGLA CENTRAL: razonas sobre este caso concreto. No aplicas plantillas ni "
-        "repites formulas genericas. Cada paciente es distinto y el plan debe "
-        "reflejar su situacion particular, sus preferencias y sus restricciones."
+        "repites fórmulas genéricas. Cada paciente es distinto y el plan debe "
+        "reflejar su situación particular, sus preferencias y sus restricciones."
     )
 
     partes.append("\n\n" + ("=" * 70) + "\n")
     partes.append(_seccion_expediente(paciente, historia, medicion))
 
     partes.append("\n\n" + ("=" * 70) + "\n")
-    partes.append("CRITERIOS DE PRESCRIPCION DE LA NUTRIOLOGA\n")
+    partes.append("CRITERIOS DE PRESCRIPCIÓN DE LA NUTRIÓLOGA\n")
     partes.append("Estos criterios son de ella y no se negocian.\n\n")
     partes.append(reglas.resumen_para_prompt(
         peso, usa_glp1=usa_glp1,
@@ -299,20 +299,20 @@ def construir_prompt(paciente, historia, medicion, padecimientos=None,
         esta_embarazada=esta_embarazada,
     ))
 
-    partes.append("\n\nJERARQUIA DE DECISION, en orden de prioridad:\n")
+    partes.append("\n\nJERARQUÍA DE DECISIÓN, en orden de prioridad:\n")
     for regla in reglas.jerarquia():
         partes.append("  " + regla + "\n")
 
     r = reglas.cargar()
     partes.append("\nGRASAS PERMITIDAS: " + ", ".join(r["grasa"]["preferidas"]))
-    partes.append("\nGRASAS EXCLUIDAS por criterio de la nutriologa: "
+    partes.append("\nGRASAS EXCLUIDAS por criterio de la nutrióloga: "
                   + ", ".join(r["grasa"]["excluidas"]))
     partes.append("\nFRUTAS PREFERIDAS: " + ", ".join(r["fruta"]["preferidas"]))
     partes.append("\nCARBOHIDRATOS PREFERIDOS: " + ", ".join(r["carbohidrato"]["preferidos"]))
 
     if "carnes_frias" in r:
         cf = r["carnes_frias"]
-        partes.append("\n\nCARNES FRIAS, distincion con criterio:")
+        partes.append("\n\nCARNES FRÍAS, distinción con criterio:")
         partes.append("\n  Evitar: " + ", ".join(cf["evitar"]["alimentos"]))
         partes.append("\n  Aceptables: " + ", ".join(cf["aceptables_con_criterio"]["alimentos"]))
         partes.append("\n  " + cf["regla"])
@@ -327,22 +327,22 @@ def construir_prompt(paciente, historia, medicion, padecimientos=None,
         partes.append("\n\n" + ("=" * 70) + "\n")
         partes.append("CONTINUIDAD CON EL PLAN ANTERIOR\n")
         partes.append(
-            "Lo siguiente es INFORMACION DE CONTEXTO, no una instruccion de repetir "
-            "ni de evitar. Usa tu criterio clinico igual que con el resto del "
-            "expediente: a veces lo correcto es mantener una opcion que le funciono "
+            "Lo siguiente es INFORMACIÓN DE CONTEXTO, no una instrucción de repetir "
+            "ni de evitar. Usa tu criterio clínico igual que con el resto del "
+            "expediente: a veces lo correcto es mantener una opción que le funcionó "
             "bien al paciente y solo ajustar porciones para el nuevo objetivo; otras "
             "veces, sobre todo si hubo dificultad o disgusto, lo correcto es cambiar "
             "de fondo. Decide caso por caso.\n\n"
         )
 
         if retroalimentacion_followup:
-            partes.append("COMO LE FUE AL PACIENTE CON EL PLAN ANTERIOR (ultimo seguimiento):\n")
+            partes.append("CÓMO LE FUE AL PACIENTE CON EL PLAN ANTERIOR (último seguimiento):\n")
             etiquetas = {
-                "que_le_gusto": "Que le gusto",
-                "que_no_le_gusto": "Que no le gusto",
+                "que_le_gusto": "Qué le gustó",
+                "que_no_le_gusto": "Qué no le gustó",
                 "cambios_que_hizo": "Cambios que hizo por su cuenta",
-                "en_que_puede_mejorar": "En que puede mejorar",
-                "ajustes_acordados": "Ajustes ya acordados con la nutriologa",
+                "en_que_puede_mejorar": "En qué puede mejorar",
+                "ajustes_acordados": "Ajustes ya acordados con la nutrióloga",
             }
             for campo, etiqueta in etiquetas.items():
                 valor = retroalimentacion_followup.get(campo)
@@ -357,7 +357,7 @@ def construir_prompt(paciente, historia, medicion, padecimientos=None,
 
     if analisis_laboratorio:
         partes.append("\n\n" + ("=" * 70) + "\n")
-        partes.append("ANALISIS DE LABORATORIO\n")
+        partes.append("ANÁLISIS DE LABORATORIO\n")
         partes.append(
             "La nutrióloga revisó explícitamente este resultado y decidió incluirlo "
             "para este plan. Tómalo en cuenta al definir el enfoque, las banderas "
@@ -372,40 +372,44 @@ def construir_prompt(paciente, historia, medicion, padecimientos=None,
         contexto = kb.contexto_para_caso(temas, max_fuentes=3)
         if contexto["total"] > 0:
             partes.append("\n\n" + ("=" * 70) + "\n")
-            partes.append("CONOCIMIENTO CLINICO DE REFERENCIA\n")
+            partes.append("CONOCIMIENTO CLÍNICO DE REFERENCIA\n")
             partes.append("Fuentes seleccionadas para este caso. Las de nivel A tienen "
-                          "mayor autoridad clinica que las de nivel B.\n")
+                          "mayor autoridad clínica que las de nivel B.\n")
             partes.append(contexto["texto"])
 
     partes.append("\n\n" + ("=" * 70) + "\n")
     partes.append(
         "INSTRUCCIONES DE SALIDA\n\n"
-        "Devuelve unicamente un JSON que siga exactamente este esquema:\n\n"
+        "Devuelve únicamente un JSON que siga exactamente este esquema:\n\n"
         + ESQUEMA_PLAN +
+        "\n\nIMPORTANTE: escribe todo el texto en español correcto, con acentos "
+        "y tildes donde corresponda (opción, proteína, día, según, más, "
+        "nutrióloga, etc.), y usa la ñ cuando corresponda (año, tamaño, etc.). "
+        "No generes texto sin acentos.\n"
         "\n\nReglas para llenarlo:\n"
-        "\nCANTIDADES, LA REGLA MAS IMPORTANTE:\n"
-        "TODO alimento que aparezca en una opcion DEBE llevar su cantidad. "
-        "El paciente tiene que saber exactamente cuanto comer de cada cosa. "
-        "Una descripcion sin cantidades es inservible y sera rechazada.\n\n"
+        "\nCANTIDADES, LA REGLA MÁS IMPORTANTE:\n"
+        "TODO alimento que aparezca en una opción DEBE llevar su cantidad. "
+        "El paciente tiene que saber exactamente cuánto comer de cada cosa. "
+        "Una descripción sin cantidades es inservible y será rechazada.\n\n"
         "MAL (no hagas esto):\n"
         "  'Huevos a la mexicana con frijoles refritos y aguacate'\n"
         "  'Tinga de pechuga de pollo con nopales y tostadas horneadas'\n\n"
         "BIEN (haz esto):\n"
         "  '3 huevos a la mexicana, 1/3 de taza de frijoles refritos (60 g aprox) "
-        "en 1 cdita de aceite de oliva, 1/3 de aguacate y 2 tortillas de maiz'\n"
+        "en 1 cdita de aceite de oliva, 1/3 de aguacate y 2 tortillas de maíz'\n"
         "  '3/4 de taza de tinga de pechuga de pollo (120 g aprox), 2 nopales "
         "asados, 3 tostadas horneadas y 1/3 de aguacate'\n\n"
         "Cada alimento del campo 'alimentos' debe repetir esa cantidad en su "
-        "campo 'cantidad'. La descripcion y la lista de alimentos deben coincidir.\n\n"
+        "campo 'cantidad'. La descripción y la lista de alimentos deben coincidir.\n\n"
         "\nPESOS REALES, NO LOS ESTIMES:\n"
         "Abajo tienes la tabla de pesos del sistema. Es la referencia "
-        "autoritativa. NO calcules gramajes de memoria: un error tipico es "
+        "autoritativa. NO calcules gramajes de memoria: un error típico es "
         "decir que 2 rebanadas de pechuga de pavo pesan 60 g cuando pesan 24. "
-        "\nSI UN ALIMENTO NO ESTA EN LA TABLA:\n"
-        "Preferentemente elige otro que si este, porque el sistema solo puede "
+        "\nSI UN ALIMENTO NO ESTÁ EN LA TABLA:\n"
+        "Preferentemente elige otro que sí esté, porque el sistema solo puede "
         "verificar los que conoce. Si de verdad necesitas usarlo, hazlo pero "
         "avisa en notas_para_la_nutriologa con esta forma: 'El alimento X no "
-        "esta en la tabla de pesos del sistema, su gramaje es estimado y "
+        "está en la tabla de pesos del sistema, su gramaje es estimado y "
         "conviene verificarlo.' Nunca inventes un peso sin avisar.\n\n"
         + _tabla_de_pesos() +
         "\n\nPRACTICIDAD, TAN IMPORTANTE COMO LA EXACTITUD:\n"
@@ -413,49 +417,49 @@ def construir_prompt(paciente, historia, medicion, padecimientos=None,
         "Una cantidad correcta pero impracticable no sirve.\n\n"
         "1) ALIMENTOS ENTEROS NO SE FRACCIONAN. Los que vienen en unidades "
         "indivisibles se prescriben completos o no se prescriben. Nadie parte "
-        "un huevo a la mitad, ni guarda media lata de atun abierta, ni deja "
+        "un huevo a la mitad, ni guarda media lata de atún abierta, ni deja "
         "1.5 tostadas en un paquete abierto que se pone aguado.\n"
-        "   MAL: '2.5 huevos', 'media lata de atun', '1.5 tostadas salmas'\n"
-        "   BIEN: '3 huevos', '1 lata de atun', '1 paquetito de salmas'\n"
+        "   MAL: '2.5 huevos', 'media lata de atún', '1.5 tostadas salmas'\n"
+        "   BIEN: '3 huevos', '1 lata de atún', '1 paquetito de salmas'\n"
         "   Aplica a: huevos, latas, paquetitos de salmas, piezas de fruta, "
-        "filetes, tortillas, rebanadas de pan, scoops de proteina.\n"
-        "   Si el calculo da una fraccion, redondea a la unidad entera mas "
+        "filetes, tortillas, rebanadas de pan, scoops de proteína.\n"
+        "   Si el cálculo da una fracción, redondea a la unidad entera más "
         "cercana y ajusta el resto de la comida para compensar.\n\n"
         "2) DOBLE REFERENCIA EN LO QUE SE SIRVE A OJO. Nadie mide la tinga o "
-        "un bistec con taza medidora, pero con una referencia visual mas el "
-        "gramaje aproximado si puede calcular.\n"
+        "un bistec con taza medidora, pero con una referencia visual más el "
+        "gramaje aproximado sí puede calcular.\n"
         "   MAL: '3/4 de taza de tinga'\n"
         "   BIEN: '3/4 de taza de tinga de pollo (120 g aprox)'\n"
         "   Aplica a: guisados, carnes, cereales cocidos, leguminosas, "
         "verduras cocidas, quesos. Es decir, todo lo que se sirve a ojo.\n\n"
         "3) Las cantidades van en medidas caseras mexicanas: taza, media taza, "
         "1/3 de taza, cucharada (cda), cucharadita (cdita), pieza, rebanada, "
-        "paquetito, filete, scoop. La proteina animal siempre lleva ademas su "
+        "paquetito, filete, scoop. La proteína animal siempre lleva además su "
         "gramaje.\n\n"
-        "Fracciones que SI son practicas porque el alimento se divide bien: "
-        "1/3 de aguacate, 1/2 taza de arroz, 1/2 platano, 1/4 de taza de "
+        "Fracciones que SÍ son prácticas porque el alimento se divide bien: "
+        "1/3 de aguacate, 1/2 taza de arroz, 1/2 plátano, 1/4 de taza de "
         "frutos secos.\n"
         "- Usa alimentos reales de la cocina mexicana. Nada de ultraprocesados.\n"
-        "- Propon entre 3 y 4 opciones por tiempo de comida, variadas entre si.\n"
+        "- Propón entre 3 y 4 opciones por tiempo de comida, variadas entre sí.\n"
         "\nPORCIONES, NO TE PASES:\n"
-        "Cada comida principal debe quedar entre 25 y 30 g de proteina, y las "
-        "colaciones entre 15 y 25 g. Es el rango que prescribe la nutriologa.\n"
-        "Una comida de 45 o 50 g de proteina desbarata la distribucion del dia "
-        "y es mas comida de la que el paciente va a terminar.\n\n"
-        "Antes de cerrar cada opcion, suma mentalmente la proteina de sus "
+        "Cada comida principal debe quedar entre 25 y 30 g de proteína, y las "
+        "colaciones entre 15 y 25 g. Es el rango que prescribe la nutrióloga.\n"
+        "Una comida de 45 o 50 g de proteína desbarata la distribución del día "
+        "y es más comida de la que el paciente va a terminar.\n\n"
+        "Antes de cerrar cada opción, suma mentalmente la proteína de sus "
         "alimentos usando la tabla de pesos. Si te pasas del rango, REDUCE las "
-        "porciones de proteina animal, que es de donde viene el grueso:\n"
-        "  - 120 g de pechuga de pollo dan unos 27 g de proteina, no pongas 150\n"
-        "  - 3 huevos dan unos 19 g, no agregues ademas queso y pavo\n"
-        "  - Una sola fuente de proteina animal por comida suele bastar\n\n"
-        "Regla practica: si una opcion lleva dos fuentes de proteina animal "
-        "(carne mas queso, huevo mas jamon), probablemente te pasaste.\n\n"
+        "porciones de proteína animal, que es de donde viene el grueso:\n"
+        "  - 120 g de pechuga de pollo dan unos 27 g de proteína, no pongas 150\n"
+        "  - 3 huevos dan unos 19 g, no agregues además queso y pavo\n"
+        "  - Una sola fuente de proteína animal por comida suele bastar\n\n"
+        "Regla práctica: si una opción lleva dos fuentes de proteína animal "
+        "(carne más queso, huevo más jamón), probablemente te pasaste.\n\n"
         "- No inventes cantidades desproporcionadas. Verifica que la suma de "
-        "proteina se acerque al objetivo.\n"
+        "proteína se acerque al objetivo.\n"
         "- Respeta las alergias, intolerancias y alimentos que el paciente evita.\n"
-        "- Si detectas algo que requiere atencion medica y no nutricional, "
+        "- Si detectas algo que requiere atención médica y no nutricional, "
         "ponlo en advertencias. Nunca diagnostiques.\n"
-        "- No cuentes ni menciones calorias."
+        "- No cuentes ni menciones calorías."
     )
 
     return "".join(partes)
@@ -528,17 +532,17 @@ def construir_prompt_porciones(paciente, historia, medicion, incluir_ejemplos, p
     partes = []
 
     partes.append(
-        "Eres el motor de analisis nutricional de la consulta de Marifer Utrilla, "
-        "nutriologa en Puebla, Mexico, especializada en obesidad, diabetes, "
+        "Eres el motor de análisis nutricional de la consulta de Marifer Utrilla, "
+        "nutrióloga en Puebla, México, especializada en obesidad, diabetes, "
         "resistencia a la insulina, SOP, endometriosis, salud hormonal, fertilidad "
         "y embarazo.\n\n"
-        "Tu trabajo es generar una 'TABLA DE PORCIONES': un formato de prescripcion "
-        "mas simple que un menu armado. Es para pacientes que no quieren recibir "
-        "opciones de comida ya combinadas, solo quieren saber cuantos gramos de "
-        "proteina, carbohidrato y grasa consumir por comida, y ellos arman su "
+        "Tu trabajo es generar una 'TABLA DE PORCIONES': un formato de prescripción "
+        "más simple que un menú armado. Es para pacientes que no quieren recibir "
+        "opciones de comida ya combinadas, solo quieren saber cuántos gramos de "
+        "proteína, carbohidrato y grasa consumir por comida, y ellos arman su "
         "propio plato con esa referencia.\n\n"
         "REGLA CENTRAL: razonas sobre este caso concreto, no aplicas una plantilla "
-        "generica. El paciente y sus restricciones son los que determinan que "
+        "genérica. El paciente y sus restricciones son los que determinan qué "
         "alimentos incluir en cada tabla."
     )
 
@@ -546,7 +550,7 @@ def construir_prompt_porciones(paciente, historia, medicion, incluir_ejemplos, p
     partes.append(_seccion_expediente(paciente, historia, medicion))
 
     partes.append("\n\n" + ("=" * 70) + "\n")
-    partes.append("CRITERIOS DE PRESCRIPCION DE LA NUTRIOLOGA\n")
+    partes.append("CRITERIOS DE PRESCRIPCIÓN DE LA NUTRIÓLOGA\n")
     partes.append("Estos criterios son de ella y no se negocian.\n\n")
     partes.append(reglas.resumen_para_prompt(
         peso, usa_glp1=usa_glp1,
@@ -556,7 +560,7 @@ def construir_prompt_porciones(paciente, historia, medicion, incluir_ejemplos, p
 
     r = reglas.cargar()
     partes.append("\nGRASAS PERMITIDAS: " + ", ".join(r["grasa"]["preferidas"]))
-    partes.append("\nGRASAS EXCLUIDAS por criterio de la nutriologa: "
+    partes.append("\nGRASAS EXCLUIDAS por criterio de la nutrióloga: "
                   + ", ".join(r["grasa"]["excluidas"]))
     partes.append("\nFRUTAS PREFERIDAS: " + ", ".join(r["fruta"]["preferidas"]))
     partes.append("\nCARBOHIDRATOS PREFERIDOS: " + ", ".join(r["carbohidrato"]["preferidos"]))
@@ -566,7 +570,7 @@ def construir_prompt_porciones(paciente, historia, medicion, incluir_ejemplos, p
         contexto = kb.contexto_para_caso(temas, max_fuentes=3)
         if contexto["total"] > 0:
             partes.append("\n\n" + ("=" * 70) + "\n")
-            partes.append("CONOCIMIENTO CLINICO DE REFERENCIA\n")
+            partes.append("CONOCIMIENTO CLÍNICO DE REFERENCIA\n")
             partes.append(contexto["texto"])
 
     partes.append("\n\n" + ("=" * 70) + "\n")
@@ -579,7 +583,7 @@ def construir_prompt_porciones(paciente, historia, medicion, incluir_ejemplos, p
             "Es la PRIMERA VEZ que este paciente recibe una Tabla de Porciones. "
             "Incluye en el campo \"ejemplos\" tres combinaciones reales de plato "
             "(desayuno, comida, cena) que usen las tres tablas juntas, para que "
-            "el paciente entienda como se ve una comida armada con este sistema."
+            "el paciente entienda cómo se ve una comida armada con este sistema."
         )
     else:
         instruccion_ejemplos = (
@@ -591,51 +595,54 @@ def construir_prompt_porciones(paciente, historia, medicion, incluir_ejemplos, p
     partes.append("\n\n" + ("=" * 70) + "\n")
     partes.append(
         "INSTRUCCIONES DE SALIDA\n\n"
-        "Devuelve UNICAMENTE un JSON con este esquema exacto, sin texto fuera del JSON:\n\n"
+        "Devuelve ÚNICAMENTE un JSON con este esquema exacto, sin texto fuera del JSON:\n\n"
         "{\n"
-        '  "meta_proteina": "texto tipo \'Meta: 25 g de proteina por comida (4 veces al dia) = 100g de proteina diaria.\'",\n'
-        '  "instruccion_general": "texto tipo \'Elige 1 opcion en desayuno, comida y cena + 1 colacion.\'",\n'
+        '  "meta_proteina": "texto tipo \'Meta: 25 g de proteína por comida (4 veces al día) = 100g de proteína diaria.\'",\n'
+        '  "instruccion_general": "texto tipo \'Elige 1 opción en desayuno, comida y cena + 1 colación.\'",\n'
         '  "tabla_proteinas": [\n'
         '    {"alimento": "nombre del alimento", "cantidad": "medida casera y/o gramos, ej. \'90 g\' o \'1 lata de 140g\'"}\n'
         "  ],\n"
-        '  "objetivo_distribucion": ["Desayuno: 1 opcion", "Comida: 1 opcion", "Cena: 1 opcion", "Colacion: ..."],\n'
+        '  "objetivo_distribucion": ["Desayuno: 1 opción", "Comida: 1 opción", "Cena: 1 opción", "Colación: ..."],\n'
         '  "tabla_carbohidratos": {\n'
         '    "instruccion": "texto tipo \'Desayuno: 2 opciones (ejemplo: 1 tortilla + 1/2 taza de papaya)...\'",\n'
         '    "alimentos": [{"alimento": "...", "cantidad": "medida casera SIN gramos, ej. \'1 a 2 piezas\' o \'1/2 taza\'"}]\n'
         "  },\n"
         '  "tabla_grasas": {\n'
-        '    "instruccion": "texto tipo \'GRASAS: 3 PORCIONES AL DIA DISTRIBUIDAS\'",\n'
+        '    "instruccion": "texto tipo \'GRASAS: 3 PORCIONES AL DÍA DISTRIBUIDAS\'",\n'
         '    "alimentos": [{"alimento": "...", "cantidad": "medida casera SIN gramos, ej. \'10 piezas\' o \'1 cucharadita\'"}]\n'
         "  },\n"
-        '  "nota_verduras": "texto recomendando tazas de verdura al dia, repartidas en las comidas",\n'
-        '  "metas_diarias": ["3 porciones buenas de proteina", "2-3 frutas", "3-4 tazas de verduras", "2-3 L de agua", "Fuerza X veces/semana", "X pasos diarios"],\n'
+        '  "nota_verduras": "texto recomendando tazas de verdura al día, repartidas en las comidas",\n'
+        '  "metas_diarias": ["3 porciones buenas de proteína", "2-3 frutas", "3-4 tazas de verduras", "2-3 L de agua", "Fuerza X veces/semana", "X pasos diarios"],\n'
         '  "ejemplos": {"desayuno": ["..."], "comida": ["..."], "cena": ["..."]}\n'
         "}\n\n"
+        "IMPORTANTE: escribe todo el texto en español correcto, con acentos y "
+        "tildes donde corresponda (proteína, colación, día, opción, después, "
+        "según, etc.). No generes texto sin acentos.\n\n"
         + instruccion_ejemplos + "\n\n"
-        "FORMATO DE CANTIDAD SEGUN LA TABLA (esto es distinto para cada una):\n"
+        "FORMATO DE CANTIDAD SEGÚN LA TABLA (esto es distinto para cada una):\n"
         "- tabla_proteinas: la cantidad SIEMPRE lleva su gramaje (ej. '120 g', "
-        "'1 lata de 140 g'), ademas de la medida casera si aplica. Esto no cambia, "
-        "la proteina si necesita precisarse en gramos.\n"
+        "'1 lata de 140 g'), además de la medida casera si aplica. Esto no cambia, "
+        "la proteína sí necesita precisarse en gramos.\n"
         "- tabla_carbohidratos y tabla_grasas: la cantidad NUNCA lleva gramos ni "
-        "menciona el tamano de empaque comercial (paquetito, bolsa). Usa "
-        "unicamente la medida casera que el paciente puede contar sin bascula: "
+        "menciona el tamaño de empaque comercial (paquetito, bolsa). Usa "
+        "únicamente la medida casera que el paciente puede contar sin báscula: "
         "pieza, taza, cucharada o cucharadita. Motivo: el gramo invita al "
-        "paciente a pesar su porcion, y una variacion normal de peso (una "
-        "almendra un poco mas grande, un aguacate un poco mas chico) no cambia "
-        "el resultado de la dieta, pero si genera angustia innecesaria si el "
-        "numero exacto no cuadra en la bascula.\n"
+        "paciente a pesar su porción, y una variación normal de peso (una "
+        "almendra un poco más grande, un aguacate un poco más chico) no cambia "
+        "el resultado de la dieta, pero sí genera angustia innecesaria si el "
+        "número exacto no cuadra en la báscula.\n"
         "   MAL: 'Almendras - 10 piezas (10 a 12 g)', "
         "'Salmas - 1 paquetito = 30 g (5 piezas)', 'Arroz - 1/2 taza (79 a 98 g)'\n"
         "   BIEN: 'Almendras - 10 piezas', 'Salmas - 5 piezas', "
-        "'Tortilla de maiz - 1 a 2 piezas', 'Arroz - 1/2 taza'\n\n"
-        "REGLA DE PORCIONES: cada renglon de tabla_proteinas debe aportar "
-        "aproximadamente la misma cantidad de proteina por porcion (la que "
-        "definas en meta_proteina, dividida entre el numero de comidas). Usa "
+        "'Tortilla de maíz - 1 a 2 piezas', 'Arroz - 1/2 taza'\n\n"
+        "REGLA DE PORCIONES: cada renglón de tabla_proteinas debe aportar "
+        "aproximadamente la misma cantidad de proteína por porción (la que "
+        "definas en meta_proteina, dividida entre el número de comidas). Usa "
         "la tabla de pesos de arriba para las conversiones, nunca inventes "
         "un gramaje.\n\n"
         "- Usa alimentos reales de la cocina mexicana, nada de ultraprocesados.\n"
         "- Respeta alergias, intolerancias, y alimentos que el paciente evita.\n"
-        "- No cuentes ni menciones calorias."
+        "- No cuentes ni menciones calorías."
     )
 
     return "".join(partes)
