@@ -3,20 +3,20 @@
     "version": "1.2",
     "fecha": "2026-08-30",
     "fuente": "Criterios clinicos de Marifer Utrilla Lack, recabados directamente",
-    "nota": "Este archivo define COMO decide la nutriologa que prescribir. Es editable sin tocar codigo. Si ella cambia un criterio, se ajusta aqui.",
-    "referencia_clinica": "EASO para los rangos de proteina en pacientes con GLP-1"
+    "nota": "Este archivo define COMO decide la nutrióloga qué prescribir. Es editable sin tocar código. Si ella cambia un criterio, se ajusta aquí.",
+    "referencia_clinica": "EASO para los rangos de proteína en pacientes con GLP-1"
   },
   "proteina": {
-    "descripcion": "El nutriente rector del plan. Marifer construye la dieta alrededor de la proteina.",
+    "descripcion": "El nutriente rector del plan. Marifer construye la dieta alrededor de la proteína.",
     "con_glp1": {
       "g_por_kg_min": 1.0,
       "g_por_kg_max": 1.5,
-      "justificacion": "Guias EASO: rango necesario para que haya perdida de peso preservando masa muscular"
+      "justificacion": "Guías EASO: rango necesario para que haya pérdida de peso preservando masa muscular"
     },
     "sin_glp1": {
       "g_por_kg_min": 1.2,
       "g_por_kg_max": 1.8,
-      "justificacion": "Segun objetivos y resultados del paciente"
+      "justificacion": "Según objetivos y resultados del paciente"
     },
     "piso_absoluto_g": 60,
     "piso_no_negociable": true,
@@ -24,13 +24,13 @@
       "comidas_principales": 3,
       "g_por_comida_min": 25,
       "g_por_comida_max": 30,
-      "nota": "Puede haber una colacion adicional con proteina si el objetivo diario lo requiere"
+      "nota": "Puede haber una colación adicional con proteína si el objetivo diario lo requiere"
     }
   },
   "verdura": {
     "tazas_minimas_dia": 2,
     "distribuir_en_el_dia": true,
-    "nota": "Minimo no negociable, se reparte entre las comidas"
+    "nota": "Mínimo no negociable, se reparte entre las comidas"
   },
   "fruta": {
     "piezas_max_dia": 2,
@@ -44,13 +44,13 @@
       "frutos rojos",
       "fresas",
       "moras",
-      "arandanos",
+      "arándanos",
       "manzana",
       "papaya",
       "pera"
     ],
     "prohibidas": [],
-    "nota": "No hay frutas prohibidas, solo se cuida la porcion"
+    "nota": "No hay frutas prohibidas, solo se cuida la porción"
   },
   "grasa": {
     "porciones_ideales_dia": 4,
@@ -63,11 +63,11 @@
       "nueces",
       "pistaches",
       "cacahuates",
-      "semillas de chia",
+      "semillas de chía",
       "linaza",
       "pepitas",
-      "crema de almendras sin azucar",
-      "crema de cacahuate sin azucar"
+      "crema de almendras sin azúcar",
+      "crema de cacahuate sin azúcar"
     ],
     "excluidas": [
       "margarina",
@@ -84,7 +84,7 @@
     "segun_el_caso": true,
     "preferir_bajo_indice_glucemico": true,
     "preferidos": [
-      "tortilla de maiz",
+      "tortilla de maíz",
       "avena",
       "quinoa",
       "arroz",
@@ -98,11 +98,11 @@
       "salmas",
       "tortitas de arroz"
     ],
-    "nota": "El rango se ajusta segun el caso clinico y el objetivo del paciente"
+    "nota": "El rango se ajusta según el caso clínico y el objetivo del paciente"
   },
   "calorias": {
     "contar": false,
-    "nota": "Marifer no cuenta calorias. Saca un estimado pero no es estricto. Le interesa mas el punto de partida del paciente, el cambio de habitos y la calidad de los alimentos. El sistema NUNCA debe mostrar conteo calorico al paciente ni construir el plan a partir de un objetivo calorico."
+    "nota": "Marifer no cuenta calorías. Saca un estimado pero no es estricto. Le interesa más el punto de partida del paciente, el cambio de hábitos y la calidad de los alimentos. El sistema NUNCA debe mostrar conteo calórico al paciente ni construir el plan a partir de un objetivo calórico."
   },
   "calidad_de_alimentos": {
     "principio": "Alimentos reales y naturales",
@@ -112,51 +112,51 @@
       "productos empaquetados con lista larga de ingredientes",
       "bebidas azucaradas",
       "harinas refinadas",
-      "azucar refinada",
+      "azúcar refinada",
       "grasas trans"
     ],
-    "nota": "Esta regla tiene prioridad sobre cualquier calculo. Un alimento que cumple los numeros pero es ultraprocesado no se prescribe."
+    "nota": "Esta regla tiene prioridad sobre cualquier cálculo. Un alimento que cumple los números pero es ultraprocesado no se prescribe."
   },
   "jerarquia_de_decision": [
     "1. Calidad del alimento: real y natural, sin ultraprocesados",
-    "2. Piso de proteina: 60 g diarios como minimo absoluto",
-    "3. Objetivo de proteina por kg segun uso de GLP-1",
-    "4. Distribucion de proteina en 3 comidas de 25 a 30 g",
-    "5. Minimos de verdura (2 tazas) y limites de fruta (2 piezas)",
+    "2. Piso de proteína: 60 g diarios como mínimo absoluto",
+    "3. Objetivo de proteína por kg según uso de GLP-1",
+    "4. Distribución de proteína en 3 comidas de 25 a 30 g",
+    "5. Mínimos de verdura (2 tazas) y límites de fruta (2 piezas)",
     "6. Grasas saludables, 4 porciones, solo de la lista preferida",
-    "7. Carbohidratos, 1 a 2 equivalentes por comida segun el caso",
-    "8. Preferencias y restricciones del paciente registradas en su historia clinica"
+    "7. Carbohidratos, 1 a 2 equivalentes por comida según el caso",
+    "8. Preferencias y restricciones del paciente registradas en su historia clínica"
   ],
   "practicidad": {
     "descripcion": "Reglas de la vida real. Una cantidad correcta pero impracticable no sirve, el paciente la prepara en su cocina.",
     "alimentos_enteros_no_se_fraccionan": {
       "regla": "Los alimentos que vienen en unidades indivisibles se prescriben completos o no se prescriben",
-      "motivo": "Nadie parte un huevo a la mitad, ni guarda media lata de atun abierta, ni deja 1.5 tostadas en un paquete que se pone aguado",
+      "motivo": "Nadie parte un huevo a la mitad, ni guarda media lata de atún abierta, ni deja 1.5 tostadas en un paquete que se pone aguado",
       "aplica_a": [
         "huevos",
-        "latas de atun",
+        "latas de atún",
         "paquetitos de salmas",
         "piezas de fruta",
         "filetes",
         "tortillas",
         "rebanadas de pan",
-        "scoops de proteina"
+        "scoops de proteína"
       ],
       "ejemplos_mal": [
         "2.5 huevos",
-        "media lata de atun",
+        "media lata de atún",
         "1.5 tostadas salmas"
       ],
       "ejemplos_bien": [
         "3 huevos",
-        "1 lata de atun",
+        "1 lata de atún",
         "1 paquetito de salmas"
       ],
-      "si_el_calculo_da_fraccion": "Redondear a la unidad entera mas cercana y ajustar el resto de la comida para compensar"
+      "si_el_calculo_da_fraccion": "Redondear a la unidad entera más cercana y ajustar el resto de la comida para compensar"
     },
     "doble_referencia_en_lo_que_se_sirve_a_ojo": {
-      "regla": "Medida casera mas gramaje aproximado entre parentesis",
-      "motivo": "Nadie mide la tinga o un bistec con taza medidora, pero con una referencia visual mas el gramaje si puede calcular",
+      "regla": "Medida casera más gramaje aproximado entre paréntesis",
+      "motivo": "Nadie mide la tinga o un bistec con taza medidora, pero con una referencia visual más el gramaje sí puede calcular",
       "aplica_a": [
         "guisados",
         "carnes",
@@ -173,22 +173,22 @@
       "ejemplos": [
         "1/3 de aguacate",
         "1/2 taza de arroz",
-        "1/2 platano",
+        "1/2 plátano",
         "1/4 de taza de frutos secos"
       ]
     }
   },
   "carnes_frias": {
-    "descripcion": "Distincion con criterio, no regla absoluta. Marifer si prescribe pechuga de pavo natural en sus dietas reales.",
+    "descripcion": "Distinción con criterio, no regla absoluta. Marifer sí prescribe pechuga de pavo natural en sus dietas reales.",
     "evitar": {
       "alimentos": [
         "salchicha",
         "chorizo",
-        "jamon",
+        "jamón",
         "tocino",
         "salami",
         "mortadela",
-        "salchichon"
+        "salchichón"
       ],
       "motivo": "Ultraprocesados con alta grasa, sodio y nitritos"
     },
@@ -197,14 +197,14 @@
         "pechuga de pavo natural",
         "pechuga de pollo natural"
       ],
-      "preferencia": "Sin nitritos anadidos cuando sea posible",
-      "motivo": "Minimamente procesadas. Poner al paciente a conseguir una pechuga entera y rebanarla es poco practico y afecta la adherencia. Marifer ya las prescribe en sus dietas reales"
+      "preferencia": "Sin nitritos añadidos cuando sea posible",
+      "motivo": "Mínimamente procesadas. Poner al paciente a conseguir una pechuga entera y rebanarla es poco práctico y afecta la adherencia. Marifer ya las prescribe en sus dietas reales"
     },
     "regla": "Siempre especificar 'natural' para distinguirlas del embutido"
   },
   "principio_de_practicidad_sobre_pureza": {
     "regla": "La practicidad y la adherencia importan tanto como la pureza del criterio nutricional",
     "motivo": "Un plan que el paciente no puede seguir no funciona, aunque sea nutricionalmente impecable",
-    "aplicacion": "Cuando un alimento este en zona gris entre lo ideal y lo practico, elegir lo practico y senalarlo en notas_para_la_nutriologa para que ella decida al revisar"
+    "aplicacion": "Cuando un alimento esté en zona gris entre lo ideal y lo práctico, elegir lo práctico y señalarlo en notas_para_la_nutriologa para que ella decida al revisar"
   }
 }

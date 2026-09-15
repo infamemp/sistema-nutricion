@@ -128,7 +128,7 @@ def alimento_permitido(nombre_alimento):
 
     for excluido in r["grasa"]["excluidas"]:
         if excluido.lower() in nombre:
-            return False, "Excluido por criterio de la nutriologa: " + excluido
+            return False, "Excluido por criterio de la nutrióloga: " + excluido
 
     for evitar in r["calidad_de_alimentos"]["evitar_siempre"]:
         palabras = evitar.lower().split()
@@ -154,26 +154,26 @@ def resumen_para_prompt(peso_kg, usa_glp1=False, es_deportista=False, esta_embar
     lineas = []
     lineas.append("OBJETIVOS DEL PACIENTE (peso " + str(peso_kg) + " kg)")
     lineas.append("")
-    lineas.append("Proteina: " + str(p["objetivo_g"]) + " g al dia "
+    lineas.append("Proteína: " + str(p["objetivo_g"]) + " g al día "
                   "(rango " + str(p["rango_min_g"]) + " a " + str(p["rango_max_g"]) + " g)")
     lineas.append("  Distribuir en " + str(p["comidas_principales"]) + " comidas de "
                   + str(p["g_por_comida"]) + " g aproximadamente")
     if p["piso_aplicado"]:
-        lineas.append("  NOTA: se aplico el piso minimo de 60 g, no negociable")
+        lineas.append("  NOTA: se aplicó el piso mínimo de 60 g, no negociable")
     if p["requiere_colacion_proteica"]:
-        lineas.append("  NOTA: el objetivo excede 30 g por comida, agregar colacion con proteina")
+        lineas.append("  NOTA: el objetivo excede 30 g por comida, agregar colación con proteína")
 
     lineas.append("")
-    lineas.append("Verdura: minimo " + str(o["verdura"]["tazas_minimas"]) + " tazas al dia, distribuidas")
-    lineas.append("Fruta: maximo " + str(o["fruta"]["piezas_max"]) + " piezas al dia, de bajo indice glucemico")
+    lineas.append("Verdura: mínimo " + str(o["verdura"]["tazas_minimas"]) + " tazas al día, distribuidas")
+    lineas.append("Fruta: máximo " + str(o["fruta"]["piezas_max"]) + " piezas al día, de bajo índice glucémico")
     lineas.append("Grasa: " + str(o["grasa"]["porciones"]) + " porciones de grasa saludable")
     lineas.append("Carbohidrato: " + str(o["carbohidrato"]["equivalentes_por_comida_min"])
                   + " a " + str(o["carbohidrato"]["equivalentes_por_comida_max"])
-                  + " equivalentes por comida, segun el caso")
+                  + " equivalentes por comida, según el caso")
     lineas.append("")
     lineas.append("CALIDAD: " + o["calidad"]["principio"])
     lineas.append("Evitar siempre: " + ", ".join(o["calidad"]["evitar"]))
     lineas.append("")
-    lineas.append("NO contar ni mostrar calorias.")
+    lineas.append("NO contar ni mostrar calorías.")
 
     return "\n".join(lineas)
