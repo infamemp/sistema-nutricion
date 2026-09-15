@@ -1,7 +1,24 @@
 from sqlalchemy import Column, Integer, String, Float, Text, DateTime, Date, ForeignKey
 from sqlalchemy.orm import relationship
 from datetime import datetime
+from zoneinfo import ZoneInfo
 from database import Base
+
+
+def ahora_mexico():
+    """
+    Fecha y hora actuales en Mexico, sin informacion de zona horaria
+    (naive), consistente con como ya se trata Cita.fecha_hora en
+    calendario.py.
+
+    El droplet corre en UTC. Antes, estas columnas usaban
+    datetime.utcnow por defecto: un registro creado despues de las 6pm
+    hora CDMX quedaba fechado al dia siguiente (ya es manana en UTC), y
+    las plantillas que muestran esa fecha con strftime() directo, sin
+    convertir, terminaban mostrando el dia equivocado al paciente o a
+    la nutriologa.
+    """
+    return datetime.now(ZoneInfo("America/Mexico_City")).replace(tzinfo=None)
 
 
 class Paciente(Base):
@@ -16,7 +33,7 @@ class Paciente(Base):
     profesion = Column(String)
     motivo_consulta = Column(Text)
     referido_por = Column(String)
-    fecha_alta = Column(DateTime, default=datetime.utcnow)
+    fecha_alta = Column(DateTime, default=ahora_mexico)
     activo = Column(Integer, default=1)
     origen_consulta = Column(String, default="privado")
     estatura = Column(Float)
@@ -98,8 +115,8 @@ class HistoriaClinica(Base):
     suplementos = Column(Text)
     medicamentos = Column(Text)
 
-    fecha_creacion = Column(DateTime, default=datetime.utcnow)
-    fecha_actualizacion = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    fecha_creacion = Column(DateTime, default=ahora_mexico)
+    fecha_actualizacion = Column(DateTime, default=ahora_mexico, onupdate=ahora_mexico)
 
     paciente = relationship("Paciente", back_populates="historia_clinica")
 
@@ -109,7 +126,7 @@ class MedicionInBody(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     paciente_id = Column(Integer, ForeignKey("pacientes.id"), nullable=False)
-    fecha_medicion = Column(DateTime, default=datetime.utcnow)
+    fecha_medicion = Column(DateTime, default=ahora_mexico)
     peso = Column(Float)
     imc = Column(Float)
     porcentaje_grasa = Column(Float)
@@ -131,7 +148,7 @@ class IdInBodyConocido(Base):
     paciente_id = Column(Integer, ForeignKey("pacientes.id"), nullable=False)
     id_inbody = Column(String, nullable=False)
     clinica = Column(String)
-    fecha_primer_uso = Column(DateTime, default=datetime.utcnow)
+    fecha_primer_uso = Column(DateTime, default=ahora_mexico)
 
     paciente = relationship("Paciente", back_populates="ids_inbody")
 
@@ -142,7 +159,7 @@ class FollowUp(Base):
     id = Column(Integer, primary_key=True, index=True)
     paciente_id = Column(Integer, ForeignKey("pacientes.id"), nullable=False)
     numero_consulta = Column(Integer)
-    fecha_consulta = Column(DateTime, default=datetime.utcnow)
+    fecha_consulta = Column(DateTime, default=ahora_mexico)
     proxima_cita = Column(Date)
     porcentaje_apego = Column(Float)
     promedio_dias_ejercicio = Column(Float)
@@ -164,7 +181,7 @@ class DietaVersion(Base):
     id = Column(Integer, primary_key=True, index=True)
     paciente_id = Column(Integer, ForeignKey("pacientes.id"), nullable=False)
     version = Column(Integer, nullable=False)
-    fecha_creacion = Column(DateTime, default=datetime.utcnow)
+    fecha_creacion = Column(DateTime, default=ahora_mexico)
     contenido = Column(Text)
     estado = Column(String, default="borrador_ia")
     creado_por = Column(String)
@@ -183,7 +200,7 @@ class OpcionPrescrita(Base):
     dieta_id = Column(Integer, ForeignKey("dietas_versiones.id"), nullable=False)
     tipo_comida = Column(String)
     descripcion = Column(Text)
-    fecha_prescrita = Column(DateTime, default=datetime.utcnow)
+    fecha_prescrita = Column(DateTime, default=ahora_mexico)
 
     dieta = relationship("DietaVersion", back_populates="opciones")
 
@@ -193,7 +210,7 @@ class Laboratorio(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     paciente_id = Column(Integer, ForeignKey("pacientes.id"), nullable=False)
-    fecha_subida = Column(DateTime, default=datetime.utcnow)
+    fecha_subida = Column(DateTime, default=ahora_mexico)
     archivo_path = Column(String)
     analisis_ia = Column(Text)
 
@@ -210,7 +227,7 @@ class Cita(Base):
     estado = Column(String, default="agendada")
     notas_breves = Column(Text)
     google_event_id = Column(String, nullable=True)
-    fecha_creacion = Column(DateTime, default=datetime.utcnow)
+    fecha_creacion = Column(DateTime, default=ahora_mexico)
 
     paciente = relationship("Paciente", back_populates="citas")
 
@@ -221,6 +238,6 @@ class NotaPaciente(Base):
     id = Column(Integer, primary_key=True, index=True)
     paciente_id = Column(Integer, ForeignKey("pacientes.id"), nullable=False)
     texto = Column(Text, nullable=False)
-    fecha_creacion = Column(DateTime, default=datetime.utcnow)
+    fecha_creacion = Column(DateTime, default=ahora_mexico)
 
     paciente = relationship("Paciente", back_populates="notas")

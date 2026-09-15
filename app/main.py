@@ -9,7 +9,6 @@ from fastapi.responses import HTMLResponse, RedirectResponse, FileResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 from datetime import datetime, date
-from zoneinfo import ZoneInfo
 from typing import Optional
 
 from database import get_db, engine
@@ -464,7 +463,7 @@ def _hoy_mexico():
     (edad, fecha de consulta) sale como "manana" en las horas de la
     tarde/noche.
     """
-    return datetime.now(ZoneInfo("America/Mexico_City")).date()
+    return models.ahora_mexico().date()
 
 
 def _calcular_edad(fecha_nacimiento):
@@ -1002,7 +1001,7 @@ async def guardar_followup(paciente_id: int, request: Request, db: Session = Dep
     followup = models.FollowUp(
         paciente_id=paciente_id,
         numero_consulta=numero_consulta,
-        fecha_consulta=datetime.fromisoformat(fecha_consulta) if fecha_consulta else datetime.utcnow(),
+        fecha_consulta=datetime.fromisoformat(fecha_consulta) if fecha_consulta else models.ahora_mexico(),
         proxima_cita=date.fromisoformat(proxima_cita) if proxima_cita else None,
         porcentaje_apego=float(apego) if apego else None,
         promedio_dias_ejercicio=float(dias_ejercicio) if dias_ejercicio else None,
