@@ -275,7 +275,7 @@ def _armar_bloques_porciones(documento):
         bloques.append({
             "tipo": "grid_categorias",
             "titulo": "TABLA DE PORCIONES",
-            "instruccion": " ".join(tip) if tip else None,
+            "instruccion": "\n".join(tip) if tip else None,
             "categorias": categorias,
         })
 
