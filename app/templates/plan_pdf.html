@@ -241,6 +241,14 @@
     letter-spacing: 0.4px;
     margin: 0 0 2.5mm 0;
   }
+  .categoria-nota {
+    font-size: 7.5pt;
+    font-style: italic;
+    color: #6b7280;
+    line-height: 1.4;
+    margin: -1mm 0 2.5mm 0;
+    white-space: pre-line;
+  }
   .categoria ul { margin: 0; padding: 0; list-style: none; }
   .categoria ul li {
     font-size: 9pt;
@@ -364,10 +372,18 @@
       {% if bloque.instruccion %}
       <div class="caja-tip"><span class="etiqueta-tip">TIP</span><span class="texto-tip">{{ bloque.instruccion }}</span></div>
       {% endif %}
+      {% if bloque.distribucion %}
+      <ul class="checklist">
+        {% for item in bloque.distribucion %}
+        <li><span class="check">&#10003;</span><span>{{ item }}</span></li>
+        {% endfor %}
+      </ul>
+      {% endif %}
       <div class="rejilla-categorias">
         {% for cat in bloque.categorias %}
         <div class="categoria c-{{ cat.clave }}">
           <h3>{{ cat.titulo }}</h3>
+          {% if cat.instruccion %}<p class="categoria-nota">{{ cat.instruccion }}</p>{% endif %}
           <ul>{% for item in cat.elementos %}<li>{{ item }}</li>{% endfor %}</ul>
         </div>
         {% endfor %}

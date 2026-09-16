@@ -229,13 +229,17 @@ def _armar_bloques_porciones(documento):
     if documento.get("metas_diarias"):
         bloques.append({"tipo": "lista", "titulo": "METAS DIARIAS", "elementos": documento["metas_diarias"]})
 
+    # El TIP general solo lleva la meta de proteina y la instruccion general
+    # (igual que en ver_porciones.html). La distribucion por tiempo de comida
+    # y las notas de carbohidratos/grasas van cada una en su propio lugar,
+    # no mezcladas aqui.
     tip = []
     if documento.get("meta_proteina"):
         tip.append(documento["meta_proteina"])
     if documento.get("instruccion_general"):
         tip.append(documento["instruccion_general"])
-    if documento.get("objetivo_distribucion"):
-        tip.extend(documento["objetivo_distribucion"])
+
+    distribucion = documento.get("objetivo_distribucion") or []
 
     categorias = []
 
@@ -248,25 +252,29 @@ def _armar_bloques_porciones(documento):
 
     carbohidratos = documento.get("tabla_carbohidratos") or {}
     if carbohidratos.get("alimentos"):
-        elementos = []
-        if carbohidratos.get("instruccion"):
-            tip.append(carbohidratos["instruccion"])
-        elementos.extend(
+        elementos = [
             (f.get("alimento", "") + " - " + f.get("cantidad", "")).strip(" -")
             for f in carbohidratos["alimentos"]
-        )
-        categorias.append({"clave": "carbohidratos", "titulo": "CARBOHIDRATOS", "elementos": elementos})
+        ]
+        categorias.append({
+            "clave": "carbohidratos",
+            "titulo": "CARBOHIDRATOS",
+            "instruccion": carbohidratos.get("instruccion") or None,
+            "elementos": elementos,
+        })
 
     grasas = documento.get("tabla_grasas") or {}
     if grasas.get("alimentos"):
-        elementos = []
-        if grasas.get("instruccion"):
-            tip.append(grasas["instruccion"])
-        elementos.extend(
+        elementos = [
             (f.get("alimento", "") + " - " + f.get("cantidad", "")).strip(" -")
             for f in grasas["alimentos"]
-        )
-        categorias.append({"clave": "grasas", "titulo": "GRASAS", "elementos": elementos})
+        ]
+        categorias.append({
+            "clave": "grasas",
+            "titulo": "GRASAS",
+            "instruccion": grasas.get("instruccion") or None,
+            "elementos": elementos,
+        })
 
     if documento.get("nota_verduras"):
         categorias.append({"clave": "verduras", "titulo": "VERDURAS", "elementos": [documento["nota_verduras"]]})
@@ -276,6 +284,7 @@ def _armar_bloques_porciones(documento):
             "tipo": "grid_categorias",
             "titulo": "TABLA DE PORCIONES",
             "instruccion": "\n".join(tip) if tip else None,
+            "distribucion": distribucion,
             "categorias": categorias,
         })
 
