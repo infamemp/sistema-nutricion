@@ -1,6 +1,6 @@
 # Fuentes de datos de alimentos
 
-**Versión:** 3.0
+**Versión:** 3.1
 **Fecha:** 21 de septiembre de 2026
 **Estado:** implementado y verificado en el servidor
 
@@ -55,7 +55,7 @@ Los nombres de los campos que ya existían no cambiaron, así que `marifer.py` f
 
 **La nota anterior sobre el hierro estaba incompleta.** La versión anterior anulaba `hierro_mg` en ~967 alimentos por "errores de captura". La causa real era que varias columnas de micronutrientes estaban cruzadas: en ~65 % de los alimentos con dato, `vitamina_c_mg` contenía calcio; en ~66 %, `folato_ug` contenía hierro; y en ~47 %, `hierro_mg` contenía sodio. v10 corrige las columnas, por lo que los valores de hierro, calcio, sodio y vitaminas ya son utilizables.
 
-**Cómo se busca, y por qué importa el nombre.** El verificador toma el primer resultado de `buscar_palabras`: el nombre más corto que contiene todas las palabras. Por eso una palabra genérica puede caer en otro producto: con la base v10, "fresas" habría devuelto "Pica Fresa" (un dulce), y "zanahoria" ya devolvía "Jugo de zanahoria" con la base anterior. Para esos casos, `medidas_caseras.json` fija el término exacto en `buscar_como` (fresas → "fresa entera", pechuga de pollo → "pechuga de pollo sin piel cocida", zanahoria → "zanahoria picada cruda"). **Después de cualquier cambio a la base o a la tabla de medidas, correr `validar_tabla.py`** (desde `/opt/sistema-nutricion`, con el `venv` del servidor) y revisar que la cobertura no baje.
+**Cómo se busca, y por qué importa el nombre.** El verificador toma el primer resultado de `buscar_palabras`: el nombre más corto que contiene todas las palabras. Por eso una palabra genérica puede caer en otro producto: con la base v10, "fresas" habría devuelto "Pica Fresa" (un dulce), y "zanahoria" ya devolvía "Jugo de zanahoria" con la base anterior. Para esos casos, `medidas_caseras.json` fija el término exacto en `buscar_como` (fresas → "fresa entera", pechuga de pollo → "pechuga de pollo sin piel cocida", zanahoria → "zanahoria picada cruda"). **Después de cualquier cambio a la base o a la tabla de medidas, correr `validar_tabla.py`** (desde `/opt/sistema-nutricion`, con el `venv` del servidor) y revisar que la cobertura no baje. Los alimentos con `"buscar_en": "usda"` se saltan la KB y van directo a FNDDS; ahí el mismo problema aparece con los términos en inglés (por ejemplo, "flaxseed" devolvía aceite de linaza). Cuando el alimento existe en la KB conviene usar `buscar_como`, y al validar hay que revisar **a qué alimento** resuelve cada término, no solo que resuelva.
 
 **Módulo:** `marifer.py`. Búsqueda insensible a acentos, por palabras sueltas en cualquier orden.
 
@@ -179,6 +179,33 @@ De las 293 medidas caseras que calcula el verificador, 262 dan el mismo resultad
 
 Pendiente conocido: "aguacate, 3 rebanadas" quedó en 45 g de pulpa (78 kcal); no hay fuente para ajustarlo y conviene que lo confirme la nutrióloga.
 
+### Corrección de la tabla de medidas, v2.3 (21 de septiembre de 2026)
+
+Al revisar qué alimentos de la tabla resolvían a otro alimento, se encontraron 9 que caían en un alimento equivocado de FNDDS y 5 que no resolvían a nada. Esto ya ocurría antes de la migración a v10. Se corrigieron 12, sin cambios de código:
+
+| Alimento (medida) | Antes | Ahora |
+|---|---|---|
+| Linaza (1 cucharada) | "Aceite de linaza": 88 kcal, 0 g de proteína | Linaza: 53 kcal, 1.8 g |
+| Vinagre balsámico (1 cucharada) | "Ensalada de huevo con aderezo italiano": 1.6 g de proteína | Vinagre balsámico: 0 g |
+| Pan thin (1 pieza) | "Pizza con pepperoni": 114 kcal, 5.8 g | Pan Thin: 82 kcal, 4.2 g |
+| Tortita de arroz (1 tortita, 9 g) | "Idli" (pastel de arroz hindú): 11 kcal | Rice cake: 35 kcal |
+| Crema de cacahuate (1 cucharada) | "Pay de crema de cacahuate": 67 kcal, 0.9 g | Mantequilla de cacahuate: 92 kcal, 3.8 g |
+| Hot cakes de avena (1 pieza) | "Chinese pancake": 124 kcal, 2.4 g | Hot cake: 109 kcal, 3.9 g |
+| Vinagreta (1 cucharada) | "Mozzarella con jitomate y aderezo": 21 kcal | Vinagreta: 68 kcal |
+| Aceite de aguacate, amaranto, salsa macha, vinagre de manzana | Sin verificar | Verificados con la KB (aceite de aguacate 1 cucharada: 123 kcal; amaranto 1 taza: 118 kcal, 4.1 g de proteína) |
+
+Detalles de la corrección:
+
+- Diez alimentos pasaron a la KB de Marifer con `buscar_como` (se quitó `"buscar_en": "usda"`). Las dos tortitas de arroz siguen en FNDDS con el término exacto `rice cake all flavors`.
+- Donde FNDDS daba un alimento equivocado se quitó `buscar_como_usda`, para que un fallo quede como "sin verificar" y no como verificado con otro alimento.
+- Amaranto apunta a "Amaranto tostado" (el grano). "Amaranto cocido" de la KB son hojas de quelite (26 kcal por 100 g).
+- Resultado de `validar_tabla.py` en el servidor: 164 alimentos, **163 verificables** y **1 con problema** (antes: 159 y 5). Prueba puntual: linaza, 1 cucharada → "Linaza", 1.8 g de proteína.
+
+Pendientes conocidos de la tabla:
+
+- **Pan de masa madre:** no existe en la KB ni en FNDDS; sigue sin verificar hasta incluirlo con una fuente.
+- **Leche de coco:** hoy resuelve a "Coconut milk" de FNDDS (31 kcal por 100 g, que es la bebida). La leche de coco enlatada trae ~230 kcal; hay que confirmar con la nutrióloga cuál usa.
+
 ### Prueba del 30 de agosto de 2026 (jerarquía anterior, BAM como principal)
 
 Prueba de jerarquía ejecutada en el servidor el 30 de agosto de 2026 (jerarquía anterior, BAM como principal):
@@ -203,3 +230,4 @@ Prueba de jerarquía ejecutada en el servidor el 30 de agosto de 2026 (jerarquí
 | 2026-09-03 | FNDDS local reemplaza a la API en línea del USDA como fuente #2; se corrigen 7 términos de búsqueda; se documentan 5 alimentos sin cobertura en ninguna fuente |
 | 2026-09-04 | v2.0. Documento actualizado para reflejar la jerarquía real del código (estaba desactualizado desde la migración del 3 de septiembre) |
 | 2026-09-21 | v3.0. Migración a la base v10 de Marifer: 2,916 alimentos (antes 2,342), 26 campos por alimento, micronutrientes en su columna correcta (la base anterior los tenía cruzados) y sin dato como `null`. `medidas_caseras.json` v2.2: se fijó `buscar_como` en fresas, pechuga de pollo, pollo desmenuzado y zanahoria, y el aguacate pasa a pesos de pulpa. Sin cambios de código. Verificado en el servidor con `validar_tabla.py` |
+| 2026-09-21 | v3.1. `medidas_caseras.json` v2.3: se corrigen 12 alimentos que resolvían a otro alimento (o a ninguno); se documenta que `buscar_en: usda` se salta la KB. `validar_tabla.py` en el servidor: 163 verificables y 1 con problema (antes 159 y 5). Sin cambios de código |
