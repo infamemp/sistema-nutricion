@@ -1,6 +1,6 @@
 {
   "_meta": {
-    "version": "2.2",
+    "version": "2.3",
     "fecha": "2026-09-21",
     "proposito": "Traducir entre las medidas caseras que usa Marifer en sus dietas y los gramos que necesita el sistema para consultar la BAM. Sin esta tabla el sistema no puede verificar si una dieta cumple el objetivo de proteína.",
     "nota": "Los pesos son aproximados y sirven para cálculo interno. El paciente siempre ve la medida casera, nunca los gramos.",
@@ -11,7 +11,8 @@
     "nota_terminos": "REGLA: todo término de 'buscar_como' debe verificarse contra la BAM real antes de registrarlo, con bam.buscar_palabras(). En la versión 1.5 se registraron cinco términos inventados (jitomate saladette, pepino crudo, champiñón crudo, tortilla de maíz nixtamalizada, aceite de aguacate) que no existían y dejaban esos alimentos sin verificar. El nombre correcto suele diferir: la BAM dice 'JITOMATE SALADET' sin doble t, y 'CHAMPIÑONES NATURALES' en plural.",
     "origen": "Alimentos extraídos de los 24 documentos reales de Marifer, más los de uso común en México. Cubre el universo de lo que ella prescribe, no el universo completo de alimentos mexicanos.",
     "tabla_viva": "Esta tabla crece con la práctica. Cuando el verificador reporte un alimento desconocido, se agrega aquí. Correr validar_tabla.py después de cada cambio para confirmar que los términos existen en las fuentes.",
-    "historial_2_2": "Migracion a la base de alimentos v10. Se fijo 'buscar_como' en fresas, pechuga de pollo, pollo desmenuzado y zanahoria porque con la base nueva la busqueda por nombre mas corto devolvia otro alimento (Pica Fresa, jugo de zanahoria) o el pollo en estado crudo. Aguacate: los pesos pasan a ser de pulpa (31 g el tercio) porque la base nueva trae el valor por 100 g de pulpa."
+    "historial_2_2": "Migracion a la base de alimentos v10. Se fijo 'buscar_como' en fresas, pechuga de pollo, pollo desmenuzado y zanahoria porque con la base nueva la busqueda por nombre mas corto devolvia otro alimento (Pica Fresa, jugo de zanahoria) o el pollo en estado crudo. Aguacate: los pesos pasan a ser de pulpa (31 g el tercio) porque la base nueva trae el valor por 100 g de pulpa.",
+    "historial_2_3": "Corrección de alimentos que se resolvían a otro alimento en FNDDS (vinagre balsámico → ensalada de huevo, linaza → aceite de linaza, pan thin → pizza, crema de cacahuate → pay, hot cakes → panqueque chino, vinagreta → platillo con mozzarella, tortitas de arroz → idli) o que no se resolvían a nada. Diez pasan a la base de Marifer con 'buscar_como' (se quita 'buscar_en': 'usda'); las dos tortitas de arroz siguen en FNDDS con el término exacto 'rice cake all flavors'. Se quitó 'buscar_como_usda' donde daba un alimento equivocado, para que quede sin verificar en vez de mal verificado. Amaranto apunta a 'amaranto tostado' (grano); 'amaranto cocido' de la base son hojas de quelite."
   },
   "volumen_a_ml": {
     "taza": 240,
@@ -67,15 +68,14 @@
         "2 tortitas": 18
       },
       "buscar_en": "usda",
-      "buscar_como_usda": "rice cakes"
+      "buscar_como_usda": "rice cake all flavors"
     },
     "pan de caja": {
       "rebanada_g": 28
     },
     "pan thin": {
       "pieza_g": 45,
-      "buscar_en": "usda",
-      "buscar_como_usda": "bread flat thin"
+      "buscar_como": "pan thin"
     },
     "pan de masa madre": {
       "rebanada_g": 40,
@@ -294,8 +294,7 @@
     },
     "crema de cacahuate": {
       "cucharada_g": 16,
-      "buscar_en": "usda",
-      "buscar_como_usda": "peanut butter"
+      "buscar_como": "mantequilla de cacahuate"
     },
     "chia": {
       "cucharada_g": 12,
@@ -304,8 +303,7 @@
     },
     "linaza": {
       "cucharada_g": 10,
-      "buscar_en": "usda",
-      "buscar_como_usda": "flaxseed"
+      "buscar_como": "linaza"
     },
     "pepitas": {
       "cucharada_g": 8,
@@ -650,8 +648,7 @@
       },
       "nota": "Compuesto de aceite y vinagre. Contar el aceite por separado.",
       "sin_aporte_nutricional": false,
-      "buscar_en": "usda",
-      "buscar_como_usda": "salad dressing vinegar and oil"
+      "buscar_como": "vinagreta"
     },
     "mostaza": {
       "cucharadita_g": 5,
@@ -664,8 +661,8 @@
     "amaranto": {
       "taza_g": 30,
       "cucharada_g": 8,
-      "buscar_en": "usda",
-      "buscar_como_usda": "amaranth grain"
+      "buscar_como_usda": "amaranth grain",
+      "buscar_como": "amaranto tostado"
     },
     "granola": {
       "cucharada_g": 12,
@@ -690,7 +687,7 @@
         "2 tortitas": 18
       },
       "buscar_en": "usda",
-      "buscar_como_usda": "rice cakes"
+      "buscar_como_usda": "rice cake all flavors"
     },
     "mandarina mini": {
       "pieza_g": 50,
@@ -752,8 +749,8 @@
         "1 cda": 14,
         "1 cucharada": 14
       },
-      "buscar_en": "usda",
-      "buscar_como_usda": "oil avocado"
+      "buscar_como_usda": "oil avocado",
+      "buscar_como": "aceite de aguacate"
     },
     "mayonesa de aguacate": {
       "cucharadita_g": 5,
@@ -931,8 +928,7 @@
     },
     "hot cakes de avena": {
       "pieza_g": 60,
-      "buscar_en": "usda",
-      "buscar_como_usda": "pancakes"
+      "buscar_como": "hot cake"
     },
     "tortirregias": {
       "pieza_g": 25,
@@ -1068,19 +1064,18 @@
     "salsa macha": {
       "cucharadita_g": 5,
       "cucharada_g": 15,
-      "buscar_en": "usda",
-      "buscar_como_usda": "oil chili"
+      "buscar_como_usda": "oil chili",
+      "buscar_como": "salsa macha"
     },
     "vinagre de manzana": {
       "cucharada_g": 15,
       "cucharadita_g": 5,
-      "buscar_en": "usda",
-      "buscar_como_usda": "vinegar cider"
+      "buscar_como_usda": "vinegar cider",
+      "buscar_como": "vinagre de manzana"
     },
     "vinagre balsamico": {
       "cucharada_g": 16,
-      "buscar_en": "usda",
-      "buscar_como_usda": "vinegar balsamic"
+      "buscar_como": "vinagre balsamico"
     },
     "creatina": {
       "porciones_usuales": {
