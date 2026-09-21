@@ -1,7 +1,7 @@
 {
   "_meta": {
-    "version": "2.1",
-    "fecha": "2026-08-30",
+    "version": "2.2",
+    "fecha": "2026-09-21",
     "proposito": "Traducir entre las medidas caseras que usa Marifer en sus dietas y los gramos que necesita el sistema para consultar la BAM. Sin esta tabla el sistema no puede verificar si una dieta cumple el objetivo de proteína.",
     "nota": "Los pesos son aproximados y sirven para cálculo interno. El paciente siempre ve la medida casera, nunca los gramos.",
     "fuentes": "Medidas observadas en las 24 dietas reales de la nutrióloga, complementadas con equivalencias de uso común en México",
@@ -10,7 +10,8 @@
     "nota_fuentes": "Campo 'buscar_como': término para la BAM. Campo 'buscar_como_usda' más 'buscar_en': usar cuando el alimento no existe en la BAM (quinoa, pistaches, pepitas, pan de masa madre y otros no tradicionales en México). El verificador prueba BAM primero y USDA como respaldo.",
     "nota_terminos": "REGLA: todo término de 'buscar_como' debe verificarse contra la BAM real antes de registrarlo, con bam.buscar_palabras(). En la versión 1.5 se registraron cinco términos inventados (jitomate saladette, pepino crudo, champiñón crudo, tortilla de maíz nixtamalizada, aceite de aguacate) que no existían y dejaban esos alimentos sin verificar. El nombre correcto suele diferir: la BAM dice 'JITOMATE SALADET' sin doble t, y 'CHAMPIÑONES NATURALES' en plural.",
     "origen": "Alimentos extraídos de los 24 documentos reales de Marifer, más los de uso común en México. Cubre el universo de lo que ella prescribe, no el universo completo de alimentos mexicanos.",
-    "tabla_viva": "Esta tabla crece con la práctica. Cuando el verificador reporte un alimento desconocido, se agrega aquí. Correr validar_tabla.py después de cada cambio para confirmar que los términos existen en las fuentes."
+    "tabla_viva": "Esta tabla crece con la práctica. Cuando el verificador reporte un alimento desconocido, se agrega aquí. Correr validar_tabla.py después de cada cambio para confirmar que los términos existen en las fuentes.",
+    "historial_2_2": "Migracion a la base de alimentos v10. Se fijo 'buscar_como' en fresas, pechuga de pollo, pollo desmenuzado y zanahoria porque con la base nueva la busqueda por nombre mas corto devolvia otro alimento (Pica Fresa, jugo de zanahoria) o el pollo en estado crudo. Aguacate: los pesos pasan a ser de pulpa (31 g el tercio) porque la base nueva trae el valor por 100 g de pulpa."
   },
   "volumen_a_ml": {
     "taza": 240,
@@ -25,14 +26,14 @@
   },
   "alimentos": {
     "aguacate": {
-      "pieza_g": 200,
+      "pieza_g": 94,
       "porciones_usuales": {
-        "1/3 de aguacate": 67,
-        "1/2 aguacate": 100,
+        "1/3 de aguacate": 31,
+        "1/2 aguacate": 47,
         "3 rebanadas": 45,
         "30 g": 30
       },
-      "nota": "Marifer usa mucho el tercio de aguacate"
+      "nota": "Marifer usa mucho el tercio de aguacate. Los pesos son de pulpa, segun el equivalente SMAE de la base de alimentos (1/3 de pieza = 31 g)."
     },
     "tortilla de maíz": {
       "pieza_g": 30,
@@ -166,7 +167,7 @@
         "100 g": 100,
         "120 g": 120
       },
-      "buscar_como": "pollo pechuga sin piel",
+      "buscar_como": "pechuga de pollo sin piel cocida",
       "estado": "cocido",
       "nota": "Marifer prescribe pechuga sin piel. Con piel tiene más grasa."
     },
@@ -373,7 +374,7 @@
     },
     "zanahoria": {
       "pieza_g": 60,
-      "buscar_como": "zanahoria"
+      "buscar_como": "zanahoria picada cruda"
     },
     "jícama": {
       "taza_g": 130
@@ -403,7 +404,8 @@
       "porciones_usuales": {
         "5 fresas": 60,
         "1/2 taza": 75
-      }
+      },
+      "buscar_como": "fresa entera"
     },
     "blueberries": {
       "taza_g": 148,
@@ -796,7 +798,7 @@
         "3/4 taza": 105,
         "1/2 taza": 70
       },
-      "buscar_como": "pollo pechuga sin piel",
+      "buscar_como": "pechuga de pollo sin piel cocida",
       "estado": "cocido"
     },
     "pollo rostizado": {
