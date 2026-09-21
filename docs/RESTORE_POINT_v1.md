@@ -267,7 +267,7 @@ Arquitectura de tres fuentes con jerarquía, detallada en `docs/FUENTES_ALIMENTO
 | Archivo/dato | Ubicación | Contenido | ¿Va al repo? |
 |---|---|---|---|
 | Proyecto de Google Cloud | `sistema-nutricion` (consola web) | APIs activas: Drive, Calendar. OAuth consent screen publicado en "Production" | — |
-| Client ID / Secret OAuth | `181382395592-es248860rhqqmoqqajjfssj2qmgfoa0r.apps.googleusercontent.com` / `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` | Tipo "Desktop app", nombre `rclone-sistema-nutricion` | No (viven solo en `rclone.conf` del servidor) |
+| Client ID / Secret OAuth | `181382395592-es248860rhqqmoqqajjfssj2qmgfoa0r.apps.googleusercontent.com` / (el secreto ya no se guarda en este documento; vive solo en `rclone.conf` del servidor) | Tipo "Desktop app", nombre `rclone-sistema-nutricion` | No (viven solo en `rclone.conf` del servidor) |
 | Página de política de privacidad | `app/static/legal-oauth.html` | Exigida por Google para publicar el OAuth en producción. Pública (`/static/` no requiere login) | Sí |
 | Config de `rclone` | `/root/.config/rclone/rclone.conf` en el servidor, remote `gdrive-marifer` | Token OAuth de la cuenta de Marifer, con refresh automático | No |
 | Cuenta de servicio (`google-service-account.json`) | `/opt/sistema-nutricion/google-service-account.json` | **Ya no se usa** (era el intento fallido). Se puede borrar del servidor si se quiere, no se usa en `backup.sh` | No, nunca |
@@ -285,7 +285,7 @@ rclone copy gdrive-marifer:NOMBRE_DEL_ARCHIVO.tar.gz.gpg . --drive-root-folder-i
 gpg --batch --yes --passphrase-file /opt/sistema-nutricion/.backup_passphrase --decrypt -o restaurado.tar.gz NOMBRE_DEL_ARCHIVO.tar.gz.gpg
 tar -xzf restaurado.tar.gz   # extrae sistema_nutricion.db y .env
 ```
-Si el droplet es nuevo y `rclone` no está configurado todavía, hay que volver a correr `rclone config create gdrive-marifer drive client_id ... client_secret ... token '...'` con las credenciales guardadas (client_id y secret están en esta tabla; el token específico habría que regenerarlo si expiró, repitiendo el proceso de autorización con Marifer).
+Si el droplet es nuevo y `rclone` no está configurado todavía, hay que volver a correr `rclone config create gdrive-marifer drive client_id ... client_secret ... token '...'` con las credenciales guardadas (el client_id está en esta tabla; el secreto ya no se guarda aquí y Google no permite volver a verlo: se copia de `/root/.config/rclone/rclone.conf` mientras el servidor exista, o se crea uno nuevo en Google Cloud, en APIs y servicios > Credenciales > cliente `rclone-sistema-nutricion` > Client secrets > Add secret. El token específico habría que regenerarlo si expiró, repitiendo el proceso de autorización con Marifer).
 
 ## ✅ COMPLETADO (1 sep 2026): sincronización con Google Calendar
 
@@ -549,3 +549,4 @@ Verificado con dos casos: paciente de 85 kg con GLP-1 (objetivo 105 g, detectó 
 | 2026-09-01 | Lectura automática de reportes InBody vía imagen (no PDF, el dispositivo real manda `.jpg`) con Gemini multimodal. Identificación simplificada al vivir dentro del expediente ya abierto, con 3 verificaciones de seguridad en vez de la búsqueda global de 3 capas originalmente especificada. Verificado con un reporte real, los 7 campos coincidieron exactos. La imagen se descarta tras leerla |
 | 2026-09-01 | Registro de opciones ya prescritas al aprobar una dieta, usado junto con la retroalimentación del follow-up como contexto (no instrucción) para la siguiente dieta. Se subieron los timeouts de nginx a 300s porque el prompt mas grande hacia que Gemini tardara mas. **Con esto, la Fase 1 queda practicamente completa** |
 | 2026-09-01 | Confirmación agregada antes de cancelar, reagendar, marcar completada o no asistió una cita |
+| 2026-09-21 | Se quita de este documento el secreto del cliente OAuth de Google, que había quedado escrito por error. El secreto se rotó el 20 de septiembre y el anterior se borró en Google Cloud, así que el valor que aparece en el historial de git ya no sirve |
