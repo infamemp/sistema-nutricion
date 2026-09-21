@@ -1,7 +1,7 @@
 # Fuentes de datos de alimentos
 
-**Versión:** 2.0
-**Fecha:** 4 de septiembre de 2026
+**Versión:** 3.0
+**Fecha:** 21 de septiembre de 2026
 **Estado:** implementado y verificado en el servidor
 
 ---
@@ -23,11 +23,39 @@ Esta jerarquía reemplazó a la anterior (BAM → USDA en línea → OpenFoodFac
 
 ## 2. Marifer — fuente principal
 
-**Qué es:** base de equivalencias propia de la nutrióloga, clasificada según el Sistema Mexicano de Alimentos Equivalentes (SMAE). Cada alimento trae su grupo real (AOAMBG, CerealesSG, Frutas, etc.), su porción casera típica, y sus valores nutricionales por 100 g de porción neta para poder escalar a cualquier cantidad.
+**Qué es:** base de equivalencias propia de la nutrióloga, clasificada según el Sistema Mexicano de Alimentos Equivalentes (SMAE). Cada alimento trae su grupo SMAE, su porción casera típica y sus valores nutricionales por 100 g de peso neto, para poder escalar a cualquier cantidad.
 
-**Cobertura:** 2,342 alimentos, sin internet, sin límites de velocidad.
+**Cobertura:** 2,916 alimentos, sin internet, sin límites de velocidad. Es la versión v10 (21 de septiembre de 2026): los 2,838 alimentos de la base v9 ya limpiados, más 78 que la base anterior tenía y v9 había perdido (entre ellos 17 bebidas alcohólicas: vino, tequila, whisky, ron, etc.).
 
-**Nota de calidad:** el campo `hierro_mg` viene anulado (`None`) en aproximadamente 967 alimentos porque el dato original tenía errores de captura (valores fisiológicamente imposibles). Cualquier campo en `None` significa "sin dato confiable", nunca cero.
+**Grupos (campo `categoria`):** 19 grupos SMAE con su nombre completo: Verduras, Frutas, Cereales S/G, Cereales C/G, Leguminosas, AOA MBAG, AOA BAG, AOA MAG, AOA AAG, Leche descremada, Leche semidescremada, Leche entera, Leche con azúcar, Grasas sin proteínas, Grasas con proteínas, Azúcares sin grasa, Azúcares con grasa, Libres en energía y Alcohol. Antes se usaban códigos como `AOAMBG` o `CerealesSG`; ningún módulo depende del texto de la categoría. Cuando un mismo nombre existe en dos grupos, el nombre lleva el grupo entre paréntesis, por ejemplo "Castaña (Grasas con proteínas)".
+
+**Campos por alimento (26):**
+
+| Campo(s) | Notas |
+|---|---|
+| `energia_kcal`, `proteina_g`, `grasa_g`, `carbohidratos_g`, `fibra_g` | Los que usa hoy el verificador |
+| `grasa_saturada_g`, `grasa_monoinsaturada_g`, `grasa_poliinsaturada_g`, `colesterol_mg` | Nuevos. `medidas.py` ya pedía `grasa_saturada_g`, que antes salía vacío |
+| `calcio_mg`, `hierro_mg`, `potasio_mg`, `sodio_mg`, `fosforo_mg`, `vitamina_a_ug`, `vitamina_c_mg`, `folato_ug` | Micronutrientes, ahora en su columna correcta |
+| `etanol_g` | Alcohol de las bebidas; 0 en el resto |
+| `azucar_smae_g` | Columna "Azúcar" del SMAE. **No es azúcar total** (vale 0 en muchas frutas y lácteos). No usar como `azucares_g` |
+| `indice_glicemico`, `carga_glicemica` | IG del alimento (existe en ~6 % de la base) y carga glicémica por porción, calculada como IG × carbohidratos de la porción ÷ 100 |
+| `medida_casera` | `cantidad`, `unidad`, `peso_neto_g` y `peso_bruto_g` de la porción de origen |
+| `revision` | Estado del registro (ver abajo) |
+
+Los nombres de los campos que ya existían no cambiaron, así que `marifer.py` funciona igual, sin modificaciones.
+
+**Conversión desde el Excel maestro.** El Excel maestro (`kb_alimentos_v10.xlsx`) trae los valores por porción SMAE y no vive en el repositorio. Para generar el JSON: cada valor = valor de la porción × 100 ÷ peso neto de la porción. "ND" o celda vacía pasa a `null`. Si los macros de la porción pesan más que el peso neto (porciones muy chicas, como 1 cucharadita de manteca), el divisor sube al peso de los macros y el registro lleva el campo `nota_conversion` (37 registros).
+
+**Calidad de los datos (campo `revision`):**
+
+- `OK` (1,602) y `CORREGIDO` (1,202): sin problemas conocidos o corregidos en la limpieza de v10.
+- `REINCORPORADO` (76): venían de la base anterior; sus micronutrientes están sin dato. Otros 2 de los 78 reincorporados quedaron en `VERIFICAR`.
+- `VERIFICAR` (36): algún dato sin confirmar (energía que no cuadra con los macros, cantidades inferidas por OCR). Ninguno de los alimentos de la tabla de medidas resuelve hoy a un registro `VERIFICAR`.
+- Cualquier campo en `null` significa "sin dato confiable", nunca cero. En la limpieza de v10, 937 ceros dudosos de micronutrientes pasaron a `null`.
+
+**La nota anterior sobre el hierro estaba incompleta.** La versión anterior anulaba `hierro_mg` en ~967 alimentos por "errores de captura". La causa real era que varias columnas de micronutrientes estaban cruzadas: en ~65 % de los alimentos con dato, `vitamina_c_mg` contenía calcio; en ~66 %, `folato_ug` contenía hierro; y en ~47 %, `hierro_mg` contenía sodio. v10 corrige las columnas, por lo que los valores de hierro, calcio, sodio y vitaminas ya son utilizables.
+
+**Cómo se busca, y por qué importa el nombre.** El verificador toma el primer resultado de `buscar_palabras`: el nombre más corto que contiene todas las palabras. Por eso una palabra genérica puede caer en otro producto: con la base v10, "fresas" habría devuelto "Pica Fresa" (un dulce), y "zanahoria" ya devolvía "Jugo de zanahoria" con la base anterior. Para esos casos, `medidas_caseras.json` fija el término exacto en `buscar_como` (fresas → "fresa entera", pechuga de pollo → "pechuga de pollo sin piel cocida", zanahoria → "zanahoria picada cruda"). **Después de cualquier cambio a la base o a la tabla de medidas, correr `validar_tabla.py`** (desde `/opt/sistema-nutricion`, con el `venv` del servidor) y revisar que la cobertura no baje.
 
 **Módulo:** `marifer.py`. Búsqueda insensible a acentos, por palabras sueltas en cualquier orden.
 
@@ -110,7 +138,7 @@ Es el antecedente directo de la BAM, del mismo grupo institucional. Se conserva 
 | `bam.py` | Búsqueda en la BAM local (respaldo) |
 | `openfoodfacts.py` | Cliente de OpenFoodFacts, uso restringido |
 | `usda.py` | Cliente de la API en línea del USDA. **Ya no se usa** — reemplazado por `fndds.py` |
-| `datos/alimentos_marifer.json` | Los 2,342 alimentos de Marifer |
+| `datos/alimentos_marifer.json` | Los 2,916 alimentos de Marifer (v10, 26 campos) |
 | `datos/alimentos_fndds.json` | Los 5,431 alimentos del FNDDS |
 | `datos/alimentos_bam.json` | Los 2,045 alimentos de la BAM |
 | `probar_openfoodfacts.py` | Diagnóstico de cobertura, para referencia |
@@ -125,6 +153,34 @@ Es el antecedente directo de la BAM, del mismo grupo institucional. Se conserva 
 
 ## 8. Verificación realizada
 
+### Migración a la base v10 (21 de septiembre de 2026)
+
+Se corrió `validar_tabla.py` en el servidor después del despliegue, y se comprobó que los archivos llegaron idénticos (hash SHA-256):
+
+| Concepto | Resultado |
+|---|---|
+| Alimentos en la tabla de medidas | 164, más 7 sin aporte nutricional (café, tés, suplementos) |
+| Verificables | 159 (cobertura 97 %) |
+| Con problema | 5: aceite de aguacate, amaranto, pan de masa madre, salsa macha y vinagre de manzana. Ya estaban sin verificar antes de la migración |
+| Prueba puntual | "pechuga de pollo", 1 pechuga → "Pechuga de pollo sin piel cocida", 34.8 g de proteína |
+
+En la misma prueba con los mismos archivos, las 159 verificables se resolvieron así: 91 por Marifer, 26 por BAM y 42 por FNDDS (antes de la migración: 89, 28 y 42).
+
+De las 293 medidas caseras que calcula el verificador, 262 dan el mismo resultado con la base nueva. Las que cambian:
+
+| Alimento | Cambio | Motivo |
+|---|---|---|
+| Pechuga de pollo (1 pechuga, 120 g) | 28.0 → 34.8 g de proteína | Antes usaba valores de pechuga cruda con pesos de pechuga cocida |
+| Aguacate (1/3) | 62 → 54 kcal | El valor por 100 g estaba a casi la mitad; los pesos de la tabla pasaron a pulpa (1/3 = 31 g) |
+| Espinaca cruda y cocida | 16 → 7 kcal (1 taza cruda); 97 → 42 kcal (1 taza cocida) | La cruda usaba valores de espinaca cocida y la cocida tenía un valor por 100 g incorrecto |
+| Espárragos, jícama | 40 a 50 % menos de energía | Valores por 100 g incorrectos en la base anterior |
+| Zanahoria | Mismos valores, alimento correcto | Devolvía "Jugo de zanahoria" |
+| Queso mozzarella (40 g) | 56 → 120 kcal; 12.7 → 8.9 g de proteína | Devolvía la versión "cero grasa" |
+
+Pendiente conocido: "aguacate, 3 rebanadas" quedó en 45 g de pulpa (78 kcal); no hay fuente para ajustarlo y conviene que lo confirme la nutrióloga.
+
+### Prueba del 30 de agosto de 2026 (jerarquía anterior, BAM como principal)
+
 Prueba de jerarquía ejecutada en el servidor el 30 de agosto de 2026 (jerarquía anterior, BAM como principal):
 
 | Búsqueda | Fuente usada | Resultado |
@@ -133,7 +189,7 @@ Prueba de jerarquía ejecutada en el servidor el 30 de agosto de 2026 (jerarquí
 | quinoa | USDA (la BAM no lo tiene) | Quinoa cooked, 120 kcal |
 | salmon | BAM (sí lo tiene, tiene prioridad) | SALMON COCIDO, 156 kcal |
 
-*Pendiente: repetir esta prueba con la jerarquía actual (Marifer → FNDDS → BAM) para tener una verificación vigente.*
+*Esta prueba quedó reemplazada por la del 21 de septiembre de 2026, con la jerarquía actual.*
 
 ---
 
@@ -146,3 +202,4 @@ Prueba de jerarquía ejecutada en el servidor el 30 de agosto de 2026 (jerarquí
 | 2026-09-03 | Corrección de datos y búsqueda: se anulan valores erróneos detectados por validación cruzada; se mejora la detección de plurales en la búsqueda |
 | 2026-09-03 | FNDDS local reemplaza a la API en línea del USDA como fuente #2; se corrigen 7 términos de búsqueda; se documentan 5 alimentos sin cobertura en ninguna fuente |
 | 2026-09-04 | v2.0. Documento actualizado para reflejar la jerarquía real del código (estaba desactualizado desde la migración del 3 de septiembre) |
+| 2026-09-21 | v3.0. Migración a la base v10 de Marifer: 2,916 alimentos (antes 2,342), 26 campos por alimento, micronutrientes en su columna correcta (la base anterior los tenía cruzados) y sin dato como `null`. `medidas_caseras.json` v2.2: se fijó `buscar_como` en fresas, pechuga de pollo, pollo desmenuzado y zanahoria, y el aguacate pasa a pesos de pulpa. Sin cambios de código. Verificado en el servidor con `validar_tabla.py` |
