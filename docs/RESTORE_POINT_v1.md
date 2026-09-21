@@ -267,10 +267,10 @@ Arquitectura de tres fuentes con jerarquía, detallada en `docs/FUENTES_ALIMENTO
 | Archivo/dato | Ubicación | Contenido | ¿Va al repo? |
 |---|---|---|---|
 | Proyecto de Google Cloud | `sistema-nutricion` (consola web) | APIs activas: Drive, Calendar. OAuth consent screen publicado en "Production" | — |
-| Client ID / Secret OAuth | `181382395592-es248860rhqqmoqqajjfssj2qmgfoa0r.apps.googleusercontent.com` / (el secreto ya no se guarda en este documento; vive solo en `rclone.conf` del servidor) | Tipo "Desktop app", nombre `rclone-sistema-nutricion` | No (viven solo en `rclone.conf` del servidor) |
+| Client ID / Secret OAuth | `181382395592-es248860rhqqmoqqajjfssj2qmgfoa0r.apps.googleusercontent.com` / (el secreto ya no se guarda en este documento; vive en dos lugares del servidor, ver "Rotar el secreto OAuth de Google" más abajo) | Tipo "Desktop app", nombre `rclone-sistema-nutricion` | No (viven solo en el servidor: `rclone.conf` y `.env`) |
 | Página de política de privacidad | `app/static/legal-oauth.html` | Exigida por Google para publicar el OAuth en producción. Pública (`/static/` no requiere login) | Sí |
 | Config de `rclone` | `/root/.config/rclone/rclone.conf` en el servidor, remote `gdrive-marifer` | Token OAuth de la cuenta de Marifer, con refresh automático | No |
-| Cuenta de servicio (`google-service-account.json`) | `/opt/sistema-nutricion/google-service-account.json` | **Ya no se usa** (era el intento fallido). Se puede borrar del servidor si se quiere, no se usa en `backup.sh` | No, nunca |
+| Cuenta de servicio (`google-service-account.json`) | `/opt/sistema-nutricion/google-service-account.json` | **Eliminada el 21 de septiembre de 2026.** Era el intento fallido; se borró la llave del servidor, se quitó su acceso a la carpeta de Drive y se eliminó la cuenta en Google Cloud. Nada la usaba | No, nunca |
 | Frase de cifrado GPG | `/opt/sistema-nutricion/.backup_passphrase` (permisos 600) + copiada en el gestor de contraseñas de Michel | Generada aleatoriamente por Claude, 32 caracteres. **Sin ella, los respaldos en Drive son irrecuperables** | No, nunca |
 | Carpeta de Drive de Marifer | ID `1AexbrpkVhn-F67SyeFx7y145Tua4q4kt` ("Respaldos Sistema Nutrición") | Compartida por Marifer, ahora con permiso de escritura para la cuenta OAuth autorizada | — |
 | Script de respaldo | `/opt/sistema-nutricion/backup.sh` (ejecutable) | Empaqueta `sistema_nutricion.db` + `.env`, cifra con GPG (AES256 simétrico), sube con `rclone`, borra temporales, y rota (borra de Drive lo mayor a 30 días) | Sí, en `deploy/backup.sh` |
@@ -286,6 +286,15 @@ gpg --batch --yes --passphrase-file /opt/sistema-nutricion/.backup_passphrase --
 tar -xzf restaurado.tar.gz   # extrae sistema_nutricion.db y .env
 ```
 Si el droplet es nuevo y `rclone` no está configurado todavía, hay que volver a correr `rclone config create gdrive-marifer drive client_id ... client_secret ... token '...'` con las credenciales guardadas (el client_id está en esta tabla; el secreto ya no se guarda aquí y Google no permite volver a verlo: se copia de `/root/.config/rclone/rclone.conf` mientras el servidor exista, o se crea uno nuevo en Google Cloud, en APIs y servicios > Credenciales > cliente `rclone-sistema-nutricion` > Client secrets > Add secret. El token específico habría que regenerarlo si expiró, repitiendo el proceso de autorización con Marifer).
+
+**Rotar el secreto OAuth de Google** (aprendido el 21 de septiembre de 2026). El mismo secreto se usa en dos lugares del servidor y hay que cambiar ambos:
+
+1. `rclone.conf` (campo `client_secret`), que usan los respaldos a Drive.
+2. `GOOGLE_CLIENT_SECRET` en `/opt/sistema-nutricion/.env`, que usa la sincronización con Google Calendar (`calendario.py`). El servicio solo lee el `.env` al arrancar, así que hay que reiniciarlo: `systemctl restart sistema-nutricion`.
+
+Orden recomendado: crear un secreto nuevo en Google Cloud (cliente `rclone-sistema-nutricion`), ponerlo en los dos lugares, reiniciar el servicio, comprobar que los respaldos siguen subiendo y que la renovación del token de los dos calendarios responde 200, inhabilitar el secreto viejo y borrarlo solo después de confirmar todo. En la rotación del 21 de septiembre de 2026 el `.env` se quedó con el secreto viejo; se detectó antes de que Calendar fallara.
+
+Además, cada respaldo incluye una copia del `.env`. Los respaldos hasta el del 21 de septiembre de 2026 a las 03:00 UTC traen el secreto viejo, que ya no existe; si se restaura uno de esos, hay que poner el secreto vigente en el `.env` y en `rclone.conf`.
 
 ## ✅ COMPLETADO (1 sep 2026): sincronización con Google Calendar
 
@@ -550,3 +559,4 @@ Verificado con dos casos: paciente de 85 kg con GLP-1 (objetivo 105 g, detectó 
 | 2026-09-01 | Registro de opciones ya prescritas al aprobar una dieta, usado junto con la retroalimentación del follow-up como contexto (no instrucción) para la siguiente dieta. Se subieron los timeouts de nginx a 300s porque el prompt mas grande hacia que Gemini tardara mas. **Con esto, la Fase 1 queda practicamente completa** |
 | 2026-09-01 | Confirmación agregada antes de cancelar, reagendar, marcar completada o no asistió una cita |
 | 2026-09-21 | Se quita de este documento el secreto del cliente OAuth de Google, que había quedado escrito por error. El secreto se rotó el 20 de septiembre y el anterior se borró en Google Cloud, así que el valor que aparece en el historial de git ya no sirve |
+| 2026-09-21 | Se elimina la cuenta de servicio de Google (remanente sin uso del intento fallido de respaldo) y se documenta que el secreto OAuth vive en `rclone.conf` y en el `.env`, con el orden para rotarlo |
