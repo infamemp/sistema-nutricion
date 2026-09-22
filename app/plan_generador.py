@@ -320,6 +320,130 @@ def _seccion_seguimiento(retroalimentacion_followup=None, notas_paciente=None):
     )
 
 
+def _fecha_corta(f):
+    """AAAA-MM-DD de un datetime, date o texto ISO."""
+    return str(f)[:10] if f else ""
+
+
+def _dias_entre(a, b):
+    """Dias entre dos fechas (datetime o date); None si falta alguna."""
+    if not a or not b:
+        return None
+    try:
+        da = a.date() if hasattr(a, "date") and callable(a.date) else a
+        db = b.date() if hasattr(b, "date") and callable(b.date) else b
+        return (db - da).days
+    except Exception:
+        return None
+
+
+def _delta(actual, previo):
+    """Diferencia con signo y un decimal, ej. '-1.4' o '+0.2'."""
+    if actual is None or previo is None:
+        return None
+    d = round(float(actual) - float(previo), 1)
+    if d == 0:
+        return "sin cambio"
+    return ("+" if d > 0 else "\u2212") + str(abs(d))
+
+
+def _seccion_evolucion(evolucion):
+    """
+    Bloque "Qué cambió": compara la medición actual contra la anterior y la
+    inicial, y muestra la tendencia de apego y ejercicio de los últimos
+    seguimientos. Las cifras las calcula el sistema, no la IA, para que
+    sean exactas. Devuelve texto vacío si no hay nada que mostrar.
+
+    evolucion = {
+        "mediciones": [ {fecha_medicion, peso, porcentaje_grasa, ...}, ... ]
+                      en orden cronológico (la última es la actual),
+        "seguimientos": [ {numero_consulta, fecha_consulta,
+                           porcentaje_apego, promedio_dias_ejercicio}, ... ]
+                      en orden cronológico,
+    }
+    """
+    if not evolucion:
+        return ""
+
+    lineas = []
+    mediciones = [m for m in (evolucion.get("mediciones") or []) if m]
+
+    if len(mediciones) == 1:
+        lineas.append("Solo hay una medición registrada ("
+                      + _fecha_corta(mediciones[0].get("fecha_medicion"))
+                      + "); todavía no hay evolución que comparar.")
+    elif len(mediciones) > 1:
+        actual = mediciones[-1]
+        inicial = mediciones[0]
+        # La anterior es la más reciente de un DÍA distinto al de la actual,
+        # para no comparar contra una captura duplicada del mismo día.
+        anterior = None
+        for m in reversed(mediciones[:-1]):
+            if _fecha_corta(m.get("fecha_medicion")) != _fecha_corta(actual.get("fecha_medicion")):
+                anterior = m
+                break
+
+        dias_ant = _dias_entre(anterior.get("fecha_medicion"), actual.get("fecha_medicion")) if anterior else None
+        dias_ini = _dias_entre(inicial.get("fecha_medicion"), actual.get("fecha_medicion"))
+
+        encabezado = "Mediciones registradas: " + str(len(mediciones))
+        encabezado += " | inicial " + _fecha_corta(inicial.get("fecha_medicion"))
+        if anterior:
+            encabezado += " | anterior " + _fecha_corta(anterior.get("fecha_medicion"))
+        encabezado += " | actual " + _fecha_corta(actual.get("fecha_medicion"))
+        lineas.append(encabezado)
+
+        for campo, etiqueta in [
+            ("peso", "Peso (kg)"),
+            ("porcentaje_grasa", "Grasa corporal (%)"),
+            ("masa_grasa_kg", "Masa grasa (kg)"),
+            ("mme", "Masa muscular esquelética (kg)"),
+            ("grasa_visceral", "Grasa visceral"),
+        ]:
+            valor = actual.get(campo)
+            if valor is None:
+                continue
+            linea = "  " + etiqueta + ": " + str(valor)
+            if anterior:
+                d = _delta(valor, anterior.get(campo))
+                if d is not None:
+                    linea += " | vs anterior: " + d
+                    if dias_ant is not None:
+                        linea += " en " + str(dias_ant) + " días"
+            if inicial is not actual and inicial is not anterior:
+                d = _delta(valor, inicial.get(campo))
+                if d is not None:
+                    linea += " | vs inicial: " + d
+                    if dias_ini is not None:
+                        linea += " en " + str(dias_ini) + " días"
+            lineas.append(linea)
+
+    seguimientos = [s for s in (evolucion.get("seguimientos") or []) if s]
+    apegos = [s.get("porcentaje_apego") for s in seguimientos if s.get("porcentaje_apego") is not None]
+    ejercicio = [s.get("promedio_dias_ejercicio") for s in seguimientos
+                 if s.get("promedio_dias_ejercicio") is not None]
+    if apegos:
+        lineas.append("Apego al plan en los últimos seguimientos (%): "
+                      + " \u2192 ".join(str(round(a)) for a in apegos))
+    if ejercicio:
+        lineas.append("Días de ejercicio por semana en los últimos seguimientos: "
+                      + " \u2192 ".join(str(e) for e in ejercicio))
+
+    if not lineas:
+        return ""
+
+    return (
+        "Cifras calculadas por el sistema a partir del expediente; son exactas, "
+        "no las recalcules.\n\n"
+        + "\n".join(lineas)
+        + "\n\nEsta evolución es el insumo principal para decidir qué ajustar. "
+        "Identifica qué indica (avance, estancamiento, pérdida de masa muscular, "
+        "aumento de grasa visceral, apego bajo o en descenso, etc.) y ajusta el "
+        "plan en consecuencia. Un plan que no responde a la evolución del "
+        "paciente no sirve.\n"
+    )
+
+
 ESQUEMA_PLAN = """{
   "resumen_del_caso": "2 o 3 frases sobre la situación del paciente y el enfoque elegido",
   "banderas_clinicas": [
@@ -360,7 +484,8 @@ ESQUEMA_PLAN = """{
 def construir_prompt(paciente, historia, medicion, padecimientos=None,
                      usa_glp1=False, es_deportista=False, esta_embarazada=False,
                      opciones_previas=None, retroalimentacion_followup=None,
-                     analisis_laboratorio=None, incluir_kb=True, notas_paciente=None):
+                     analisis_laboratorio=None, incluir_kb=True, notas_paciente=None,
+                     evolucion=None):
     """
     Arma el prompt completo para Gemini.
     """
@@ -387,6 +512,14 @@ def construir_prompt(paciente, historia, medicion, padecimientos=None,
         "repites fórmulas genéricas. Cada paciente es distinto y el plan debe "
         "reflejar su situación particular, sus preferencias y sus restricciones."
     )
+
+    texto_evolucion = _seccion_evolucion(evolucion)
+    if texto_evolucion:
+        partes.append("\n\n" + ("=" * 70) + "\n")
+        partes.append("QUÉ CAMBIÓ: EVOLUCIÓN DEL PACIENTE\n")
+        partes.append(texto_evolucion)
+        partes.append("Explica en resumen_del_caso, en una frase, qué indica la "
+                      "evolución y cómo responde el plan.\n")
 
     partes.append("\n\n" + ("=" * 70) + "\n")
     partes.append(_seccion_expediente(paciente, historia, medicion))
@@ -558,7 +691,8 @@ def construir_prompt(paciente, historia, medicion, padecimientos=None,
 def generar_plan(paciente, historia, medicion, padecimientos=None,
                  usa_glp1=False, es_deportista=False, esta_embarazada=False,
                  opciones_previas=None, retroalimentacion_followup=None,
-                 analisis_laboratorio=None, incluir_kb=True, notas_paciente=None):
+                 analisis_laboratorio=None, incluir_kb=True, notas_paciente=None,
+                 evolucion=None):
     """
     Genera el plan tecnico completo para un paciente.
     Devuelve el plan como diccionario, mas metadatos del proceso.
@@ -574,6 +708,7 @@ def generar_plan(paciente, historia, medicion, padecimientos=None,
         analisis_laboratorio=analisis_laboratorio,
         incluir_kb=incluir_kb,
         notas_paciente=notas_paciente,
+        evolucion=evolucion,
     )
 
     plan = gemini.generar_json(prompt)
@@ -602,7 +737,7 @@ def generar_plan(paciente, historia, medicion, padecimientos=None,
 def construir_prompt_porciones(paciente, historia, medicion, incluir_ejemplos, padecimientos=None,
                                usa_glp1=False, es_deportista=False, esta_embarazada=False, incluir_kb=True,
                                retroalimentacion_followup=None, notas_paciente=None,
-                               analisis_laboratorio=None):
+                               analisis_laboratorio=None, evolucion=None):
     """
     Arma el prompt para la "Tabla de Porciones": un formato de prescripcion
     mas simple que el menu completo, para pacientes que no quieren un menu
@@ -638,6 +773,12 @@ def construir_prompt_porciones(paciente, historia, medicion, incluir_ejemplos, p
         "genérica. El paciente y sus restricciones son los que determinan qué "
         "alimentos incluir en cada tabla."
     )
+
+    texto_evolucion = _seccion_evolucion(evolucion)
+    if texto_evolucion:
+        partes.append("\n\n" + ("=" * 70) + "\n")
+        partes.append("QUÉ CAMBIÓ: EVOLUCIÓN DEL PACIENTE\n")
+        partes.append(texto_evolucion)
 
     partes.append("\n\n" + ("=" * 70) + "\n")
     partes.append(_seccion_expediente(paciente, historia, medicion))
@@ -761,7 +902,7 @@ def construir_prompt_porciones(paciente, historia, medicion, incluir_ejemplos, p
 def generar_tabla_porciones(paciente, historia, medicion, incluir_ejemplos, padecimientos=None,
                             usa_glp1=False, es_deportista=False, esta_embarazada=False, incluir_kb=True,
                             retroalimentacion_followup=None, notas_paciente=None,
-                            analisis_laboratorio=None):
+                            analisis_laboratorio=None, evolucion=None):
     """
     Genera una Tabla de Porciones. A diferencia de generar_plan(), el
     resultado de Gemini se usa directo como documento final, sin pasar por
@@ -782,6 +923,7 @@ def generar_tabla_porciones(paciente, historia, medicion, incluir_ejemplos, pade
         retroalimentacion_followup=retroalimentacion_followup,
         notas_paciente=notas_paciente,
         analisis_laboratorio=analisis_laboratorio,
+        evolucion=evolucion,
     )
 
     documento = gemini.generar_json(prompt)
