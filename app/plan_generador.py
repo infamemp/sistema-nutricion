@@ -444,6 +444,135 @@ def _seccion_evolucion(evolucion):
     )
 
 
+# ---------------------------------------------------------------------
+# CONTINUIDAD CON EL PLAN ANTERIOR (candado anti-copia)
+# Marifer elige el modo antes de generar; el sistema verifica despues,
+# con codigo y no con la IA, cuantas opciones se repitieron.
+# ---------------------------------------------------------------------
+
+MODOS_CONTINUIDAD = {
+    "mantener": "Mantener",
+    "renovar": "Renovar",
+    "nuevo": "Menú nuevo",
+}
+
+_INSTRUCCION_MODO = {
+    "mantener": (
+        "MODO ELEGIDO POR LA NUTRIÓLOGA: MANTENER. El plan le está funcionando al "
+        "paciente. Conserva las opciones del plan anterior y ajusta solo lo "
+        "indispensable: porciones si cambió el objetivo, lo que no le gustó, y lo "
+        "que la información nueva pida cambiar. Registra cada ajuste."
+    ),
+    "renovar": (
+        "MODO ELEGIDO POR LA NUTRIÓLOGA: RENOVAR. Conserva lo que le funcionó al "
+        "paciente, pero incluye AL MENOS 1 opción nueva en CADA tiempo de comida "
+        "(desayuno, colación, comida y cena)."
+    ),
+    "nuevo": (
+        "MODO ELEGIDO POR LA NUTRIÓLOGA: MENÚ NUEVO. La mayoría de las opciones de "
+        "cada tiempo de comida deben ser nuevas. Conserva COMO MÁXIMO 1 opción por "
+        "tiempo de comida, y solo si el paciente dijo explícitamente que le gustó. "
+        "Puedes reutilizar alimentos que el paciente disfruta, pero en "
+        "preparaciones o combinaciones distintas."
+    ),
+}
+
+_PALABRAS_VACIAS = set("""
+de del la las el los y o u con sin en a al por para su sus un una unos unas
+taza tazas cda cdas cdita cditas cucharada cucharadas cucharadita cucharaditas
+pieza piezas rebanada rebanadas filete filetes lata latas paquetito paquetitos
+scoop g gr gramos kg ml aprox aproximadamente media medio mitad mitades tercio
+cuarto cuartos entero enteros entera enteras al gusto natural sin azucar
+acompanado acompanada acompanados acompanadas servido servida preparado preparada
+opcion elige mas
+""".split())
+
+
+def _sin_acentos(texto):
+    import unicodedata
+    texto = unicodedata.normalize("NFD", str(texto or "").lower())
+    return "".join(c for c in texto if unicodedata.category(c) != "Mn")
+
+
+def _palabras_clave(texto):
+    """Palabras que identifican una opcion: alimentos y preparaciones,
+    sin cantidades, medidas ni conectores."""
+    import re
+    t = _sin_acentos(texto)
+    t = re.sub(r"[^a-z\s]", " ", t)
+    palabras = set()
+    for p in t.split():
+        if len(p) < 3 or p in _PALABRAS_VACIAS:
+            continue
+        # plural simple: "huevos" y "huevo" cuentan igual
+        if p.endswith("es") and len(p) > 5:
+            p = p[:-2]
+        elif p.endswith("s") and len(p) > 4:
+            p = p[:-1]
+        palabras.add(p)
+    return palabras
+
+
+def _parecido(a, b):
+    """Indice de Jaccard entre las palabras clave de dos opciones (0 a 1)."""
+    pa, pb = _palabras_clave(a), _palabras_clave(b)
+    if not pa or not pb:
+        return 0.0
+    return len(pa & pb) / len(pa | pb)
+
+
+# A partir de este parecido, una opcion cuenta como repetida del plan
+# anterior (misma combinacion, aunque cambien cantidades o un detalle menor).
+UMBRAL_REPETIDA = 0.6
+
+_NOMBRES_TIEMPO = {
+    "desayuno": "Desayuno", "colacion": "Colación", "comida": "Comida", "cena": "Cena",
+}
+
+
+def comparar_con_anterior(menu_nuevo, opciones_previas, modo="renovar"):
+    """
+    Compara las opciones del menu nuevo contra las del plan anterior, por
+    tiempo de comida. No usa IA.
+
+    menu_nuevo: {"desayuno": {"opciones": [...]}, ...}  (documento redactado)
+    opciones_previas: {"desayuno": [...], ...}
+    Devuelve un resumen con el total repetido y las alertas segun el modo.
+    """
+    resultado = {"modo": modo, "total": 0, "repetidas": 0, "por_tiempo": {}, "alertas": []}
+    if not opciones_previas:
+        return resultado
+
+    for tiempo, datos in (menu_nuevo or {}).items():
+        nuevas = (datos or {}).get("opciones", []) or []
+        previas = opciones_previas.get(tiempo) or []
+        repetidas = []
+        for op in nuevas:
+            if any(_parecido(op, pr) >= UMBRAL_REPETIDA for pr in previas):
+                repetidas.append(op)
+        total = len(nuevas)
+        resultado["total"] += total
+        resultado["repetidas"] += len(repetidas)
+        resultado["por_tiempo"][tiempo] = {
+            "total": total,
+            "repetidas": repetidas,
+            "nuevas": total - len(repetidas),
+        }
+
+        nombre = _NOMBRES_TIEMPO.get(tiempo, tiempo)
+        if not previas or not total:
+            continue
+        if modo == "renovar" and len(repetidas) == total:
+            resultado["alertas"].append(nombre + ": sin opciones nuevas (el modo Renovar pide al menos 1).")
+        elif modo == "nuevo" and len(repetidas) > 1:
+            resultado["alertas"].append(
+                nombre + ": " + str(len(repetidas)) + " opciones repetidas "
+                "(el modo Menú nuevo permite como máximo 1)."
+            )
+
+    return resultado
+
+
 ESQUEMA_PLAN = """{
   "resumen_del_caso": "2 o 3 frases sobre la situación del paciente y el enfoque elegido",
   "banderas_clinicas": [
@@ -490,7 +619,8 @@ def construir_prompt(paciente, historia, medicion, padecimientos=None,
                      usa_glp1=False, es_deportista=False, esta_embarazada=False,
                      opciones_previas=None, retroalimentacion_followup=None,
                      analisis_laboratorio=None, incluir_kb=True, notas_paciente=None,
-                     evolucion=None, plan_anterior=None, decisiones_nutriologa=None):
+                     evolucion=None, plan_anterior=None, decisiones_nutriologa=None,
+                     modo_continuidad="renovar"):
     """
     Arma el prompt completo para Gemini.
     """
@@ -604,6 +734,15 @@ def construir_prompt(paciente, historia, medicion, padecimientos=None,
             "con un motivo concreto del expediente. Esto incluye la suplementación: "
             "no quites, agregues ni cambies un suplemento sin registrarlo ahí.\n\n"
         )
+        partes.append(_INSTRUCCION_MODO.get(modo_continuidad, _INSTRUCCION_MODO["renovar"]) + "\n")
+        partes.append(
+            "Una opción nueva es una combinación distinta, no la misma opción con "
+            "otra cantidad o con un ingrediente menor cambiado. En cualquier modo "
+            "se respetan las decisiones de la nutrióloga, las alergias, "
+            "intolerancias y alimentos que el paciente evita. Registra también en "
+            "cambios_vs_plan_anterior, en una sola entrada con aspecto 'continuidad', "
+            "qué opciones conservaste y por qué.\n\n"
+        )
 
         if plan_anterior:
             for campo, etiqueta in [
@@ -620,8 +759,16 @@ def construir_prompt(paciente, historia, medicion, padecimientos=None,
 
         if opciones_previas:
             partes.append("OPCIONES DE MENÚ DEL PLAN ANTERIOR:\n")
-            for o in opciones_previas[:30]:
-                partes.append("  - " + str(o) + "\n")
+            if isinstance(opciones_previas, dict):
+                for tiempo, lista in opciones_previas.items():
+                    if not lista:
+                        continue
+                    partes.append("  " + _NOMBRES_TIEMPO.get(tiempo, tiempo).upper() + ":\n")
+                    for o in lista[:8]:
+                        partes.append("    - " + str(o) + "\n")
+            else:
+                for o in opciones_previas[:30]:
+                    partes.append("  - " + str(o) + "\n")
 
     if analisis_laboratorio:
         partes.append("\n\n" + ("=" * 70) + "\n")
@@ -737,7 +884,8 @@ def generar_plan(paciente, historia, medicion, padecimientos=None,
                  usa_glp1=False, es_deportista=False, esta_embarazada=False,
                  opciones_previas=None, retroalimentacion_followup=None,
                  analisis_laboratorio=None, incluir_kb=True, notas_paciente=None,
-                 evolucion=None, plan_anterior=None, decisiones_nutriologa=None):
+                 evolucion=None, plan_anterior=None, decisiones_nutriologa=None,
+                 modo_continuidad="renovar"):
     """
     Genera el plan tecnico completo para un paciente.
     Devuelve el plan como diccionario, mas metadatos del proceso.
@@ -756,6 +904,7 @@ def generar_plan(paciente, historia, medicion, padecimientos=None,
         evolucion=evolucion,
         plan_anterior=plan_anterior,
         decisiones_nutriologa=decisiones_nutriologa,
+        modo_continuidad=modo_continuidad,
     )
 
     plan = gemini.generar_json(prompt)
