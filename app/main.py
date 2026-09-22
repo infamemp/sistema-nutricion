@@ -1172,6 +1172,7 @@ def generar_dieta_confirmada(
     db: Session = Depends(get_db),
 ):
     analisis_laboratorio = None
+    laboratorio_fecha = None
     if incluir_laboratorio and laboratorio_id:
         lab = (
             db.query(models.Laboratorio)
@@ -1180,15 +1181,18 @@ def generar_dieta_confirmada(
         )
         if lab:
             analisis_laboratorio = lab.analisis_ia
+            laboratorio_fecha = lab.fecha_subida
 
     return _generar_dieta_y_redirigir(
         paciente_id, db, analisis_laboratorio=analisis_laboratorio, tipo_documento=tipo_documento,
         usa_glp1=bool(usa_glp1), esta_embarazada=bool(esta_embarazada), es_deportista=bool(es_deportista),
+        laboratorio_fecha=laboratorio_fecha,
     )
 
 
 def _generar_dieta_y_redirigir(paciente_id: int, db: Session, analisis_laboratorio=None, tipo_documento="menu",
-                               usa_glp1=False, esta_embarazada=False, es_deportista=False):
+                               usa_glp1=False, esta_embarazada=False, es_deportista=False,
+                               laboratorio_fecha=None):
     paciente = obtener_paciente(db, paciente_id)
 
     historia_obj = (
@@ -1299,6 +1303,7 @@ def _generar_dieta_y_redirigir(paciente_id: int, db: Session, analisis_laborator
             "confiable": resultado["verificacion"]["confiable"],
             "problemas": resultado["verificacion"]["problemas"],
         }
+        plan_anterior_version = None
     else:
         # Continuidad con el plan anterior: se le pasa a Gemini como
         # contexto, nunca como instruccion de repetir o evitar (ver
@@ -1312,7 +1317,9 @@ def _generar_dieta_y_redirigir(paciente_id: int, db: Session, analisis_laborator
             .first()
         )
         opciones_previas = None
+        plan_anterior_version = None
         if ultima_aprobada:
+            plan_anterior_version = ultima_aprobada.version
             filas_opciones = (
                 db.query(models.OpcionPrescrita)
                 .filter(models.OpcionPrescrita.dieta_id == ultima_aprobada.id)
@@ -1338,6 +1345,22 @@ def _generar_dieta_y_redirigir(paciente_id: int, db: Session, analisis_laborator
             "confiable": resultado_plan["verificacion"]["resumen"]["confiable"],
             "cobertura": resultado_plan["verificacion"]["resumen"]["cobertura_promedio"],
         }
+
+    # Registro de que informacion uso la IA para esta version. Se muestra
+    # en la pantalla de la dieta para que Marifer sepa con que se genero.
+    guardado["contexto"] = {
+        "seguimiento_numero": ultimo_followup.numero_consulta if ultimo_followup else None,
+        "seguimiento_fecha": (
+            ultimo_followup.fecha_consulta.isoformat()
+            if ultimo_followup and ultimo_followup.fecha_consulta else None
+        ),
+        "notas": len(notas_paciente or []),
+        "laboratorio_fecha": laboratorio_fecha.isoformat() if laboratorio_fecha else None,
+        "plan_anterior_version": plan_anterior_version,
+        "usa_glp1": bool(usa_glp1),
+        "esta_embarazada": bool(esta_embarazada),
+        "es_deportista": bool(es_deportista),
+    }
 
     dieta = models.DietaVersion(
         paciente_id=paciente_id,
@@ -1403,6 +1426,101 @@ def crear_dieta_manual(paciente_id: int, db: Session = Depends(get_db)):
     )
 
 
+MESES_CORTOS = ["ene", "feb", "mar", "abr", "may", "jun",
+                "jul", "ago", "sep", "oct", "nov", "dic"]
+
+
+def _fecha_texto(f, con_hora=True):
+    """Ej. '22 sep 2026, 13:41'. Acepta datetime, date o texto ISO."""
+    if not f:
+        return ""
+    if isinstance(f, str):
+        try:
+            f = datetime.fromisoformat(f)
+        except ValueError:
+            return f
+    texto = str(f.day) + " " + MESES_CORTOS[f.month - 1] + " " + str(f.year)
+    if con_hora and isinstance(f, datetime):
+        texto += ", " + f.strftime("%H:%M")
+    return texto
+
+
+def _contexto_texto(dieta, guardado):
+    """
+    Una linea legible con la informacion que se uso para generar esta
+    version: seguimiento, notas, laboratorio, plan anterior y condiciones.
+    """
+    if dieta.creado_por == "manual":
+        return "Captura manual, sin IA."
+    if dieta.instruccion_ajuste:
+        # ajustar_dieta numera la nueva version como la anterior + 1.
+        return ("Ajuste de la versión " + str(dieta.version - 1) + ": “"
+                + dieta.instruccion_ajuste + "”")
+
+    c = guardado.get("contexto")
+    if not c:
+        return "Sin registro (dieta generada antes de que existiera este dato)."
+
+    partes = []
+    if c.get("seguimiento_numero"):
+        texto = "Seguimiento #" + str(c["seguimiento_numero"])
+        if c.get("seguimiento_fecha"):
+            texto += " (" + _fecha_texto(c["seguimiento_fecha"], con_hora=False) + ")"
+        partes.append(texto)
+    else:
+        partes.append("Sin seguimiento")
+
+    n = c.get("notas") or 0
+    partes.append(str(n) + (" nota" if n == 1 else " notas"))
+
+    if c.get("laboratorio_fecha"):
+        partes.append("Laboratorio del " + _fecha_texto(c["laboratorio_fecha"], con_hora=False))
+    else:
+        partes.append("Sin laboratorio")
+
+    if c.get("plan_anterior_version"):
+        partes.append("Plan anterior: versión " + str(c["plan_anterior_version"]))
+
+    condiciones = []
+    if c.get("usa_glp1"):
+        condiciones.append("GLP-1")
+    if c.get("esta_embarazada"):
+        condiciones.append("embarazo")
+    if c.get("es_deportista"):
+        condiciones.append("deportista")
+    partes.append("Condiciones: " + (", ".join(condiciones) if condiciones else "ninguna"))
+
+    return " · ".join(partes)
+
+
+def _pdf_de_dieta(dieta, paciente, guardado):
+    """
+    Genera el PDF de una version con SU fecha de creacion (no la del dia
+    en que se descarga o envia). El nombre del archivo lleva esa fecha y
+    el numero de version, para distinguir varias versiones del mismo dia.
+    """
+    fecha = dieta.fecha_creacion.date() if dieta.fecha_creacion else None
+
+    limpio = "".join(
+        c for c in paciente.nombre_completo if c.isalnum() or c in (" ", "_")
+    ).strip().replace(" ", "_")
+    prefijo = "porciones_" if dieta.tipo_documento == "porciones" else "plan_"
+    nombre = (prefijo + limpio + "_" + (fecha.isoformat() if fecha else "sin_fecha")
+              + "_v" + str(dieta.version) + ".pdf")
+    os.makedirs(pdf_gen.RUTA_SALIDA, exist_ok=True)
+    ruta = os.path.join(pdf_gen.RUTA_SALIDA, nombre)
+
+    if dieta.tipo_documento == "porciones":
+        return pdf_gen.generar_porciones(
+            guardado["documento"], paciente.nombre_completo,
+            fecha_documento=fecha, ruta_salida=ruta,
+        )
+    return pdf_gen.generar(
+        guardado["documento"], paciente.nombre_completo,
+        fecha_documento=fecha, ruta_salida=ruta,
+    )
+
+
 @app.get("/pacientes/{paciente_id}/dieta/{dieta_id}", response_class=HTMLResponse)
 def ver_dieta(paciente_id: int, dieta_id: int, request: Request, db: Session = Depends(get_db)):
     paciente = obtener_paciente(db, paciente_id)
@@ -1429,6 +1547,8 @@ def ver_dieta(paciente_id: int, dieta_id: int, request: Request, db: Session = D
                 "confiable": guardado.get("confiable", False),
                 "problemas": guardado.get("problemas", []),
                 "mensaje": mensaje,
+                "fecha_texto": _fecha_texto(dieta.fecha_creacion),
+                "contexto_texto": _contexto_texto(dieta, guardado),
             },
         )
 
@@ -1442,6 +1562,8 @@ def ver_dieta(paciente_id: int, dieta_id: int, request: Request, db: Session = D
             "menu": guardado["documento"].get("menu", {}),
             "confiable": guardado.get("confiable", False),
             "mensaje": mensaje,
+            "fecha_texto": _fecha_texto(dieta.fecha_creacion),
+            "contexto_texto": _contexto_texto(dieta, guardado),
         },
     )
 
@@ -1451,6 +1573,12 @@ def aprobar_dieta(paciente_id: int, dieta_id: int, db: Session = Depends(get_db)
     dieta = db.query(models.DietaVersion).filter(models.DietaVersion.id == dieta_id).first()
     if not dieta:
         raise HTTPException(status_code=404, detail="Version de dieta no encontrada")
+
+    # Si ya estaba aprobada (doble clic o reenvio del formulario), no se
+    # vuelve a registrar: duplicaria las opciones del plan anterior que
+    # despues ve la IA.
+    if dieta.estado == "aprobada":
+        return RedirectResponse(url="/pacientes/" + str(paciente_id), status_code=303)
 
     dieta.estado = "aprobada"
 
@@ -1734,10 +1862,7 @@ def enviar_dieta_por_correo(paciente_id: int, dieta_id: int, db: Session = Depen
         raise HTTPException(status_code=404, detail="Version de dieta no encontrada")
 
     guardado = _cargar_contenido(dieta)
-    if dieta.tipo_documento == "porciones":
-        ruta_pdf = pdf_gen.generar_porciones(guardado["documento"], paciente.nombre_completo)
-    else:
-        ruta_pdf = pdf_gen.generar(guardado["documento"], paciente.nombre_completo)
+    ruta_pdf = _pdf_de_dieta(dieta, paciente, guardado)
 
     correo.enviar_dieta(paciente.correo_electronico, paciente.nombre_completo, ruta_pdf)
 
@@ -1755,10 +1880,7 @@ def descargar_pdf(paciente_id: int, dieta_id: int, db: Session = Depends(get_db)
         raise HTTPException(status_code=404, detail="Version de dieta no encontrada")
 
     guardado = _cargar_contenido(dieta)
-    if dieta.tipo_documento == "porciones":
-        ruta_pdf = pdf_gen.generar_porciones(guardado["documento"], paciente.nombre_completo)
-    else:
-        ruta_pdf = pdf_gen.generar(guardado["documento"], paciente.nombre_completo)
+    ruta_pdf = _pdf_de_dieta(dieta, paciente, guardado)
 
     return FileResponse(ruta_pdf, media_type="application/pdf", filename=os.path.basename(ruta_pdf))
 
