@@ -1153,10 +1153,24 @@ def formulario_generar_dieta(paciente_id: int, request: Request, db: Session = D
     )
     condiciones = _detectar_condiciones(paciente, historia_obj)
 
+    # La tarjeta "Continuidad con el plan anterior" solo aparece si hay un
+    # Menu aprobado previo contra el cual comparar.
+    hay_plan_anterior = (
+        db.query(models.DietaVersion)
+        .filter(models.DietaVersion.paciente_id == paciente_id)
+        .filter(models.DietaVersion.estado == "aprobada")
+        .first()
+    ) is not None
+
     return templates.TemplateResponse(
         request,
         "dieta_nueva.html",
-        {"paciente": paciente, "laboratorios": laboratorios, "condiciones": condiciones},
+        {
+            "paciente": paciente,
+            "laboratorios": laboratorios,
+            "condiciones": condiciones,
+            "hay_plan_anterior": hay_plan_anterior,
+        },
     )
 
 
@@ -1169,8 +1183,12 @@ def generar_dieta_confirmada(
     usa_glp1: Optional[str] = Form(None),
     esta_embarazada: Optional[str] = Form(None),
     es_deportista: Optional[str] = Form(None),
+    modo_continuidad: str = Form("renovar"),
     db: Session = Depends(get_db),
 ):
+    if modo_continuidad not in plan_gen.MODOS_CONTINUIDAD:
+        modo_continuidad = "renovar"
+
     analisis_laboratorio = None
     laboratorio_fecha = None
     if incluir_laboratorio and laboratorio_id:
@@ -1187,6 +1205,7 @@ def generar_dieta_confirmada(
         paciente_id, db, analisis_laboratorio=analisis_laboratorio, tipo_documento=tipo_documento,
         usa_glp1=bool(usa_glp1), esta_embarazada=bool(esta_embarazada), es_deportista=bool(es_deportista),
         laboratorio_fecha=laboratorio_fecha,
+        modo_continuidad=modo_continuidad,
     )
 
 
@@ -1227,7 +1246,7 @@ def _decisiones_de_marifer(db, paciente_id, maximo=10):
 
 def _generar_dieta_y_redirigir(paciente_id: int, db: Session, analisis_laboratorio=None, tipo_documento="menu",
                                usa_glp1=False, esta_embarazada=False, es_deportista=False,
-                               laboratorio_fecha=None):
+                               laboratorio_fecha=None, modo_continuidad="renovar"):
     paciente = obtener_paciente(db, paciente_id)
 
     historia_obj = (
@@ -1402,7 +1421,15 @@ def _generar_dieta_y_redirigir(paciente_id: int, db: Session, analisis_laborator
                 .all()
             )
             if filas_opciones:
-                opciones_previas = [f.descripcion for f in filas_opciones if f.descripcion]
+                # Agrupadas por tiempo de comida y sin duplicados, para que la
+                # IA y el comparador anti-copia vean cada tiempo por separado.
+                opciones_previas = {}
+                for f in filas_opciones:
+                    if not f.descripcion:
+                        continue
+                    lista = opciones_previas.setdefault(f.tipo_comida or "otros", [])
+                    if f.descripcion not in lista:
+                        lista.append(f.descripcion)
 
         # Plan anterior completo: ademas de las opciones de menu, la IA ve la
         # suplementacion, objetivos y recomendaciones que Marifer aprobo.
@@ -1433,6 +1460,7 @@ def _generar_dieta_y_redirigir(paciente_id: int, db: Session, analisis_laborator
             evolucion=evolucion,
             plan_anterior=plan_anterior,
             decisiones_nutriologa=decisiones_nutriologa,
+            modo_continuidad=modo_continuidad,
         )
         resultado_doc = redactor.redactar(resultado_plan["plan"], nombre_paciente=paciente.nombre_completo)
 
@@ -1451,6 +1479,16 @@ def _generar_dieta_y_redirigir(paciente_id: int, db: Session, analisis_laborator
             "decisiones_usadas": len(decisiones_nutriologa),
         }
 
+        # Candado anti-copia: el sistema (no la IA) cuenta cuantas opciones
+        # del menu nuevo se repiten del plan anterior, segun el modo elegido.
+        if opciones_previas:
+            guardado["revision"]["continuidad"] = plan_gen.comparar_con_anterior(
+                resultado_doc["documento"].get("menu", {}),
+                opciones_previas,
+                modo_continuidad,
+            )
+            guardado["modo_continuidad"] = modo_continuidad
+
     # Registro de que informacion uso la IA para esta version. Se muestra
     # en la pantalla de la dieta para que Marifer sepa con que se genero.
     guardado["contexto"] = {
@@ -1463,6 +1501,7 @@ def _generar_dieta_y_redirigir(paciente_id: int, db: Session, analisis_laborator
         "laboratorio_fecha": laboratorio_fecha.isoformat() if laboratorio_fecha else None,
         "plan_anterior_version": plan_anterior_version,
         "decisiones": guardado.get("decisiones_usadas", 0),
+        "modo_continuidad": guardado.get("modo_continuidad"),
         "usa_glp1": bool(usa_glp1),
         "esta_embarazada": bool(esta_embarazada),
         "es_deportista": bool(es_deportista),
@@ -1586,6 +1625,9 @@ def _contexto_texto(dieta, guardado):
 
     if c.get("plan_anterior_version"):
         partes.append("Plan anterior: versión " + str(c["plan_anterior_version"]))
+
+    if c.get("modo_continuidad"):
+        partes.append("Modo: " + plan_gen.MODOS_CONTINUIDAD.get(c["modo_continuidad"], c["modo_continuidad"]))
 
     d = c.get("decisiones") or 0
     if d:
