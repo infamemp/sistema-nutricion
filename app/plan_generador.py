@@ -476,6 +476,11 @@ ESQUEMA_PLAN = """{
   "suplementacion_sugerida": [
     {"suplemento": "nombre", "dosis": "cantidad", "momento": "cuando", "motivo": "por qué"}
   ],
+  "cambios_vs_plan_anterior": [
+    {"aspecto": "suplementación | objetivos | desayuno | colación | comida | cena | recomendaciones",
+     "cambio": "qué se cambió, se agregó o se quitó",
+     "motivo": "por qué, ligado a un dato concreto: evolución, seguimiento, laboratorio, nota o decisión de la nutrióloga"}
+  ],
   "notas_para_la_nutriologa": ["algo que conviene que revise o considere"],
   "advertencias": ["si algo del expediente requiere atención médica, no nutricional"]
 }"""
@@ -485,7 +490,7 @@ def construir_prompt(paciente, historia, medicion, padecimientos=None,
                      usa_glp1=False, es_deportista=False, esta_embarazada=False,
                      opciones_previas=None, retroalimentacion_followup=None,
                      analisis_laboratorio=None, incluir_kb=True, notas_paciente=None,
-                     evolucion=None):
+                     evolucion=None, plan_anterior=None, decisiones_nutriologa=None):
     """
     Arma el prompt completo para Gemini.
     """
@@ -520,6 +525,25 @@ def construir_prompt(paciente, historia, medicion, padecimientos=None,
         partes.append(texto_evolucion)
         partes.append("Explica en resumen_del_caso, en una frase, qué indica la "
                       "evolución y cómo responde el plan.\n")
+
+    if decisiones_nutriologa:
+        partes.append("\n\n" + ("=" * 70) + "\n")
+        partes.append("DECISIONES DE LA NUTRIÓLOGA: OBLIGATORIAS\n")
+        partes.append(
+            "Son indicaciones que la nutrióloga dio al ajustar planes anteriores de "
+            "este paciente. Son decisiones clínicas suyas y se respetan SIEMPRE: el "
+            "plan nuevo no puede contradecirlas. Van en orden cronológico; si dos se "
+            "contradicen, manda la más reciente. Si con la información nueva crees que "
+            "alguna debería cambiar, NO la cambies: mantenla y explica tu sugerencia "
+            "en notas_para_la_nutriologa. Ejemplo: si ella indicó agregar un "
+            "suplemento, ese suplemento aparece en suplementacion_sugerida; si indicó "
+            "quitarlo, no aparece.\n\n"
+        )
+        for d in decisiones_nutriologa:
+            etiqueta = "Versión " + str(d.get("version", "?"))
+            if d.get("fecha"):
+                etiqueta += " (" + _fecha_corta(d["fecha"]) + ")"
+            partes.append("  - " + etiqueta + ": " + str(d.get("instruccion", "")).strip() + "\n")
 
     partes.append("\n\n" + ("=" * 70) + "\n")
     partes.append(_seccion_expediente(paciente, historia, medicion))
@@ -563,20 +587,41 @@ def construir_prompt(paciente, historia, medicion, padecimientos=None,
         partes.append("INFORMACIÓN DE SEGUIMIENTO\n")
         partes.append(seguimiento)
 
-    if opciones_previas:
+    if plan_anterior or opciones_previas:
         partes.append("\n\n" + ("=" * 70) + "\n")
-        partes.append("CONTINUIDAD CON EL PLAN ANTERIOR\n")
+        titulo = "PLAN ANTERIOR APROBADO"
+        if plan_anterior and plan_anterior.get("version"):
+            titulo += " (versión " + str(plan_anterior["version"]) + ")"
+        partes.append(titulo + "\n")
         partes.append(
-            "Lo siguiente es INFORMACIÓN DE CONTEXTO, no una instrucción de repetir "
-            "ni de evitar. Usa tu criterio clínico igual que con el resto del "
-            "expediente: a veces lo correcto es mantener una opción que le funcionó "
-            "bien al paciente y solo ajustar porciones para el nuevo objetivo; otras "
-            "veces, sobre todo si hubo dificultad o disgusto, lo correcto es cambiar "
-            "de fondo. Decide caso por caso.\n\n"
+            "Es el plan que la nutrióloga aprobó y que el paciente siguió. El plan "
+            "nuevo parte de aquí y se adecua a lo que cambió (evolución, seguimiento, "
+            "notas, laboratorio). Copiarlo sin cambios no es aceptable, y cambiarlo "
+            "todo sin motivo tampoco: puedes conservar lo que al paciente le funcionó "
+            "(reajustando porciones si hace falta) y debes cambiar lo que no funcionó "
+            "o lo que la información nueva pide cambiar.\n\n"
+            "REGISTRA CADA CAMBIO en cambios_vs_plan_anterior: qué cambió y por qué, "
+            "con un motivo concreto del expediente. Esto incluye la suplementación: "
+            "no quites, agregues ni cambies un suplemento sin registrarlo ahí.\n\n"
         )
-        partes.append("OPCIONES YA PRESCRITAS ANTERIORMENTE:\n\n")
-        for o in opciones_previas[:30]:
-            partes.append("  - " + str(o) + "\n")
+
+        if plan_anterior:
+            for campo, etiqueta in [
+                ("suplementacion", "Suplementación vigente"),
+                ("objetivos_clave", "Objetivos"),
+                ("recomendaciones", "Recomendaciones"),
+            ]:
+                valores = plan_anterior.get(campo) or []
+                if valores:
+                    partes.append(etiqueta.upper() + ":\n")
+                    for v in valores:
+                        partes.append("  - " + str(v) + "\n")
+                    partes.append("\n")
+
+        if opciones_previas:
+            partes.append("OPCIONES DE MENÚ DEL PLAN ANTERIOR:\n")
+            for o in opciones_previas[:30]:
+                partes.append("  - " + str(o) + "\n")
 
     if analisis_laboratorio:
         partes.append("\n\n" + ("=" * 70) + "\n")
@@ -692,7 +737,7 @@ def generar_plan(paciente, historia, medicion, padecimientos=None,
                  usa_glp1=False, es_deportista=False, esta_embarazada=False,
                  opciones_previas=None, retroalimentacion_followup=None,
                  analisis_laboratorio=None, incluir_kb=True, notas_paciente=None,
-                 evolucion=None):
+                 evolucion=None, plan_anterior=None, decisiones_nutriologa=None):
     """
     Genera el plan tecnico completo para un paciente.
     Devuelve el plan como diccionario, mas metadatos del proceso.
@@ -709,6 +754,8 @@ def generar_plan(paciente, historia, medicion, padecimientos=None,
         incluir_kb=incluir_kb,
         notas_paciente=notas_paciente,
         evolucion=evolucion,
+        plan_anterior=plan_anterior,
+        decisiones_nutriologa=decisiones_nutriologa,
     )
 
     plan = gemini.generar_json(prompt)
