@@ -58,6 +58,30 @@
                 </div>
             </div>
 
+            {% if hay_plan_anterior %}
+            <div id="tarjeta-continuidad" class="bg-white rounded-xl shadow-sm p-6 mb-6">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Continuidad con el plan anterior</label>
+                <p class="text-xs text-gray-500 mb-4">Solo para Menú. Después de generar verás cuántas opciones se repitieron.</p>
+                <div class="space-y-3">
+                    <label class="flex items-start gap-2 text-sm text-gray-700">
+                        <input type="radio" name="modo_continuidad" value="mantener" class="mt-1 text-green-600 focus:ring-green-400">
+                        <span><span class="font-medium">Mantener</span>
+                            <span class="block text-xs text-gray-500">El plan está funcionando: conservar las opciones y ajustar solo lo indispensable.</span></span>
+                    </label>
+                    <label class="flex items-start gap-2 text-sm text-gray-700">
+                        <input type="radio" name="modo_continuidad" value="renovar" checked class="mt-1 text-green-600 focus:ring-green-400">
+                        <span><span class="font-medium">Renovar</span>
+                            <span class="block text-xs text-gray-500">Conservar lo que funciona y agregar al menos 1 opción nueva por tiempo de comida.</span></span>
+                    </label>
+                    <label class="flex items-start gap-2 text-sm text-gray-700">
+                        <input type="radio" name="modo_continuidad" value="nuevo" class="mt-1 text-green-600 focus:ring-green-400">
+                        <span><span class="font-medium">Menú nuevo</span>
+                            <span class="block text-xs text-gray-500">La mayoría de las opciones nuevas; como máximo 1 conservada por tiempo de comida.</span></span>
+                    </label>
+                </div>
+            </div>
+            {% endif %}
+
             <div class="bg-white rounded-xl shadow-sm p-6 mb-6">
                 <label class="block text-sm font-medium text-gray-700 mb-1">Condiciones que cambian el cálculo</label>
                 <p class="text-xs text-gray-500 mb-4">El sistema marca lo que detecta en el expediente. Revisa y corrige antes de generar.</p>
@@ -109,6 +133,21 @@
     </div>
 
     <script>
+        // La tarjeta de continuidad solo aplica al Menu: se oculta si se
+        // elige Tabla de Porciones.
+        (function () {
+            var tarjeta = document.getElementById('tarjeta-continuidad');
+            if (!tarjeta) return;
+            function actualizar() {
+                var porciones = document.querySelector('input[name="tipo_documento"][value="porciones"]');
+                tarjeta.classList.toggle('hidden', porciones && porciones.checked);
+            }
+            document.querySelectorAll('input[name="tipo_documento"]').forEach(function (r) {
+                r.addEventListener('change', actualizar);
+            });
+            actualizar();
+        })();
+
         // Laboratorio del dia: si hoy se subio un laboratorio, la casilla
         // "Incluir analisis de laboratorio" sale marcada con ese laboratorio
         // seleccionado. Si no, queda desmarcada y Marifer decide.
