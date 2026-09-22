@@ -55,7 +55,7 @@
         </div>
         {% endif %}
 
-        {% if revision and (revision.cambios or revision.notas or revision.advertencias) %}
+        {% if revision and (revision.cambios or revision.notas or revision.advertencias or revision.continuidad) %}
         <div class="bg-amber-50 border border-amber-200 rounded-xl p-6 mb-6">
             <h2 class="text-lg font-medium text-amber-800 mb-1">Para revisión de Marifer</h2>
             <p class="text-xs text-amber-700 mb-4">Solo se ve aquí. No aparece en el PDF del paciente.</p>
@@ -65,6 +65,41 @@
             <ul class="space-y-1 text-sm text-red-700 list-disc pl-4 mb-4">
                 {% for a in revision.advertencias %}<li>{{ a }}</li>{% endfor %}
             </ul>
+            {% endif %}
+
+            {% if revision.continuidad and revision.continuidad.total %}
+            {% set cont = revision.continuidad %}
+            {% set nombres_modo = {"mantener": "Mantener", "renovar": "Renovar", "nuevo": "Menú nuevo"} %}
+            {% set nombres_tiempo = {"desayuno": "Desayuno", "colacion": "Colación", "comida": "Comida", "cena": "Cena"} %}
+            <h3 class="text-sm font-medium text-gray-800 mb-2">Continuidad con el plan anterior</h3>
+            <p class="text-sm text-gray-700 mb-2">
+                Modo elegido: <span class="font-medium">{{ nombres_modo.get(cont.modo, cont.modo) }}</span>
+                &middot; <span class="font-medium">{{ cont.repetidas }} de {{ cont.total }}</span> opciones iguales al plan anterior
+            </p>
+            {% if cont.alertas %}
+            <ul class="space-y-1 text-sm text-red-700 list-disc pl-4 mb-2">
+                {% for a in cont.alertas %}<li>{{ a }}</li>{% endfor %}
+            </ul>
+            {% endif %}
+            {% if cont.repetidas %}
+            <details class="mb-4">
+                <summary class="text-xs text-amber-700 cursor-pointer">Ver opciones repetidas</summary>
+                <div class="mt-2 space-y-2">
+                    {% for tiempo, datos in cont.por_tiempo.items() %}
+                    {% if datos.repetidas %}
+                    <div>
+                        <span class="text-xs uppercase tracking-wide text-amber-700">{{ nombres_tiempo.get(tiempo, tiempo) }} &middot; {{ datos.repetidas|length }} de {{ datos.total }}</span>
+                        <ul class="text-xs text-gray-600 list-disc pl-4">
+                            {% for r in datos.repetidas %}<li>{{ r }}</li>{% endfor %}
+                        </ul>
+                    </div>
+                    {% endif %}
+                    {% endfor %}
+                </div>
+            </details>
+            {% else %}
+            <div class="mb-4"></div>
+            {% endif %}
             {% endif %}
 
             {% if revision.cambios %}
