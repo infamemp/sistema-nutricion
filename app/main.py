@@ -1190,6 +1190,41 @@ def generar_dieta_confirmada(
     )
 
 
+def _decisiones_de_marifer(db, paciente_id, maximo=10):
+    """
+    Junta las instrucciones que Marifer escribio en "Ajustar" y que
+    terminaron en un plan aprobado. Recorre hacia atras la cadena de
+    ajustes de cada version aprobada (un plan pudo ajustarse varias veces
+    antes de aprobarse). Devuelve las mas recientes, en orden cronologico.
+    Son obligatorias para la IA (decision de Marifer, 22 sep 2026).
+    """
+    aprobadas = (
+        db.query(models.DietaVersion)
+        .filter(models.DietaVersion.paciente_id == paciente_id)
+        .filter(models.DietaVersion.estado == "aprobada")
+        .all()
+    )
+    encontradas = {}
+    for v in aprobadas:
+        actual = v
+        vistos = set()
+        while actual is not None and actual.id not in vistos and actual.instruccion_ajuste:
+            vistos.add(actual.id)
+            encontradas[actual.id] = actual
+            if not actual.version_anterior_id:
+                break
+            actual = (
+                db.query(models.DietaVersion)
+                .filter(models.DietaVersion.id == actual.version_anterior_id)
+                .first()
+            )
+    ordenadas = sorted(encontradas.values(), key=lambda d: d.version)[-maximo:]
+    return [
+        {"version": d.version, "fecha": d.fecha_creacion, "instruccion": d.instruccion_ajuste}
+        for d in ordenadas
+    ]
+
+
 def _generar_dieta_y_redirigir(paciente_id: int, db: Session, analisis_laboratorio=None, tipo_documento="menu",
                                usa_glp1=False, esta_embarazada=False, es_deportista=False,
                                laboratorio_fecha=None):
@@ -1369,6 +1404,23 @@ def _generar_dieta_y_redirigir(paciente_id: int, db: Session, analisis_laborator
             if filas_opciones:
                 opciones_previas = [f.descripcion for f in filas_opciones if f.descripcion]
 
+        # Plan anterior completo: ademas de las opciones de menu, la IA ve la
+        # suplementacion, objetivos y recomendaciones que Marifer aprobo.
+        plan_anterior = None
+        if ultima_aprobada:
+            try:
+                doc_anterior = _cargar_contenido(ultima_aprobada).get("documento", {}) or {}
+            except Exception:
+                doc_anterior = {}
+            plan_anterior = {
+                "version": ultima_aprobada.version,
+                "suplementacion": doc_anterior.get("suplementacion") or [],
+                "objetivos_clave": doc_anterior.get("objetivos_clave") or [],
+                "recomendaciones": doc_anterior.get("recomendaciones") or [],
+            }
+
+        decisiones_nutriologa = _decisiones_de_marifer(db, paciente_id)
+
         resultado_plan = plan_gen.generar_plan(
             paciente_dict, historia_dict, medicion_dict, padecimientos=padecimientos,
             usa_glp1=usa_glp1,
@@ -1379,6 +1431,8 @@ def _generar_dieta_y_redirigir(paciente_id: int, db: Session, analisis_laborator
             analisis_laboratorio=analisis_laboratorio,
             notas_paciente=notas_paciente,
             evolucion=evolucion,
+            plan_anterior=plan_anterior,
+            decisiones_nutriologa=decisiones_nutriologa,
         )
         resultado_doc = redactor.redactar(resultado_plan["plan"], nombre_paciente=paciente.nombre_completo)
 
@@ -1386,6 +1440,15 @@ def _generar_dieta_y_redirigir(paciente_id: int, db: Session, analisis_laborator
             "documento": resultado_doc["documento"],
             "confiable": resultado_plan["verificacion"]["resumen"]["confiable"],
             "cobertura": resultado_plan["verificacion"]["resumen"]["cobertura_promedio"],
+            # Solo para Marifer, nunca va al PDF: que cambio respecto al plan
+            # anterior y por que, y las notas y advertencias de la IA (antes
+            # se generaban pero se descartaban).
+            "revision": {
+                "cambios": resultado_plan["plan"].get("cambios_vs_plan_anterior") or [],
+                "notas": resultado_plan["plan"].get("notas_para_la_nutriologa") or [],
+                "advertencias": resultado_plan["plan"].get("advertencias") or [],
+            },
+            "decisiones_usadas": len(decisiones_nutriologa),
         }
 
     # Registro de que informacion uso la IA para esta version. Se muestra
@@ -1399,6 +1462,7 @@ def _generar_dieta_y_redirigir(paciente_id: int, db: Session, analisis_laborator
         "notas": len(notas_paciente or []),
         "laboratorio_fecha": laboratorio_fecha.isoformat() if laboratorio_fecha else None,
         "plan_anterior_version": plan_anterior_version,
+        "decisiones": guardado.get("decisiones_usadas", 0),
         "usa_glp1": bool(usa_glp1),
         "esta_embarazada": bool(esta_embarazada),
         "es_deportista": bool(es_deportista),
@@ -1523,6 +1587,10 @@ def _contexto_texto(dieta, guardado):
     if c.get("plan_anterior_version"):
         partes.append("Plan anterior: versión " + str(c["plan_anterior_version"]))
 
+    d = c.get("decisiones") or 0
+    if d:
+        partes.append(str(d) + (" indicación de Marifer" if d == 1 else " indicaciones de Marifer"))
+
     condiciones = []
     if c.get("usa_glp1"):
         condiciones.append("GLP-1")
@@ -1604,6 +1672,7 @@ def ver_dieta(paciente_id: int, dieta_id: int, request: Request, db: Session = D
             "menu": guardado["documento"].get("menu", {}),
             "confiable": guardado.get("confiable", False),
             "mensaje": mensaje,
+            "revision": guardado.get("revision"),
             "fecha_texto": _fecha_texto(dieta.fecha_creacion),
             "contexto_texto": _contexto_texto(dieta, guardado),
         },
