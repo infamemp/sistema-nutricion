@@ -40,7 +40,8 @@
         <div class="mb-6 flex justify-between items-start">
             <div>
                 <h1 class="text-2xl font-medium text-green-800">Borrador de dieta</h1>
-                <p class="text-sm text-gray-600 mt-1">{{ paciente.nombre_completo }} &middot; versión {{ dieta.version }}</p>
+                <p class="text-sm text-gray-600 mt-1">{{ paciente.nombre_completo }} &middot; versión {{ dieta.version }}{% if fecha_texto %} &middot; creada el {{ fecha_texto }}{% endif %}</p>
+                {% if contexto_texto %}<p class="text-xs text-gray-500 mt-1">Generada con: {{ contexto_texto }}</p>{% endif %}
             </div>
             <span class="text-xs px-3 py-1.5 rounded-full font-medium
                 {% if confiable %}bg-green-100 text-green-700{% else %}bg-orange-100 text-orange-700{% endif %}">
