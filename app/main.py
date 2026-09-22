@@ -1,6 +1,7 @@
 import json
 import os
 import time
+import unicodedata
 from fastapi import FastAPI, Request, Form, Depends, HTTPException, File, UploadFile
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
@@ -1070,6 +1071,65 @@ def _cargar_contenido(dieta):
     return json.loads(dieta.contenido)
 
 
+def _sin_acentos(texto):
+    """Minusculas y sin acentos, para comparar palabras clave."""
+    texto = unicodedata.normalize("NFD", str(texto or "").lower())
+    return "".join(c for c in texto if unicodedata.category(c) != "Mn")
+
+
+# Palabras clave para pre-marcar las casillas de la pantalla "Generar
+# dieta". Es solo una sugerencia: Marifer confirma o corrige antes de
+# generar. Se comparan en minusculas y sin acentos.
+PALABRAS_GLP1 = [
+    "glp-1", "glp1", "glp 1",
+    "ozempic", "wegovy", "rybelsus", "semaglutid",
+    "mounjaro", "zepbound", "tirzepatid",
+    "saxenda", "victoza", "liraglutid",
+    "trulicity", "dulaglutid", "exenatid", "byetta",
+]
+PALABRAS_EMBARAZO = [
+    "embarazada", "cursa embarazo", "embarazo actual",
+    "semanas de gestacion", "sdg",
+]
+PALABRAS_DEPORTISTA = [
+    "deportista", "atleta", "competencia", "competir", "compite",
+    "maraton", "medio maraton", "triatlon", "ironman", "ultra",
+    "alto rendimiento", "seleccionado", "crossfit", "fisicoculturismo",
+]
+
+
+def _detectar_condiciones(paciente, historia_obj):
+    """
+    Revisa el expediente y sugiere si el paciente usa GLP-1, esta
+    embarazada o es deportista. Devuelve un diccionario de booleanos que
+    se usa para pre-marcar las casillas de la pantalla "Generar dieta".
+    """
+    def contiene(textos, palabras):
+        todo = " ".join(_sin_acentos(t) for t in textos if t)
+        return any(p in todo for p in palabras)
+
+    h = historia_obj
+    textos_medicos = [
+        getattr(h, "medicamentos", None),
+        getattr(h, "tratamiento_medico_actual", None),
+        getattr(h, "padecimientos_diagnosticados", None),
+    ]
+    textos_embarazo = textos_medicos + [
+        getattr(paciente, "motivo_consulta", None),
+    ]
+    textos_deporte = [
+        getattr(h, "ejercicio_rutina", None),
+        getattr(paciente, "profesion", None),
+        getattr(paciente, "motivo_consulta", None),
+    ]
+
+    return {
+        "usa_glp1": contiene(textos_medicos, PALABRAS_GLP1),
+        "esta_embarazada": contiene(textos_embarazo, PALABRAS_EMBARAZO),
+        "es_deportista": contiene(textos_deporte, PALABRAS_DEPORTISTA),
+    }
+
+
 @app.get("/pacientes/{paciente_id}/dieta/nueva", response_class=HTMLResponse)
 def formulario_generar_dieta(paciente_id: int, request: Request, db: Session = Depends(get_db)):
     """
@@ -1086,10 +1146,17 @@ def formulario_generar_dieta(paciente_id: int, request: Request, db: Session = D
         .all()
     )
 
+    historia_obj = (
+        db.query(models.HistoriaClinica)
+        .filter(models.HistoriaClinica.paciente_id == paciente_id)
+        .first()
+    )
+    condiciones = _detectar_condiciones(paciente, historia_obj)
+
     return templates.TemplateResponse(
         request,
         "dieta_nueva.html",
-        {"paciente": paciente, "laboratorios": laboratorios},
+        {"paciente": paciente, "laboratorios": laboratorios, "condiciones": condiciones},
     )
 
 
@@ -1099,6 +1166,9 @@ def generar_dieta_confirmada(
     tipo_documento: str = Form("menu"),
     incluir_laboratorio: Optional[str] = Form(None),
     laboratorio_id: Optional[str] = Form(None),
+    usa_glp1: Optional[str] = Form(None),
+    esta_embarazada: Optional[str] = Form(None),
+    es_deportista: Optional[str] = Form(None),
     db: Session = Depends(get_db),
 ):
     analisis_laboratorio = None
@@ -1112,11 +1182,13 @@ def generar_dieta_confirmada(
             analisis_laboratorio = lab.analisis_ia
 
     return _generar_dieta_y_redirigir(
-        paciente_id, db, analisis_laboratorio=analisis_laboratorio, tipo_documento=tipo_documento
+        paciente_id, db, analisis_laboratorio=analisis_laboratorio, tipo_documento=tipo_documento,
+        usa_glp1=bool(usa_glp1), esta_embarazada=bool(esta_embarazada), es_deportista=bool(es_deportista),
     )
 
 
-def _generar_dieta_y_redirigir(paciente_id: int, db: Session, analisis_laboratorio=None, tipo_documento="menu"):
+def _generar_dieta_y_redirigir(paciente_id: int, db: Session, analisis_laboratorio=None, tipo_documento="menu",
+                               usa_glp1=False, esta_embarazada=False, es_deportista=False):
     paciente = obtener_paciente(db, paciente_id)
 
     historia_obj = (
@@ -1142,13 +1214,55 @@ def _generar_dieta_y_redirigir(paciente_id: int, db: Session, analisis_laborator
             detail="El paciente no tiene ninguna medicion registrada (se necesita el peso). Agrega una desde un follow-up.",
         )
 
-    paciente_dict = {"sexo": paciente.sexo}
+    paciente_dict = {
+        "sexo": paciente.sexo,
+        "edad": _calcular_edad(paciente.fecha_nacimiento) if paciente.fecha_nacimiento else None,
+        "estatura": paciente.estatura,
+        "motivo_consulta": paciente.motivo_consulta,
+    }
     historia_dict = {c.name: getattr(historia_obj, c.name) for c in historia_obj.__table__.columns}
     medicion_dict = {c.name: getattr(medicion_obj, c.name) for c in medicion_obj.__table__.columns}
 
     padecimientos = []
     if historia_dict.get("padecimientos_diagnosticados"):
         padecimientos.append(historia_dict["padecimientos_diagnosticados"])
+    if esta_embarazada:
+        # Para que la IA consulte las fuentes de embarazo de la knowledgebase.
+        padecimientos.append("embarazo")
+
+    # Informacion nueva de la consulta: ultimo seguimiento completo y la
+    # bitacora de notas. Aplica tanto a Menu como a Tabla de Porciones.
+    ultimo_followup = (
+        db.query(models.FollowUp)
+        .filter(models.FollowUp.paciente_id == paciente_id)
+        .order_by(models.FollowUp.numero_consulta.desc())
+        .first()
+    )
+    retroalimentacion = None
+    if ultimo_followup:
+        retroalimentacion = {
+            "numero_consulta": ultimo_followup.numero_consulta,
+            "fecha_consulta": ultimo_followup.fecha_consulta,
+            "porcentaje_apego": ultimo_followup.porcentaje_apego,
+            "promedio_dias_ejercicio": ultimo_followup.promedio_dias_ejercicio,
+            "que_le_gusto": ultimo_followup.que_le_gusto,
+            "que_no_le_gusto": ultimo_followup.que_no_le_gusto,
+            "cambios_que_hizo": ultimo_followup.cambios_que_hizo,
+            "en_que_puede_mejorar": ultimo_followup.en_que_puede_mejorar,
+            "estatus_tratamiento_medico": ultimo_followup.estatus_tratamiento_medico,
+            "ajustes_acordados": ultimo_followup.ajustes_acordados,
+            "notas_libres": ultimo_followup.notas_libres,
+        }
+
+    # Las 20 notas mas recientes, para no inflar el prompt con historia vieja.
+    filas_notas = (
+        db.query(models.NotaPaciente)
+        .filter(models.NotaPaciente.paciente_id == paciente_id)
+        .order_by(models.NotaPaciente.fecha_creacion.desc())
+        .limit(20)
+        .all()
+    )
+    notas_paciente = [{"fecha": n.fecha_creacion, "texto": n.texto} for n in filas_notas] or None
 
     ultima = (
         db.query(models.DietaVersion)
@@ -1173,6 +1287,12 @@ def _generar_dieta_y_redirigir(paciente_id: int, db: Session, analisis_laborator
         resultado = plan_gen.generar_tabla_porciones(
             paciente_dict, historia_dict, medicion_dict, incluir_ejemplos,
             padecimientos=padecimientos,
+            usa_glp1=usa_glp1,
+            es_deportista=es_deportista,
+            esta_embarazada=esta_embarazada,
+            retroalimentacion_followup=retroalimentacion,
+            notas_paciente=notas_paciente,
+            analisis_laboratorio=analisis_laboratorio,
         )
         guardado = {
             "documento": resultado["documento"],
@@ -1201,27 +1321,15 @@ def _generar_dieta_y_redirigir(paciente_id: int, db: Session, analisis_laborator
             if filas_opciones:
                 opciones_previas = [f.descripcion for f in filas_opciones if f.descripcion]
 
-        ultimo_followup = (
-            db.query(models.FollowUp)
-            .filter(models.FollowUp.paciente_id == paciente_id)
-            .order_by(models.FollowUp.numero_consulta.desc())
-            .first()
-        )
-        retroalimentacion = None
-        if ultimo_followup:
-            retroalimentacion = {
-                "que_le_gusto": ultimo_followup.que_le_gusto,
-                "que_no_le_gusto": ultimo_followup.que_no_le_gusto,
-                "cambios_que_hizo": ultimo_followup.cambios_que_hizo,
-                "en_que_puede_mejorar": ultimo_followup.en_que_puede_mejorar,
-                "ajustes_acordados": ultimo_followup.ajustes_acordados,
-            }
-
         resultado_plan = plan_gen.generar_plan(
             paciente_dict, historia_dict, medicion_dict, padecimientos=padecimientos,
+            usa_glp1=usa_glp1,
+            es_deportista=es_deportista,
+            esta_embarazada=esta_embarazada,
             opciones_previas=opciones_previas,
             retroalimentacion_followup=retroalimentacion,
             analisis_laboratorio=analisis_laboratorio,
+            notas_paciente=notas_paciente,
         )
         resultado_doc = redactor.redactar(resultado_plan["plan"], nombre_paciente=paciente.nombre_completo)
 
