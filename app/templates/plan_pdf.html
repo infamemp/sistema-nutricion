@@ -146,17 +146,27 @@
   }
 
   /* ---------- CAJA TIP ---------- */
+  /* La caja es de tipo bloque, no flex: WeasyPrint ignora la regla de
+     "no partir" (break-inside: avoid) en contenedores flex, y el TIP se
+     partia entre dos paginas. La etiqueta se posiciona a la izquierda y
+     el texto queda alineado a su derecha. */
   .caja-tip {
     background: linear-gradient(90deg, var(--verde-50), var(--azul-100));
     border-radius: 2.5mm;
     padding: 3.5mm 5mm;
     margin-bottom: 4mm;
-    display: flex;
-    align-items: flex-start;
-    gap: 3mm;
+    display: block;
+    position: relative;
     break-inside: avoid;
+    page-break-inside: avoid;
   }
   .caja-tip .etiqueta-tip {
+    position: absolute;
+    left: 5mm;
+    top: 4mm;
+    width: 9mm;
+    box-sizing: border-box;
+    text-align: center;
     background: var(--azul-700);
     color: #ffffff;
     font-size: 6.5pt;
@@ -167,7 +177,17 @@
     flex-shrink: 0;
     margin-top: 0.5mm;
   }
-  .caja-tip .texto-tip { font-size: 9.5pt; line-height: 1.5; white-space: pre-line; }
+  .caja-tip .texto-tip { display: block; margin-left: 12mm; font-size: 9.5pt; line-height: 1.5; white-space: pre-line; }
+
+  /* ARRANQUE DE SECCION: el TIP y el primer elemento viajan juntos, para
+     que nunca quede un titulo o un TIP solo al final de una pagina. */
+  .arranque { break-inside: avoid; page-break-inside: avoid; }
+  .arranque ul.checklist { margin-bottom: 0; }
+  .arranque.con-resto ul.opciones li:last-child {
+    border-bottom: 0.5pt solid #ececE4;
+    padding-bottom: 3mm;
+  }
+  ul.opciones.resto li:first-child { padding-top: 3mm; }
 
   /* ---------- LISTA CON CHECKS (checklist) ---------- */
   ul.checklist { margin: 0 0 2mm 0; padding: 0; list-style: none; }
@@ -322,14 +342,23 @@
       <div class="subrayado"></div>
     </th></tr></thead>
     <tbody><tr><td>
-      {% if bloque.instruccion %}
-      <div class="caja-tip"><span class="etiqueta-tip">TIP</span><span class="texto-tip">{{ bloque.instruccion }}</span></div>
-      {% endif %}
+      <div class="arranque">
+        {% if bloque.instruccion %}
+        <div class="caja-tip"><span class="etiqueta-tip">TIP</span><span class="texto-tip">{{ bloque.instruccion }}</span></div>
+        {% endif %}
+        {% if bloque.elementos %}
+        <ul class="checklist">
+          <li><span class="check">&#10003;</span><span>{{ bloque.elementos[0] }}</span></li>
+        </ul>
+        {% endif %}
+      </div>
+      {% if bloque.elementos|length > 1 %}
       <ul class="checklist">
-        {% for item in bloque.elementos %}
+        {% for item in bloque.elementos[1:] %}
         <li><span class="check">&#10003;</span><span>{{ item }}</span></li>
         {% endfor %}
       </ul>
+      {% endif %}
     </td></tr></tbody>
   </table>
 
@@ -340,14 +369,23 @@
       <div class="subrayado"></div>
     </th></tr></thead>
     <tbody><tr><td>
-      {% if bloque.instruccion %}
-      <div class="caja-tip"><span class="etiqueta-tip">TIP</span><span class="texto-tip">{{ bloque.instruccion }}</span></div>
-      {% endif %}
-      <ul class="opciones">
-        {% for op in bloque.opciones %}
-        <li><span class="num">{{ loop.index }}</span><span>{{ op }}</span></li>
+      <div class="arranque{% if bloque.opciones|length > 1 %} con-resto{% endif %}">
+        {% if bloque.instruccion %}
+        <div class="caja-tip"><span class="etiqueta-tip">TIP</span><span class="texto-tip">{{ bloque.instruccion }}</span></div>
+        {% endif %}
+        {% if bloque.opciones %}
+        <ul class="opciones">
+          <li><span class="num">1</span><span>{{ bloque.opciones[0] }}</span></li>
+        </ul>
+        {% endif %}
+      </div>
+      {% if bloque.opciones|length > 1 %}
+      <ul class="opciones resto">
+        {% for op in bloque.opciones[1:] %}
+        <li><span class="num">{{ loop.index + 1 }}</span><span>{{ op }}</span></li>
         {% endfor %}
       </ul>
+      {% endif %}
     </td></tr></tbody>
   </table>
 
@@ -369,16 +407,18 @@
       <div class="subrayado"></div>
     </th></tr></thead>
     <tbody><tr><td>
-      {% if bloque.instruccion %}
-      <div class="caja-tip"><span class="etiqueta-tip">TIP</span><span class="texto-tip">{{ bloque.instruccion }}</span></div>
-      {% endif %}
-      {% if bloque.distribucion %}
-      <ul class="checklist">
-        {% for item in bloque.distribucion %}
-        <li><span class="check">&#10003;</span><span>{{ item }}</span></li>
-        {% endfor %}
-      </ul>
-      {% endif %}
+      <div class="arranque">
+        {% if bloque.instruccion %}
+        <div class="caja-tip"><span class="etiqueta-tip">TIP</span><span class="texto-tip">{{ bloque.instruccion }}</span></div>
+        {% endif %}
+        {% if bloque.distribucion %}
+        <ul class="checklist">
+          {% for item in bloque.distribucion %}
+          <li><span class="check">&#10003;</span><span>{{ item }}</span></li>
+          {% endfor %}
+        </ul>
+        {% endif %}
+      </div>
       <div class="rejilla-categorias">
         {% for cat in bloque.categorias %}
         <div class="categoria c-{{ cat.clave }}">
