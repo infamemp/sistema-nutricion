@@ -58,6 +58,22 @@
                 </div>
             </div>
 
+            <div class="bg-white rounded-xl shadow-sm p-6 mb-6">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Condiciones que cambian el cálculo</label>
+                <p class="text-xs text-gray-500 mb-4">El sistema marca lo que detecta en el expediente. Revisa y corrige antes de generar.</p>
+                <div class="space-y-3">
+                    {% for campo, texto in [("usa_glp1", "Usa GLP-1 (Ozempic, Mounjaro, Saxenda, etc.)"), ("esta_embarazada", "Embarazada actualmente"), ("es_deportista", "Deportista")] %}
+                    <label class="flex items-center gap-2 text-sm text-gray-700">
+                        <input type="checkbox" name="{{ campo }}" value="1"
+                               {% if condiciones and condiciones[campo] %}checked{% endif %}
+                               class="text-green-600 focus:ring-green-400">
+                        {{ texto }}
+                        {% if condiciones and condiciones[campo] %}<span class="text-xs text-green-700">(detectado en el expediente)</span>{% endif %}
+                    </label>
+                    {% endfor %}
+                </div>
+            </div>
+
             {% if laboratorios %}
             <div class="bg-white rounded-xl shadow-sm p-6 mb-6">
                 <label class="flex items-center gap-2 text-sm font-medium text-gray-700 mb-4">
