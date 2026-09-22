@@ -153,10 +153,17 @@ def _seccion_expediente(paciente, historia, medicion):
         lineas.append("Sexo: " + str(paciente.get("sexo") or "no especificado"))
         if paciente.get("edad"):
             lineas.append("Edad: " + str(paciente["edad"]) + " años")
+        if paciente.get("estatura"):
+            lineas.append("Estatura: " + str(paciente["estatura"]) + " cm")
+        if paciente.get("motivo_consulta"):
+            lineas.append("Motivo de consulta: " + str(paciente["motivo_consulta"]))
 
     if medicion:
         lineas.append("")
-        lineas.append("MEDICIÓN MÁS RECIENTE")
+        titulo = "MEDICIÓN MÁS RECIENTE"
+        if medicion.get("fecha_medicion"):
+            titulo += " (" + str(medicion["fecha_medicion"])[:10] + ")"
+        lineas.append(titulo)
         for campo, etiqueta in [
             ("peso", "Peso (kg)"),
             ("imc", "IMC"),
@@ -164,6 +171,7 @@ def _seccion_expediente(paciente, historia, medicion):
             ("masa_grasa_kg", "Masa grasa (kg)"),
             ("mme", "Masa muscular esquelética (kg)"),
             ("grasa_visceral", "Grasa visceral"),
+            ("tasa_metabolica_basal", "Tasa metabólica basal (kcal, dato interno)"),
         ]:
             valor = medicion.get(campo)
             if valor is not None:
@@ -175,7 +183,9 @@ def _seccion_expediente(paciente, historia, medicion):
 
         bloques = [
             ("Objetivos del paciente", ["objetivo_que_espera", "objetivo_importante"]),
+            ("Plazo que espera", ["objetivo_tiempo"]),
             ("Padecimientos", ["padecimientos_diagnosticados"]),
+            ("Cirugías", ["cirugias"]),
             ("Tratamiento médico actual", ["tratamiento_medico_actual"]),
             ("Medicamentos", ["medicamentos"]),
             ("Suplementos", ["suplementos"]),
@@ -189,13 +199,46 @@ def _seccion_expediente(paciente, historia, medicion):
             ("Hidratación", ["hidratacion"]),
             ("Ejercicio", ["ejercicio_rutina"]),
             ("Sueño", ["sueno"]),
-            ("Historia de peso", ["peso_maximo", "peso_minimo", "dietas_previas"]),
+            ("Alcohol", ["alcohol"]),
+            ("Tabaco", ["tabaco"]),
+            ("Nivel de estrés (1 a 10)", ["nivel_estres"]),
+            ("Historia de peso", ["peso_maximo", "peso_minimo", "edad_inicio_sobrepeso",
+                                  "dietas_previas"]),
         ]
 
         for etiqueta, campos in bloques:
             valores = [str(historia.get(c)) for c in campos if historia.get(c)]
             if valores:
                 lineas.append("  " + etiqueta + ": " + " | ".join(valores))
+
+        antecedentes = []
+        for campo, nombre in [
+            ("antecedente_diabetes", "diabetes"),
+            ("antecedente_obesidad", "obesidad"),
+            ("antecedente_tiroides", "tiroides"),
+            ("antecedente_hipertension", "hipertensión"),
+            ("antecedente_cardiovascular", "cardiovascular"),
+            ("antecedente_cancer", "cáncer"),
+            ("antecedente_otros", "otros"),
+        ]:
+            if historia.get(campo):
+                antecedentes.append(nombre + ": " + str(historia[campo]))
+        if antecedentes:
+            lineas.append("  Antecedentes familiares: " + " | ".join(antecedentes))
+
+        gineco = []
+        for campo, nombre in [
+            ("gineco_menarca", "menarca"),
+            ("gineco_ciclo", "ciclo"),
+            ("gineco_anticonceptivo", "anticonceptivo"),
+            ("gineco_embarazos", "embarazos"),
+            ("gineco_busca_embarazo", "busca embarazo"),
+            ("gineco_menopausia", "menopausia"),
+        ]:
+            if historia.get(campo):
+                gineco.append(nombre + ": " + str(historia[campo]))
+        if gineco:
+            lineas.append("  Ginecológico: " + " | ".join(gineco))
 
         sintomas = []
         for campo, nombre in [
@@ -217,6 +260,64 @@ def _seccion_expediente(paciente, historia, medicion):
             lineas.append("  Síntomas: " + " | ".join(sintomas))
 
     return "\n".join(lineas)
+
+
+def _seccion_seguimiento(retroalimentacion_followup=None, notas_paciente=None):
+    """
+    Arma el bloque de lo que se recabó en la consulta de seguimiento y en
+    la bitácora de notas del paciente. Es la información NUEVA del caso:
+    sin ella, la IA no tiene motivo para cambiar el plan.
+    Devuelve texto vacío si no hay nada que agregar.
+    """
+    partes = []
+
+    if retroalimentacion_followup:
+        f = retroalimentacion_followup
+        titulo = "ÚLTIMA CONSULTA DE SEGUIMIENTO"
+        detalles = []
+        if f.get("numero_consulta"):
+            detalles.append("consulta " + str(f["numero_consulta"]))
+        if f.get("fecha_consulta"):
+            detalles.append(str(f["fecha_consulta"])[:10])
+        if detalles:
+            titulo += " (" + ", ".join(detalles) + ")"
+        partes.append(titulo + "\n")
+
+        etiquetas = [
+            ("porcentaje_apego", "Apego al plan anterior (%)"),
+            ("promedio_dias_ejercicio", "Promedio de días de ejercicio por semana"),
+            ("que_le_gusto", "Qué le gustó del plan anterior"),
+            ("que_no_le_gusto", "Qué no le gustó"),
+            ("cambios_que_hizo", "Cambios que hizo por su cuenta"),
+            ("en_que_puede_mejorar", "En qué puede mejorar"),
+            ("estatus_tratamiento_medico", "Estatus del tratamiento médico"),
+            ("ajustes_acordados", "Ajustes ya acordados con la nutrióloga"),
+            ("notas_libres", "Observaciones de la nutrióloga en esta consulta"),
+        ]
+        for campo, etiqueta in etiquetas:
+            valor = f.get(campo)
+            if valor is not None and valor != "":
+                partes.append("  " + etiqueta + ": " + str(valor) + "\n")
+
+    if notas_paciente:
+        if partes:
+            partes.append("\n")
+        partes.append("NOTAS DE LA NUTRIÓLOGA SOBRE ESTE PACIENTE (la más reciente primero)\n")
+        for n in notas_paciente:
+            fecha = str(n.get("fecha") or "")[:10]
+            texto = str(n.get("texto") or "").strip()
+            if texto:
+                partes.append("  - " + (fecha + ": " if fecha else "") + texto + "\n")
+
+    if not partes:
+        return ""
+
+    return (
+        "Lo siguiente es información nueva o actualizada del caso. Tiene "
+        "prioridad sobre lo que diga la historia clínica cuando se contradigan, "
+        "porque es más reciente. Úsala para adecuar el plan.\n\n"
+        + "".join(partes)
+    )
 
 
 ESQUEMA_PLAN = """{
@@ -259,7 +360,7 @@ ESQUEMA_PLAN = """{
 def construir_prompt(paciente, historia, medicion, padecimientos=None,
                      usa_glp1=False, es_deportista=False, esta_embarazada=False,
                      opciones_previas=None, retroalimentacion_followup=None,
-                     analisis_laboratorio=None, incluir_kb=True):
+                     analisis_laboratorio=None, incluir_kb=True, notas_paciente=None):
     """
     Arma el prompt completo para Gemini.
     """
@@ -323,7 +424,13 @@ def construir_prompt(paciente, historia, medicion, padecimientos=None,
         partes.append("\n  " + pp["motivo"])
         partes.append("\n  " + pp["aplicacion"])
 
-    if opciones_previas or retroalimentacion_followup:
+    seguimiento = _seccion_seguimiento(retroalimentacion_followup, notas_paciente)
+    if seguimiento:
+        partes.append("\n\n" + ("=" * 70) + "\n")
+        partes.append("INFORMACIÓN DE SEGUIMIENTO\n")
+        partes.append(seguimiento)
+
+    if opciones_previas:
         partes.append("\n\n" + ("=" * 70) + "\n")
         partes.append("CONTINUIDAD CON EL PLAN ANTERIOR\n")
         partes.append(
@@ -334,26 +441,9 @@ def construir_prompt(paciente, historia, medicion, padecimientos=None,
             "veces, sobre todo si hubo dificultad o disgusto, lo correcto es cambiar "
             "de fondo. Decide caso por caso.\n\n"
         )
-
-        if retroalimentacion_followup:
-            partes.append("CÓMO LE FUE AL PACIENTE CON EL PLAN ANTERIOR (último seguimiento):\n")
-            etiquetas = {
-                "que_le_gusto": "Qué le gustó",
-                "que_no_le_gusto": "Qué no le gustó",
-                "cambios_que_hizo": "Cambios que hizo por su cuenta",
-                "en_que_puede_mejorar": "En qué puede mejorar",
-                "ajustes_acordados": "Ajustes ya acordados con la nutrióloga",
-            }
-            for campo, etiqueta in etiquetas.items():
-                valor = retroalimentacion_followup.get(campo)
-                if valor:
-                    partes.append("  " + etiqueta + ": " + str(valor) + "\n")
-            partes.append("\n")
-
-        if opciones_previas:
-            partes.append("OPCIONES YA PRESCRITAS ANTERIORMENTE:\n\n")
-            for o in opciones_previas[:30]:
-                partes.append("  - " + str(o) + "\n")
+        partes.append("OPCIONES YA PRESCRITAS ANTERIORMENTE:\n\n")
+        for o in opciones_previas[:30]:
+            partes.append("  - " + str(o) + "\n")
 
     if analisis_laboratorio:
         partes.append("\n\n" + ("=" * 70) + "\n")
@@ -468,7 +558,7 @@ def construir_prompt(paciente, historia, medicion, padecimientos=None,
 def generar_plan(paciente, historia, medicion, padecimientos=None,
                  usa_glp1=False, es_deportista=False, esta_embarazada=False,
                  opciones_previas=None, retroalimentacion_followup=None,
-                 analisis_laboratorio=None, incluir_kb=True):
+                 analisis_laboratorio=None, incluir_kb=True, notas_paciente=None):
     """
     Genera el plan tecnico completo para un paciente.
     Devuelve el plan como diccionario, mas metadatos del proceso.
@@ -483,6 +573,7 @@ def generar_plan(paciente, historia, medicion, padecimientos=None,
         retroalimentacion_followup=retroalimentacion_followup,
         analisis_laboratorio=analisis_laboratorio,
         incluir_kb=incluir_kb,
+        notas_paciente=notas_paciente,
     )
 
     plan = gemini.generar_json(prompt)
@@ -509,7 +600,9 @@ def generar_plan(paciente, historia, medicion, padecimientos=None,
 
 
 def construir_prompt_porciones(paciente, historia, medicion, incluir_ejemplos, padecimientos=None,
-                               usa_glp1=False, es_deportista=False, esta_embarazada=False, incluir_kb=True):
+                               usa_glp1=False, es_deportista=False, esta_embarazada=False, incluir_kb=True,
+                               retroalimentacion_followup=None, notas_paciente=None,
+                               analisis_laboratorio=None):
     """
     Arma el prompt para la "Tabla de Porciones": un formato de prescripcion
     mas simple que el menu completo, para pacientes que no quieren un menu
@@ -564,6 +657,23 @@ def construir_prompt_porciones(paciente, historia, medicion, incluir_ejemplos, p
                   + ", ".join(r["grasa"]["excluidas"]))
     partes.append("\nFRUTAS PREFERIDAS: " + ", ".join(r["fruta"]["preferidas"]))
     partes.append("\nCARBOHIDRATOS PREFERIDOS: " + ", ".join(r["carbohidrato"]["preferidos"]))
+
+    seguimiento = _seccion_seguimiento(retroalimentacion_followup, notas_paciente)
+    if seguimiento:
+        partes.append("\n\n" + ("=" * 70) + "\n")
+        partes.append("INFORMACIÓN DE SEGUIMIENTO\n")
+        partes.append(seguimiento)
+
+    if analisis_laboratorio:
+        partes.append("\n\n" + ("=" * 70) + "\n")
+        partes.append("ANÁLISIS DE LABORATORIO\n")
+        partes.append(
+            "La nutrióloga revisó explícitamente este resultado y decidió incluirlo "
+            "para este plan. Tómalo en cuenta al elegir los alimentos de cada tabla. "
+            "No diagnostiques ni sugieras un padecimiento, solo la implicación "
+            "nutricional.\n\n"
+        )
+        partes.append(str(analisis_laboratorio) + "\n")
 
     if incluir_kb:
         temas = temas_del_caso(padecimientos, usa_glp1)
@@ -649,7 +759,9 @@ def construir_prompt_porciones(paciente, historia, medicion, incluir_ejemplos, p
 
 
 def generar_tabla_porciones(paciente, historia, medicion, incluir_ejemplos, padecimientos=None,
-                            usa_glp1=False, es_deportista=False, esta_embarazada=False, incluir_kb=True):
+                            usa_glp1=False, es_deportista=False, esta_embarazada=False, incluir_kb=True,
+                            retroalimentacion_followup=None, notas_paciente=None,
+                            analisis_laboratorio=None):
     """
     Genera una Tabla de Porciones. A diferencia de generar_plan(), el
     resultado de Gemini se usa directo como documento final, sin pasar por
@@ -667,6 +779,9 @@ def generar_tabla_porciones(paciente, historia, medicion, incluir_ejemplos, pade
         es_deportista=es_deportista,
         esta_embarazada=esta_embarazada,
         incluir_kb=incluir_kb,
+        retroalimentacion_followup=retroalimentacion_followup,
+        notas_paciente=notas_paciente,
+        analisis_laboratorio=analisis_laboratorio,
     )
 
     documento = gemini.generar_json(prompt)
