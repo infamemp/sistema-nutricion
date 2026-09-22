@@ -1268,6 +1268,46 @@ def _generar_dieta_y_redirigir(paciente_id: int, db: Session, analisis_laborator
     )
     notas_paciente = [{"fecha": n.fecha_creacion, "texto": n.texto} for n in filas_notas] or None
 
+    # Evolucion del paciente para el bloque "Que cambio": todas sus
+    # mediciones en orden cronologico (la ultima es la actual) y los
+    # ultimos 4 seguimientos. Las comparaciones las calcula
+    # plan_generador, no la IA.
+    filas_mediciones = (
+        db.query(models.MedicionInBody)
+        .filter(models.MedicionInBody.paciente_id == paciente_id)
+        .order_by(models.MedicionInBody.fecha_medicion.asc())
+        .all()
+    )
+    filas_seguimientos = (
+        db.query(models.FollowUp)
+        .filter(models.FollowUp.paciente_id == paciente_id)
+        .order_by(models.FollowUp.numero_consulta.desc())
+        .limit(4)
+        .all()
+    )
+    evolucion = {
+        "mediciones": [
+            {
+                "fecha_medicion": m.fecha_medicion,
+                "peso": m.peso,
+                "porcentaje_grasa": m.porcentaje_grasa,
+                "masa_grasa_kg": m.masa_grasa_kg,
+                "mme": m.mme,
+                "grasa_visceral": m.grasa_visceral,
+            }
+            for m in filas_mediciones
+        ],
+        "seguimientos": [
+            {
+                "numero_consulta": f.numero_consulta,
+                "fecha_consulta": f.fecha_consulta,
+                "porcentaje_apego": f.porcentaje_apego,
+                "promedio_dias_ejercicio": f.promedio_dias_ejercicio,
+            }
+            for f in reversed(filas_seguimientos)
+        ],
+    }
+
     ultima = (
         db.query(models.DietaVersion)
         .filter(models.DietaVersion.paciente_id == paciente_id)
@@ -1297,6 +1337,7 @@ def _generar_dieta_y_redirigir(paciente_id: int, db: Session, analisis_laborator
             retroalimentacion_followup=retroalimentacion,
             notas_paciente=notas_paciente,
             analisis_laboratorio=analisis_laboratorio,
+            evolucion=evolucion,
         )
         guardado = {
             "documento": resultado["documento"],
@@ -1337,6 +1378,7 @@ def _generar_dieta_y_redirigir(paciente_id: int, db: Session, analisis_laborator
             retroalimentacion_followup=retroalimentacion,
             analisis_laboratorio=analisis_laboratorio,
             notas_paciente=notas_paciente,
+            evolucion=evolucion,
         )
         resultado_doc = redactor.redactar(resultado_plan["plan"], nombre_paciente=paciente.nombre_completo)
 
