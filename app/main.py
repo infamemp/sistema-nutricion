@@ -380,8 +380,11 @@ def lista_pacientes(request: Request, db: Session = Depends(get_db)):
 def _citas_de_hoy(db):
     """
     Citas del dia (hora de Mexico), con el atajo directo que le toca a
-    cada una: Historia clinica si es su primera consulta, Seguimiento si
-    ya tuvo alguna. Se excluyen las canceladas.
+    cada una. El atajo se decide por si el paciente ya tiene historia
+    clinica guardada, no por el tipo de la cita: un paciente puede llegar
+    a su primera cita agendada en el sistema habiendo ya tenido consultas
+    o dietas por fuera de el, asi que "tipo" no siempre refleja si ya se
+    le capturo su historia. Se excluyen las citas canceladas.
     """
     hoy = models.ahora_mexico().date()
     inicio = datetime.combine(hoy, datetime.min.time())
@@ -396,14 +399,23 @@ def _citas_de_hoy(db):
         .all()
     )
 
+    ids_pacientes = [paciente.id for _, paciente in filas]
+    con_historia = set()
+    if ids_pacientes:
+        con_historia = {
+            pid for (pid,) in db.query(models.HistoriaClinica.paciente_id)
+            .filter(models.HistoriaClinica.paciente_id.in_(ids_pacientes))
+            .all()
+        }
+
     citas = []
     for cita, paciente in filas:
-        if cita.tipo == "primera_consulta":
-            atajo_url = "/pacientes/" + str(paciente.id) + "/historia"
-            atajo_texto = "Historia clínica"
-        else:
+        if paciente.id in con_historia:
             atajo_url = "/pacientes/" + str(paciente.id) + "/followup/nuevo"
             atajo_texto = "Seguimiento"
+        else:
+            atajo_url = "/pacientes/" + str(paciente.id) + "/historia"
+            atajo_texto = "Historia clínica"
         citas.append({
             "id": cita.id,
             "hora_texto": cita.fecha_hora.strftime("%H:%M"),
