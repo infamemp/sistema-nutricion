@@ -9,6 +9,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from fastapi.responses import HTMLResponse, RedirectResponse, FileResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
+from sqlalchemy import func
 from datetime import datetime, date
 from typing import Optional
 
@@ -313,11 +314,63 @@ def crear_paciente(
     )
 
 
+def _tiempo_relativo(fecha):
+    """Ej. 'Hoy', 'Ayer', 'Hace 5 días', 'Hace 3 semanas'. Para que Marifer
+    vea de un vistazo a que paciente no le da seguimiento hace tiempo."""
+    if not fecha:
+        return None
+    dias = (models.ahora_mexico() - fecha).days
+    if dias <= 0:
+        return "Hoy"
+    if dias == 1:
+        return "Ayer"
+    if dias < 7:
+        return "Hace " + str(dias) + " días"
+    if dias < 30:
+        semanas = dias // 7
+        return "Hace " + str(semanas) + (" semana" if semanas == 1 else " semanas")
+    if dias < 365:
+        meses = dias // 30
+        return "Hace " + str(meses) + (" mes" if meses == 1 else " meses")
+    anios = dias // 365
+    return "Hace " + str(anios) + (" año" if anios == 1 else " años")
+
+
 @app.get("/pacientes", response_class=HTMLResponse)
 def lista_pacientes(request: Request, db: Session = Depends(get_db)):
-    pacientes = db.query(models.Paciente).order_by(models.Paciente.id.desc()).all()
+    pacientes = db.query(models.Paciente).all()
+
+    # "Reciente" = ultima actividad real con el paciente (alta, nota, cita,
+    # dieta generada o seguimiento), no solo la fecha en que se registro.
+    # 4 consultas de agregacion, no una por paciente.
+    notas_max = dict(
+        db.query(models.NotaPaciente.paciente_id, func.max(models.NotaPaciente.fecha_creacion))
+        .group_by(models.NotaPaciente.paciente_id).all()
+    )
+    citas_max = dict(
+        db.query(models.Cita.paciente_id, func.max(models.Cita.fecha_hora))
+        .filter(models.Cita.fecha_hora <= models.ahora_mexico())
+        .group_by(models.Cita.paciente_id).all()
+    )
+    dietas_max = dict(
+        db.query(models.DietaVersion.paciente_id, func.max(models.DietaVersion.fecha_creacion))
+        .group_by(models.DietaVersion.paciente_id).all()
+    )
+    seguimientos_max = dict(
+        db.query(models.FollowUp.paciente_id, func.max(models.FollowUp.fecha_consulta))
+        .group_by(models.FollowUp.paciente_id).all()
+    )
+
+    for p in pacientes:
+        candidatas = [p.fecha_alta, notas_max.get(p.id), citas_max.get(p.id),
+                      dietas_max.get(p.id), seguimientos_max.get(p.id)]
+        p.ultima_actividad = max((f for f in candidatas if f), default=p.fecha_alta)
+        p.ultima_actividad_texto = _tiempo_relativo(p.ultima_actividad)
+
+    pacientes.sort(key=lambda p: p.ultima_actividad or datetime.min, reverse=True)
+
     return templates.TemplateResponse(
-        request, "lista_pacientes.html", {"pacientes": pacientes}
+        request, "lista_pacientes.html", {"pacientes": pacientes, "ventana": 10}
     )
 
 
