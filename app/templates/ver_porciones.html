@@ -128,8 +128,9 @@
         {% endif %}
 
         {% if doc.meta_proteina or doc.instruccion_general or doc.objetivo_distribucion %}
-        <div class="bg-white rounded-xl shadow-sm p-6 mb-6">
-            <h2 class="text-lg font-medium text-green-700 border-b-2 border-blue-500 pb-2 mb-4">Meta de proteína</h2>
+        <div class="bg-white rounded-xl shadow-sm mb-6 overflow-hidden">
+            <h2 class="text-lg font-medium text-green-800 bg-green-100 border-b-2 border-blue-500 px-6 py-3">Meta de proteína</h2>
+                <div class="p-6">
             {% if doc.meta_proteina %}<p class="text-sm text-gray-700 mb-2 font-medium">{{ doc.meta_proteina }}</p>{% endif %}
             {% if doc.instruccion_general %}<p class="text-sm text-gray-600 mb-3">{{ doc.instruccion_general }}</p>{% endif %}
             {% if doc.objetivo_distribucion %}
@@ -138,11 +139,13 @@
             </ul>
             {% endif %}
         </div>
+            </div>
         {% endif %}
 
         {% if doc.tabla_proteinas %}
-        <div class="bg-white rounded-xl shadow-sm p-6 mb-6">
-            <h2 class="text-lg font-medium text-green-700 border-b-2 border-blue-500 pb-2 mb-4">Proteínas</h2>
+        <div class="bg-white rounded-xl shadow-sm mb-6 overflow-hidden">
+            <h2 class="text-lg font-medium text-green-800 bg-green-100 border-b-2 border-blue-500 px-6 py-3">Proteínas</h2>
+                <div class="p-6">
             <table class="w-full text-sm">
                 <tbody>
                     {% for f in doc.tabla_proteinas %}
@@ -154,11 +157,13 @@
                 </tbody>
             </table>
         </div>
+            </div>
         {% endif %}
 
         {% if doc.tabla_carbohidratos and doc.tabla_carbohidratos.alimentos %}
-        <div class="bg-white rounded-xl shadow-sm p-6 mb-6">
-            <h2 class="text-lg font-medium text-green-700 border-b-2 border-blue-500 pb-2 mb-1">Carbohidratos</h2>
+        <div class="bg-white rounded-xl shadow-sm mb-6 overflow-hidden">
+            <h2 class="text-lg font-medium text-green-800 bg-green-100 border-b-2 border-blue-500 px-6 py-3">Carbohidratos</h2>
+                <div class="p-6">
             {% if doc.tabla_carbohidratos.instruccion %}
             <p class="text-xs text-gray-500 italic mb-3">{{ doc.tabla_carbohidratos.instruccion }}</p>
             {% endif %}
@@ -173,11 +178,13 @@
                 </tbody>
             </table>
         </div>
+            </div>
         {% endif %}
 
         {% if doc.tabla_grasas and doc.tabla_grasas.alimentos %}
-        <div class="bg-white rounded-xl shadow-sm p-6 mb-6">
-            <h2 class="text-lg font-medium text-green-700 border-b-2 border-blue-500 pb-2 mb-1">Grasas</h2>
+        <div class="bg-white rounded-xl shadow-sm mb-6 overflow-hidden">
+            <h2 class="text-lg font-medium text-green-800 bg-green-100 border-b-2 border-blue-500 px-6 py-3">Grasas</h2>
+                <div class="p-6">
             {% if doc.tabla_grasas.instruccion %}
             <p class="text-xs text-gray-500 italic mb-3">{{ doc.tabla_grasas.instruccion }}</p>
             {% endif %}
@@ -192,27 +199,33 @@
                 </tbody>
             </table>
         </div>
+            </div>
         {% endif %}
 
         {% if doc.nota_verduras %}
-        <div class="bg-white rounded-xl shadow-sm p-6 mb-6">
-            <h2 class="text-lg font-medium text-green-700 border-b-2 border-blue-500 pb-2 mb-4">Verduras</h2>
+        <div class="bg-white rounded-xl shadow-sm mb-6 overflow-hidden">
+            <h2 class="text-lg font-medium text-green-800 bg-green-100 border-b-2 border-blue-500 px-6 py-3">Verduras</h2>
+                <div class="p-6">
             <p class="text-sm text-gray-700">{{ doc.nota_verduras }}</p>
         </div>
+            </div>
         {% endif %}
 
         {% if doc.metas_diarias %}
-        <div class="bg-white rounded-xl shadow-sm p-6 mb-6">
-            <h2 class="text-lg font-medium text-green-700 border-b-2 border-blue-500 pb-2 mb-4">Metas diarias</h2>
+        <div class="bg-white rounded-xl shadow-sm mb-6 overflow-hidden">
+            <h2 class="text-lg font-medium text-green-800 bg-green-100 border-b-2 border-blue-500 px-6 py-3">Metas diarias</h2>
+                <div class="p-6">
             <ul class="text-sm text-gray-700 list-disc pl-4 space-y-1">
                 {% for m in doc.metas_diarias %}<li>{{ m }}</li>{% endfor %}
             </ul>
         </div>
+            </div>
         {% endif %}
 
         {% if doc.ejemplos %}
-        <div class="bg-white rounded-xl shadow-sm p-6 mb-6">
-            <h2 class="text-lg font-medium text-green-700 border-b-2 border-blue-500 pb-2 mb-4">Ejemplos</h2>
+        <div class="bg-white rounded-xl shadow-sm mb-6 overflow-hidden">
+            <h2 class="text-lg font-medium text-green-800 bg-green-100 border-b-2 border-blue-500 px-6 py-3">Ejemplos</h2>
+                <div class="p-6">
             {% for tiempo, titulo in [('desayuno', 'Desayuno'), ('comida', 'Comida'), ('cena', 'Cena')] %}
             {% if doc.ejemplos.get(tiempo) %}
             <p class="text-sm font-medium text-gray-700 mt-3 mb-1">{{ titulo }}</p>
@@ -222,6 +235,7 @@
             {% endif %}
             {% endfor %}
         </div>
+            </div>
         {% endif %}
 
     </div>

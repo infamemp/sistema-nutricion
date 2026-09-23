@@ -56,8 +56,9 @@
         </div>
         {% endif %}
 
-        <div class="bg-white rounded-xl shadow-sm p-6 mb-6">
-            <h2 class="text-lg font-medium text-green-700 border-b-2 border-blue-500 pb-2 mb-4">Datos leídos del reporte</h2>
+        <div class="bg-white rounded-xl shadow-sm mb-6 overflow-hidden">
+            <h2 class="text-lg font-medium text-green-800 bg-green-100 border-b-2 border-blue-500 px-6 py-3">Datos leídos del reporte</h2>
+                <div class="p-6">
             <dl class="grid grid-cols-2 gap-x-6 gap-y-3 text-sm">
                 <div>
                     <dt class="text-gray-500">ID de InBody</dt>
@@ -81,9 +82,11 @@
                 </div>
             </dl>
         </div>
+            </div>
 
-        <div class="bg-white rounded-xl shadow-sm p-6 mb-6">
-            <h2 class="text-lg font-medium text-green-700 border-b-2 border-blue-500 pb-2 mb-4">Mediciones a guardar</h2>
+        <div class="bg-white rounded-xl shadow-sm mb-6 overflow-hidden">
+            <h2 class="text-lg font-medium text-green-800 bg-green-100 border-b-2 border-blue-500 px-6 py-3">Mediciones a guardar</h2>
+                <div class="p-6">
 
             {% if resultado.historial %}
             <div class="overflow-x-auto">
@@ -120,6 +123,7 @@
             <p class="text-sm text-gray-500">No se detectó ningún punto de medición en la imagen.</p>
             {% endif %}
         </div>
+            </div>
 
         <form method="post" action="/pacientes/{{ paciente.id }}/inbody/confirmar">
             <input type="hidden" name="datos_json" value='{{ datos_json }}'>

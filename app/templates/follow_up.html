@@ -62,8 +62,9 @@
         </a>
         {% endif %}
 
-        <div class="bg-white rounded-xl shadow-sm p-6">
-            <h2 class="text-lg font-medium text-green-700 border-b-2 border-blue-500 pb-2 mb-4">Datos de la consulta</h2>
+        <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+            <h2 class="text-lg font-medium text-green-800 bg-green-100 border-b-2 border-blue-500 px-6 py-3">Datos de la consulta</h2>
+                <div class="p-6">
             <div class="grid grid-cols-2 gap-4">
                 <div>
                     <label class="block text-sm text-gray-700 mb-1">Fecha de esta consulta</label>
@@ -77,9 +78,11 @@
                 </div>
             </div>
         </div>
+            </div>
 
-        <div class="bg-white rounded-xl shadow-sm p-6">
-            <h2 class="text-lg font-medium text-green-700 border-b-2 border-blue-500 pb-2 mb-4">Notas</h2>
+        <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+            <h2 class="text-lg font-medium text-green-800 bg-green-100 border-b-2 border-blue-500 px-6 py-3">Notas</h2>
+                <div class="p-6">
             <form method="post" action="/pacientes/{{ paciente.id }}/notas" class="mb-4">
                 <input type="hidden" name="volver" value="/pacientes/{{ paciente.id }}/followup/nuevo">
                 <textarea name="texto" rows="2" placeholder="Agregar una nota..."
@@ -117,11 +120,13 @@
                 {% endif %}
             </div>
         </div>
+            </div>
 
         <form id="form-seguimiento" data-autoguardar method="post" action="/pacientes/{{ paciente.id }}/followup" class="space-y-6">
 
-            <div class="bg-white rounded-xl shadow-sm p-6">
-                <h2 class="text-lg font-medium text-green-700 border-b-2 border-blue-500 pb-2 mb-4">Continuidad del plan anterior</h2>
+            <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+                <h2 class="text-lg font-medium text-green-800 bg-green-100 border-b-2 border-blue-500 px-6 py-3">Continuidad del plan anterior</h2>
+                <div class="p-6">
                 <div class="space-y-4">
                     <div class="grid grid-cols-2 gap-4">
                         <div>
@@ -153,17 +158,21 @@
                     </div>
                 </div>
             </div>
+            </div>
 
-            <div class="bg-white rounded-xl shadow-sm p-6">
-                <h2 class="text-lg font-medium text-green-700 border-b-2 border-blue-500 pb-2 mb-4">Estatus médico</h2>
+            <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+                <h2 class="text-lg font-medium text-green-800 bg-green-100 border-b-2 border-blue-500 px-6 py-3">Estatus médico</h2>
+                <div class="p-6">
                 <div>
                     <label class="block text-sm text-gray-700 mb-1">Tratamiento médico (medicamentos, dosis, cambios)</label>
                     <textarea name="estatus_tratamiento_medico" rows="3" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400"></textarea>
                 </div>
             </div>
+            </div>
 
-            <div class="bg-white rounded-xl shadow-sm p-6">
-                <h2 class="text-lg font-medium text-green-700 border-b-2 border-blue-500 pb-2 mb-4">Medición de hoy</h2>
+            <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+                <h2 class="text-lg font-medium text-green-800 bg-green-100 border-b-2 border-blue-500 px-6 py-3">Medición de hoy</h2>
+                <div class="p-6">
                 <p class="text-xs text-gray-500 mb-4">Si no se hizo medición, deja los campos vacíos.</p>
                 <div class="grid grid-cols-3 gap-4">
                     <div>
@@ -198,9 +207,11 @@
                     </div>
                 </div>
             </div>
+            </div>
 
-            <div class="bg-white rounded-xl shadow-sm p-6">
-                <h2 class="text-lg font-medium text-green-700 border-b-2 border-blue-500 pb-2 mb-4">Ajustes</h2>
+            <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+                <h2 class="text-lg font-medium text-green-800 bg-green-100 border-b-2 border-blue-500 px-6 py-3">Ajustes</h2>
+                <div class="p-6">
                 <div class="space-y-4">
                     <div>
                         <label class="block text-sm text-gray-700 mb-1">Ajustes acordados para el siguiente periodo</label>
@@ -208,11 +219,13 @@
                     </div>
                 </div>
             </div>
+            </div>
 
         </form>
 
-        <div class="bg-white rounded-xl shadow-sm p-6 mt-6">
-            <h2 class="text-lg font-medium text-green-700 border-b-2 border-blue-500 pb-2 mb-4">Reporte InBody</h2>
+        <div class="bg-white rounded-xl shadow-sm mt-6 overflow-hidden">
+            <h2 class="text-lg font-medium text-green-800 bg-green-100 border-b-2 border-blue-500 px-6 py-3">Reporte InBody</h2>
+                <div class="p-6">
             <p class="text-xs text-gray-500 mb-4">Si subes la foto del reporte, esa lectura se guarda por separado; no hace falta llenar también los campos de arriba a mano.</p>
             <form id="form-inbody" method="post" action="/pacientes/{{ paciente.id }}/inbody/procesar" enctype="multipart/form-data">
                 <input type="hidden" name="origen" value="seguimiento">
@@ -223,6 +236,7 @@
                 </label>
             </form>
         </div>
+            </div>
         <script>
             (function() {
                 const zona = document.getElementById('zona-inbody');

@@ -42,10 +42,12 @@
             <p class="text-sm text-gray-500">Paciente: {{ paciente.nombre_completo }}</p>
         </div>
 
-        <div class="bg-white rounded-xl shadow-sm p-6 mb-6">
-            <h2 class="text-lg font-medium text-green-700 border-b-2 border-blue-500 pb-2 mb-4">Análisis generado por IA</h2>
+        <div class="bg-white rounded-xl shadow-sm mb-6 overflow-hidden">
+            <h2 class="text-lg font-medium text-green-800 bg-green-100 border-b-2 border-blue-500 px-6 py-3">Análisis generado por IA</h2>
+                <div class="p-6">
             <div class="text-sm text-gray-700 whitespace-pre-line leading-relaxed">{{ analisis }}</div>
         </div>
+            </div>
 
         <form method="post" action="/pacientes/{{ paciente.id }}/laboratorio/guardar">
             <input type="hidden" name="analisis" value="{{ analisis }}">

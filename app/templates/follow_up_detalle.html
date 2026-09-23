@@ -48,8 +48,9 @@
             <span class="text-xs bg-gray-100 text-gray-500 px-3 py-1 rounded-full">Solo lectura</span>
         </div>
 
-        <div class="bg-white rounded-xl shadow-sm p-6 mb-6">
-            <h2 class="text-lg font-medium text-green-700 border-b-2 border-blue-500 pb-2 mb-4">Datos de la consulta</h2>
+        <div class="bg-white rounded-xl shadow-sm mb-6 overflow-hidden">
+            <h2 class="text-lg font-medium text-green-800 bg-green-100 border-b-2 border-blue-500 px-6 py-3">Datos de la consulta</h2>
+                <div class="p-6">
             <dl class="grid grid-cols-2 gap-x-6 gap-y-4 text-sm">
                 <div>
                     <dt class="text-gray-500">Fecha de esta consulta</dt>
@@ -61,9 +62,11 @@
                 </div>
             </dl>
         </div>
+            </div>
 
-        <div class="bg-white rounded-xl shadow-sm p-6 mb-6">
-            <h2 class="text-lg font-medium text-green-700 border-b-2 border-blue-500 pb-2 mb-4">Continuidad del plan anterior</h2>
+        <div class="bg-white rounded-xl shadow-sm mb-6 overflow-hidden">
+            <h2 class="text-lg font-medium text-green-800 bg-green-100 border-b-2 border-blue-500 px-6 py-3">Continuidad del plan anterior</h2>
+                <div class="p-6">
             <dl class="space-y-4 text-sm">
                 <div class="grid grid-cols-2 gap-x-6">
                     <div>
@@ -93,15 +96,19 @@
                 </div>
             </dl>
         </div>
+            </div>
 
-        <div class="bg-white rounded-xl shadow-sm p-6 mb-6">
-            <h2 class="text-lg font-medium text-green-700 border-b-2 border-blue-500 pb-2 mb-4">Estatus médico</h2>
+        <div class="bg-white rounded-xl shadow-sm mb-6 overflow-hidden">
+            <h2 class="text-lg font-medium text-green-800 bg-green-100 border-b-2 border-blue-500 px-6 py-3">Estatus médico</h2>
+                <div class="p-6">
             <p class="text-sm text-gray-800 whitespace-pre-line">{{ f.estatus_tratamiento_medico or 'No registrado' }}</p>
         </div>
+            </div>
 
         {% if medicion %}
-        <div class="bg-white rounded-xl shadow-sm p-6 mb-6">
-            <h2 class="text-lg font-medium text-green-700 border-b-2 border-blue-500 pb-2 mb-4">Medición InBody de esta consulta</h2>
+        <div class="bg-white rounded-xl shadow-sm mb-6 overflow-hidden">
+            <h2 class="text-lg font-medium text-green-800 bg-green-100 border-b-2 border-blue-500 px-6 py-3">Medición InBody de esta consulta</h2>
+                <div class="p-6">
             <dl class="grid grid-cols-2 gap-x-6 gap-y-4 text-sm">
                 <div>
                     <dt class="text-gray-500">Fecha de la medición</dt>
@@ -137,12 +144,15 @@
                 </div>
             </dl>
         </div>
+            </div>
         {% endif %}
 
-        <div class="bg-white rounded-xl shadow-sm p-6 mb-6">
-            <h2 class="text-lg font-medium text-green-700 border-b-2 border-blue-500 pb-2 mb-4">Ajustes acordados para el siguiente periodo</h2>
+        <div class="bg-white rounded-xl shadow-sm mb-6 overflow-hidden">
+            <h2 class="text-lg font-medium text-green-800 bg-green-100 border-b-2 border-blue-500 px-6 py-3">Ajustes acordados para el siguiente periodo</h2>
+                <div class="p-6">
             <p class="text-sm text-gray-800 whitespace-pre-line">{{ f.ajustes_acordados or 'No registrado' }}</p>
         </div>
+            </div>
 
     </div>
 </body>
