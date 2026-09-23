@@ -356,5 +356,16 @@
         })();
     </script>
 
+    <script>
+        function autoCrecer(el) {
+            el.style.height = 'auto';
+            el.style.height = el.scrollHeight + 'px';
+        }
+        document.querySelectorAll('textarea').forEach(function(el) {
+            el.addEventListener('input', function() { autoCrecer(el); });
+            autoCrecer(el);
+        });
+    </script>
+
 </body>
 </html>
