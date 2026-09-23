@@ -444,6 +444,12 @@ def ver_expediente(paciente_id: int, request: Request, db: Session = Depends(get
             "No se pudo analizar el laboratorio con inteligencia artificial. "
             "Intenta con una foto o PDF mas claro."
         )
+    elif request.query_params.get("error") == "dieta_ia_fallo":
+        mensaje = (
+            "No se pudo generar la dieta: el servicio de inteligencia artificial "
+            "esta saturado en este momento. Intenta de nuevo en unos minutos con "
+            "el boton \"Generar dieta\"."
+        )
 
     citas = (
         db.query(models.Cita)
@@ -1309,12 +1315,22 @@ def generar_dieta_confirmada(
             analisis_laboratorio = lab.analisis_ia
             laboratorio_fecha = lab.fecha_subida
 
-    return _generar_dieta_y_redirigir(
-        paciente_id, db, analisis_laboratorio=analisis_laboratorio, tipo_documento=tipo_documento,
-        usa_glp1=bool(usa_glp1), esta_embarazada=bool(esta_embarazada), es_deportista=bool(es_deportista),
-        laboratorio_fecha=laboratorio_fecha,
-        modo_continuidad=modo_continuidad,
-    )
+    try:
+        return _generar_dieta_y_redirigir(
+            paciente_id, db, analisis_laboratorio=analisis_laboratorio, tipo_documento=tipo_documento,
+            usa_glp1=bool(usa_glp1), esta_embarazada=bool(esta_embarazada), es_deportista=bool(es_deportista),
+            laboratorio_fecha=laboratorio_fecha,
+            modo_continuidad=modo_continuidad,
+        )
+    except HTTPException:
+        raise
+    except Exception:
+        # La IA (Gemini o Claude) fallo incluso despues de reintentar, casi
+        # siempre por saturacion temporal del proveedor. No se alcanzo a
+        # guardar nada, es seguro regresar al expediente con un aviso.
+        return RedirectResponse(
+            url="/pacientes/" + str(paciente_id) + "?error=dieta_ia_fallo", status_code=303
+        )
 
 
 def _decisiones_de_marifer(db, paciente_id, maximo=10):
@@ -1828,6 +1844,12 @@ def ver_dieta(paciente_id: int, dieta_id: int, request: Request, db: Session = D
         mensaje = "Dieta enviada por correo a " + (paciente.correo_electronico or "")
     elif request.query_params.get("error") == "sin_correo":
         mensaje = "Este paciente no tiene correo electronico registrado. Agregalo en sus datos de contacto."
+    elif request.query_params.get("error") == "ajuste_ia_fallo":
+        mensaje = (
+            "No se pudo aplicar el ajuste: el servicio de inteligencia artificial "
+            "esta saturado en este momento. Intenta de nuevo en unos minutos con "
+            "el boton \"Ajustar\"."
+        )
 
     if dieta.tipo_documento == "porciones":
         return templates.TemplateResponse(
@@ -2102,10 +2124,19 @@ def ajustar_dieta(
     )
 
     import claude_api
-    nuevo_documento = claude_api.generar_json(
-        prompt_ajuste,
-        sistema=redactor._sistema(),
-    )
+    try:
+        nuevo_documento = claude_api.generar_json(
+            prompt_ajuste,
+            sistema=redactor._sistema(),
+        )
+    except Exception:
+        # Claude fallo incluso despues de reintentar, casi siempre por
+        # saturacion temporal. No se creo ninguna version nueva, es seguro
+        # regresar a la version anterior con un aviso.
+        return RedirectResponse(
+            url="/pacientes/" + str(paciente_id) + "/dieta/" + str(anterior.id) + "?error=ajuste_ia_fallo",
+            status_code=303,
+        )
 
     # Salvaguarda: si a pesar de la instruccion Claude devuelve el menu
     # reorganizado fuera de "menu", lo reacomodamos antes de guardar.

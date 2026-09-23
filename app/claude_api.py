@@ -22,6 +22,7 @@ La API key se lee de ANTHROPIC_API_KEY en el archivo .env.
 
 import os
 import json
+import time
 import urllib.request
 import urllib.error
 
@@ -48,6 +49,12 @@ def _api_key():
     return clave
 
 
+# Codigos que indican saturacion temporal del proveedor (529 es el
+# "overloaded_error" propio de Anthropic), no un error de nuestra
+# peticion: vale la pena reintentar en vez de fallar de una vez.
+CODIGOS_TRANSITORIOS = (429, 503, 529)
+
+
 def _peticion(cuerpo):
     datos = json.dumps(cuerpo).encode("utf-8")
     req = urllib.request.Request(
@@ -60,14 +67,21 @@ def _peticion(cuerpo):
         },
         method="POST",
     )
-    try:
-        with urllib.request.urlopen(req, timeout=180) as r:
-            return json.loads(r.read().decode("utf-8"))
-    except urllib.error.HTTPError as e:
-        detalle = e.read().decode("utf-8", errors="replace")
-        raise RuntimeError(
-            "Error " + str(e.code) + " de la API de Anthropic: " + detalle[:400]
-        )
+    intentos = 3
+    espera = 3
+    for intento in range(intentos):
+        try:
+            with urllib.request.urlopen(req, timeout=180) as r:
+                return json.loads(r.read().decode("utf-8"))
+        except urllib.error.HTTPError as e:
+            detalle = e.read().decode("utf-8", errors="replace")
+            if e.code in CODIGOS_TRANSITORIOS and intento < intentos - 1:
+                time.sleep(espera)
+                espera *= 2
+                continue
+            raise RuntimeError(
+                "Error " + str(e.code) + " de la API de Anthropic: " + detalle[:400]
+            )
 
 
 def generar(prompt, sistema=None, modelo=None, temperatura=None, max_tokens=12000):
