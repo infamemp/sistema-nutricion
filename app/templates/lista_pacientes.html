@@ -64,11 +64,14 @@
                 </thead>
                 <tbody id="cuerpo-tabla-pacientes">
                     {% for p in pacientes %}
-                    <tr class="border-t border-gray-100 hover:bg-green-50 transition fila-paciente">
+                    <tr class="border-t border-gray-100 hover:bg-green-50 transition fila-paciente{% if loop.index > ventana %} fila-extra hidden{% endif %}">
                         <td class="px-4 py-3">
                             <a href="/pacientes/{{ p.id }}" class="text-green-700 font-medium hover:underline">
                                 {{ p.nombre_completo }}
                             </a>
+                            {% if p.ultima_actividad_texto %}
+                            <span class="block text-xs text-gray-400">{{ p.ultima_actividad_texto }}</span>
+                            {% endif %}
                         </td>
                         <td class="px-4 py-3 text-gray-600">{{ p.celular or "" }}</td>
                         <td class="px-4 py-3 text-gray-600">{{ p.correo_electronico or "" }}</td>
@@ -80,20 +83,49 @@
             <p id="sin-resultados" class="hidden text-sm text-gray-500 p-4 text-center">
                 Ningún paciente coincide con la búsqueda.
             </p>
+            {% if pacientes|length > ventana %}
+            <button id="boton-ver-todos" onclick="alternarVentana()"
+                    class="w-full text-sm text-green-700 hover:bg-green-50 transition py-3 border-t border-gray-100">
+                Ver los demás ({{ pacientes|length - ventana }}) &#9662;
+            </button>
+            {% endif %}
         </div>
         <script>
-            function filtrarPacientes() {
+            // ventanaExpandida: si Marifer ya dio clic en "Ver los demás".
+            // Mientras hay texto en el buscador, la ventana se ignora por
+            // completo: se busca entre todos los pacientes, no solo los 10.
+            let ventanaExpandida = false;
+
+            function actualizarVisibilidad() {
                 const texto = document.getElementById('buscador-pacientes').value.toLowerCase();
+                const buscando = texto !== '';
                 const filas = document.querySelectorAll('.fila-paciente');
                 let visibles = 0;
 
                 filas.forEach(function(fila) {
                     const coincide = fila.textContent.toLowerCase().includes(texto);
-                    fila.classList.toggle('hidden', !coincide);
-                    if (coincide) visibles++;
+                    const esExtra = fila.classList.contains('fila-extra');
+                    const dentroDeVentana = !esExtra || ventanaExpandida || buscando;
+                    const mostrar = coincide && dentroDeVentana;
+                    fila.classList.toggle('hidden', !mostrar);
+                    if (mostrar) visibles++;
                 });
 
                 document.getElementById('sin-resultados').classList.toggle('hidden', visibles !== 0);
+
+                const boton = document.getElementById('boton-ver-todos');
+                if (boton) {
+                    boton.classList.toggle('hidden', buscando || ventanaExpandida);
+                }
+            }
+
+            function filtrarPacientes() {
+                actualizarVisibilidad();
+            }
+
+            function alternarVentana() {
+                ventanaExpandida = true;
+                actualizarVisibilidad();
             }
         </script>
         {% else %}
