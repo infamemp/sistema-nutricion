@@ -573,6 +573,47 @@ def comparar_con_anterior(menu_nuevo, opciones_previas, modo="renovar"):
     return resultado
 
 
+def comparar_tablas_porciones(doc_nuevo, tablas_anteriores):
+    """
+    Compara, sin IA, las tablas de la Tabla de Porciones nueva contra las
+    aprobadas antes: que alimento se agrego o se quito por tabla, y si la
+    meta de proteina cambio. A diferencia del Menu, repetir alimentos aqui
+    es normal (es una lista de referencia); lo que importa es que la meta
+    se actualice y que se reflejen los cambios pedidos.
+    """
+    resultado = {"meta_cambio": None, "por_tabla": {}}
+    if not tablas_anteriores:
+        return resultado
+
+    meta_antes = (tablas_anteriores.get("meta_proteina") or "").strip()
+    meta_ahora = (doc_nuevo.get("meta_proteina") or "").strip()
+    if meta_antes and meta_ahora and meta_antes != meta_ahora:
+        resultado["meta_cambio"] = {"antes": meta_antes, "ahora": meta_ahora}
+
+    nombres = {
+        "tabla_proteinas": "Proteínas",
+        "tabla_carbohidratos": "Carbohidratos",
+        "tabla_grasas": "Grasas",
+    }
+    for campo, etiqueta in nombres.items():
+        anterior = tablas_anteriores.get(campo)
+        nueva = doc_nuevo.get(campo)
+        lista_antes = anterior if isinstance(anterior, list) else (anterior or {}).get("alimentos", [])
+        lista_ahora = nueva if isinstance(nueva, list) else (nueva or {}).get("alimentos", [])
+        if not lista_antes and not lista_ahora:
+            continue
+        nombres_antes = {_sin_acentos(f.get("alimento", "")).strip() for f in lista_antes if f.get("alimento")}
+        nombres_ahora = {_sin_acentos(f.get("alimento", "")).strip() for f in lista_ahora if f.get("alimento")}
+        agregados = [f.get("alimento") for f in lista_ahora
+                     if _sin_acentos(f.get("alimento", "")).strip() not in nombres_antes]
+        retirados = [f.get("alimento") for f in lista_antes
+                     if _sin_acentos(f.get("alimento", "")).strip() not in nombres_ahora]
+        if agregados or retirados:
+            resultado["por_tabla"][etiqueta] = {"agregados": agregados, "retirados": retirados}
+
+    return resultado
+
+
 ESQUEMA_PLAN = """{
   "resumen_del_caso": "2 o 3 frases sobre la situación del paciente y el enfoque elegido",
   "banderas_clinicas": [
@@ -933,7 +974,8 @@ def generar_plan(paciente, historia, medicion, padecimientos=None,
 def construir_prompt_porciones(paciente, historia, medicion, incluir_ejemplos, padecimientos=None,
                                usa_glp1=False, es_deportista=False, esta_embarazada=False, incluir_kb=True,
                                retroalimentacion_followup=None, notas_paciente=None,
-                               analisis_laboratorio=None, evolucion=None):
+                               analisis_laboratorio=None, evolucion=None,
+                               tablas_anteriores=None, decisiones_nutriologa=None):
     """
     Arma el prompt para la "Tabla de Porciones": un formato de prescripcion
     mas simple que el menu completo, para pacientes que no quieren un menu
@@ -975,6 +1017,48 @@ def construir_prompt_porciones(paciente, historia, medicion, incluir_ejemplos, p
         partes.append("\n\n" + ("=" * 70) + "\n")
         partes.append("QUÉ CAMBIÓ: EVOLUCIÓN DEL PACIENTE\n")
         partes.append(texto_evolucion)
+
+    if decisiones_nutriologa:
+        partes.append("\n\n" + ("=" * 70) + "\n")
+        partes.append("DECISIONES DE LA NUTRIÓLOGA: OBLIGATORIAS\n")
+        partes.append(
+            "Son indicaciones que la nutrióloga dio al ajustar planes anteriores de "
+            "este paciente. Son decisiones clínicas suyas y se respetan SIEMPRE. Van "
+            "en orden cronológico; si dos se contradicen, manda la más reciente. Si "
+            "con la información nueva crees que alguna debería cambiar, NO la "
+            "cambies: mantenla y explica tu sugerencia en notas_para_la_nutriologa.\n\n"
+        )
+        for d in decisiones_nutriologa:
+            etiqueta = "Versión " + str(d.get("version", "?"))
+            if d.get("fecha"):
+                etiqueta += " (" + _fecha_corta(d["fecha"]) + ")"
+            partes.append("  - " + etiqueta + ": " + str(d.get("instruccion", "")).strip() + "\n")
+
+    if tablas_anteriores:
+        partes.append("\n\n" + ("=" * 70) + "\n")
+        partes.append("TABLA DE PORCIONES ANTERIOR APROBADA\n")
+        partes.append(
+            "Es la tabla que la nutrióloga aprobó y que el paciente ya usa como "
+            "referencia. Repetir un alimento no es un problema, es normal en este "
+            "formato. Lo que sí debes hacer es AJUSTAR lo que la información nueva "
+            "pida: actualizar la meta de proteína si cambió el peso o el objetivo, "
+            "quitar alimentos que el paciente dijo que no le gustan o no tolera, y "
+            "agregar los que reporte que sí disfruta. Copiar la tabla sin revisar "
+            "nada tampoco es aceptable.\n\n"
+            "REGISTRA CADA CAMBIO en cambios_vs_plan_anterior: qué cambió y por qué, "
+            "con un motivo concreto del expediente.\n\n"
+        )
+        if tablas_anteriores.get("meta_proteina"):
+            partes.append("Meta anterior: " + str(tablas_anteriores["meta_proteina"]) + "\n\n")
+        for campo, etiqueta in [
+            ("tabla_proteinas", "PROTEÍNAS"), ("tabla_carbohidratos", "CARBOHIDRATOS"),
+            ("tabla_grasas", "GRASAS"),
+        ]:
+            datos = tablas_anteriores.get(campo)
+            lista = datos if isinstance(datos, list) else (datos or {}).get("alimentos", [])
+            if lista:
+                partes.append(etiqueta + ": " + ", ".join(
+                    str(f.get("alimento", "")) for f in lista if f.get("alimento")) + "\n")
 
     partes.append("\n\n" + ("=" * 70) + "\n")
     partes.append(_seccion_expediente(paciente, historia, medicion))
@@ -1060,7 +1144,13 @@ def construir_prompt_porciones(paciente, historia, medicion, incluir_ejemplos, p
         "  },\n"
         '  "nota_verduras": "texto recomendando tazas de verdura al día, repartidas en las comidas",\n'
         '  "metas_diarias": ["3 porciones buenas de proteína", "2-3 frutas", "3-4 tazas de verduras", "2-3 L de agua", "Fuerza X veces/semana", "X pasos diarios"],\n'
-        '  "ejemplos": {"desayuno": ["..."], "comida": ["..."], "cena": ["..."]}\n'
+        '  "ejemplos": {"desayuno": ["..."], "comida": ["..."], "cena": ["..."]},\n'
+        '  "cambios_vs_plan_anterior": [\n'
+        '    {"aspecto": "meta_proteina | tabla_proteinas | tabla_carbohidratos | tabla_grasas",\n'
+        '     "cambio": "qué se cambió, agregó o quitó",\n'
+        '     "motivo": "por qué, ligado a un dato concreto: evolución, seguimiento, laboratorio, nota o decisión de la nutrióloga"}\n'
+        "  ],\n"
+        '  "notas_para_la_nutriologa": ["algo que conviene que revise o considere"]\n'
         "}\n\n"
         "IMPORTANTE: escribe todo el texto en español correcto, con acentos y "
         "tildes donde corresponda (proteína, colación, día, opción, después, "
@@ -1098,7 +1188,8 @@ def construir_prompt_porciones(paciente, historia, medicion, incluir_ejemplos, p
 def generar_tabla_porciones(paciente, historia, medicion, incluir_ejemplos, padecimientos=None,
                             usa_glp1=False, es_deportista=False, esta_embarazada=False, incluir_kb=True,
                             retroalimentacion_followup=None, notas_paciente=None,
-                            analisis_laboratorio=None, evolucion=None):
+                            analisis_laboratorio=None, evolucion=None,
+                            tablas_anteriores=None, decisiones_nutriologa=None):
     """
     Genera una Tabla de Porciones. A diferencia de generar_plan(), el
     resultado de Gemini se usa directo como documento final, sin pasar por
@@ -1120,6 +1211,8 @@ def generar_tabla_porciones(paciente, historia, medicion, incluir_ejemplos, pade
         notas_paciente=notas_paciente,
         analisis_laboratorio=analisis_laboratorio,
         evolucion=evolucion,
+        tablas_anteriores=tablas_anteriores,
+        decisiones_nutriologa=decisiones_nutriologa,
     )
 
     documento = gemini.generar_json(prompt)
