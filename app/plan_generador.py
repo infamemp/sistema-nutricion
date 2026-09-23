@@ -842,6 +842,7 @@ def construir_prompt(paciente, historia, medicion, padecimientos=None,
         "y tildes donde corresponda (opción, proteína, día, según, más, "
         "nutrióloga, etc.), y usa la ñ cuando corresponda (año, tamaño, etc.). "
         "No generes texto sin acentos.\n"
+        + "\\n\\nSOBRE 'cambios_vs_plan_anterior': solo tiene sentido si este prompt te compartió un plan o tabla anterior más arriba. Si no te compartió ninguno (es la primera vez que este paciente recibe este documento, o no hay versión aprobada previa), déjalo como una lista vacía []: no hay nada que comparar, y no hay 'cambio' en aplicar por primera vez una preferencia del seguimiento.\\n" +
         "\n\nReglas para llenarlo:\n"
         "\nCANTIDADES, LA REGLA MÁS IMPORTANTE:\n"
         "TODO alimento que aparezca en una opción DEBE llevar su cantidad. "
@@ -1154,7 +1155,8 @@ def construir_prompt_porciones(paciente, historia, medicion, incluir_ejemplos, p
         "}\n\n"
         "IMPORTANTE: escribe todo el texto en español correcto, con acentos y "
         "tildes donde corresponda (proteína, colación, día, opción, después, "
-        "según, etc.). No generes texto sin acentos.\n\n"
+        "según, etc.). No generes texto sin acentos.\n"
+        + "\\n\\nSOBRE 'cambios_vs_plan_anterior': solo tiene sentido si este prompt te compartió un plan o tabla anterior más arriba. Si no te compartió ninguno (es la primera vez que este paciente recibe este documento, o no hay versión aprobada previa), déjalo como una lista vacía []: no hay nada que comparar, y no hay 'cambio' en aplicar por primera vez una preferencia del seguimiento.\\n" + "\n"
         + instruccion_ejemplos + "\n\n"
         "FORMATO DE CANTIDAD SEGÚN LA TABLA (esto es distinto para cada una):\n"
         "- tabla_proteinas: la cantidad SIEMPRE lleva su gramaje (ej. '120 g', "
