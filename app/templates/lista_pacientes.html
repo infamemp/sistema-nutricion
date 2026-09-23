@@ -182,12 +182,20 @@
         </div>
 
         {% if pacientes %}
+        <div class="tarjeta-colapsable bg-white rounded-xl shadow-sm mb-6 overflow-hidden">
+            <div class="flex justify-between items-center bg-green-100 border-b-2 border-blue-500 px-6 py-3">
+                <h2 class="text-lg font-medium text-green-800">Pacientes ({{ pacientes|length }})</h2>
+                <button type="button" id="boton-toggle-lista-pacientes" onclick="toggleSeccion(this)" class="p-1 hover:bg-gray-100 rounded">
+                    <svg class="w-5 h-5 text-gray-400 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                </button>
+            </div>
+            <div class="seccion-contenido hidden p-6">
         <div class="mb-4">
             <input type="text" id="buscador-pacientes" placeholder="Buscar por nombre, celular, correo o referido por..."
                    oninput="filtrarPacientes()"
                    class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-400">
         </div>
-        <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+        <div class="rounded-xl overflow-hidden border border-gray-100">
             <table class="w-full text-sm">
                 <thead class="bg-green-100 text-green-800">
                     <tr class="border-b-2 border-blue-500">
@@ -227,7 +235,16 @@
             </button>
             {% endif %}
         </div>
+            </div>
+        </div>
         <script>
+            function toggleSeccion(btn) {
+                const tarjeta = btn.closest('.tarjeta-colapsable');
+                const contenido = tarjeta.querySelector('.seccion-contenido');
+                contenido.classList.toggle('hidden');
+                btn.querySelector('svg').classList.toggle('rotate-180');
+            }
+
             function alternarModoAgendar() {
                 const nuevo = document.querySelector('input[name="modo-agendar"][value="nuevo"]').checked;
                 document.getElementById('form-agendar-existente').classList.toggle('hidden', nuevo);
@@ -278,6 +295,11 @@
             }
 
             function filtrarPacientes() {
+                const contenido = document.querySelector('#buscador-pacientes').closest('.seccion-contenido');
+                if (document.getElementById('buscador-pacientes').value !== '' && contenido.classList.contains('hidden')) {
+                    contenido.classList.remove('hidden');
+                    document.getElementById('boton-toggle-lista-pacientes').querySelector('svg').classList.add('rotate-180');
+                }
                 actualizarVisibilidad();
             }
 

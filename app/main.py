@@ -373,7 +373,7 @@ def lista_pacientes(request: Request, db: Session = Depends(get_db)):
 
     return templates.TemplateResponse(
         request, "lista_pacientes.html",
-        {"pacientes": pacientes, "ventana": 10, "citas_hoy": citas_hoy}
+        {"pacientes": pacientes, "ventana": 5, "citas_hoy": citas_hoy}
     )
 
 
