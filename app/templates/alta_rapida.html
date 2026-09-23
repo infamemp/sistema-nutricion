@@ -44,12 +44,12 @@
         </div>
         {% endif %}
 
-        <form data-autoguardar method="post" action="/pacientes/alta" class="bg-white rounded-xl shadow-sm p-6 space-y-6">
+        <form data-autoguardar method="post" action="/pacientes/alta" class="space-y-6">
 
-            <div>
-                <h2 class="text-lg font-medium text-green-700 border-b-2 border-blue-500 pb-2 mb-4">Datos del paciente</h2>
+            <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+                <h2 class="text-lg font-medium text-green-800 bg-green-100 border-b-2 border-blue-500 px-6 py-3">Datos del paciente</h2>
 
-                <div class="space-y-4">
+                <div class="p-6 space-y-4">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Nombre completo *</label>
                         <input type="text" name="nombre_completo" required
@@ -112,11 +112,12 @@
                     </div>
                 </div>
             </div>
+            </div>
 
-            <div>
-                <h2 class="text-lg font-medium text-green-700 border-b-2 border-blue-500 pb-2 mb-4">Agendar cita</h2>
+            <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+                <h2 class="text-lg font-medium text-green-800 bg-green-100 border-b-2 border-blue-500 px-6 py-3">Agendar cita</h2>
 
-                <div class="space-y-4">
+                <div class="p-6 space-y-4">
                     <div class="grid grid-cols-2 gap-4">
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Fecha</label>
@@ -138,6 +139,7 @@
 
                     <p class="text-xs text-gray-500">Si no agendas ahora, deja la fecha vacía y podrás agendar después.</p>
                 </div>
+            </div>
             </div>
 
             <div class="pt-2">
