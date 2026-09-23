@@ -85,6 +85,8 @@
             </p>
             {% if pacientes|length > ventana %}
             <button id="boton-ver-todos" onclick="alternarVentana()"
+                    data-texto-cerrado="Ver los demás ({{ pacientes|length - ventana }}) &#9662;"
+                    data-texto-abierto="Ver menos &#9652;"
                     class="w-full text-sm text-green-700 hover:bg-green-50 transition py-3 border-t border-gray-100">
                 Ver los demás ({{ pacientes|length - ventana }}) &#9662;
             </button>
@@ -115,7 +117,10 @@
 
                 const boton = document.getElementById('boton-ver-todos');
                 if (boton) {
-                    boton.classList.toggle('hidden', buscando || ventanaExpandida);
+                    boton.classList.toggle('hidden', buscando);
+                    boton.innerHTML = ventanaExpandida
+                        ? boton.dataset.textoAbierto
+                        : boton.dataset.textoCerrado;
                 }
             }
 
@@ -124,7 +129,7 @@
             }
 
             function alternarVentana() {
-                ventanaExpandida = true;
+                ventanaExpandida = !ventanaExpandida;
                 actualizarVisibilidad();
             }
         </script>
