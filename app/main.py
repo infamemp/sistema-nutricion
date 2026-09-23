@@ -369,9 +369,52 @@ def lista_pacientes(request: Request, db: Session = Depends(get_db)):
 
     pacientes.sort(key=lambda p: p.ultima_actividad or datetime.min, reverse=True)
 
+    citas_hoy = _citas_de_hoy(db)
+
     return templates.TemplateResponse(
-        request, "lista_pacientes.html", {"pacientes": pacientes, "ventana": 10}
+        request, "lista_pacientes.html",
+        {"pacientes": pacientes, "ventana": 10, "citas_hoy": citas_hoy}
     )
+
+
+def _citas_de_hoy(db):
+    """
+    Citas del dia (hora de Mexico), con el atajo directo que le toca a
+    cada una: Historia clinica si es su primera consulta, Seguimiento si
+    ya tuvo alguna. Se excluyen las canceladas.
+    """
+    hoy = models.ahora_mexico().date()
+    inicio = datetime.combine(hoy, datetime.min.time())
+    fin = datetime.combine(hoy, datetime.max.time())
+
+    filas = (
+        db.query(models.Cita, models.Paciente)
+        .join(models.Paciente, models.Cita.paciente_id == models.Paciente.id)
+        .filter(models.Cita.fecha_hora >= inicio, models.Cita.fecha_hora <= fin)
+        .filter(models.Cita.estado != "cancelada")
+        .order_by(models.Cita.fecha_hora.asc())
+        .all()
+    )
+
+    citas = []
+    for cita, paciente in filas:
+        if cita.tipo == "primera_consulta":
+            atajo_url = "/pacientes/" + str(paciente.id) + "/historia"
+            atajo_texto = "Historia clínica"
+        else:
+            atajo_url = "/pacientes/" + str(paciente.id) + "/followup/nuevo"
+            atajo_texto = "Seguimiento"
+        citas.append({
+            "id": cita.id,
+            "hora_texto": cita.fecha_hora.strftime("%H:%M"),
+            "paciente_id": paciente.id,
+            "paciente_nombre": paciente.nombre_completo,
+            "origen_texto": "Unido" if paciente.origen_consulta == "unido" else "Particular",
+            "estado": cita.estado,
+            "atajo_url": atajo_url,
+            "atajo_texto": atajo_texto,
+        })
+    return citas
 
 
 @app.get("/pacientes/{paciente_id}", response_class=HTMLResponse)
