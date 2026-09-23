@@ -66,6 +66,67 @@
         </div>
         {% endif %}
 
+        {% if revision and (revision.cambios or revision.notas or revision.advertencias or revision.tablas) %}
+        <div class="bg-amber-50 border border-amber-200 rounded-xl p-6 mb-6">
+            <h2 class="text-lg font-medium text-amber-800 mb-1">Para revisión de Marifer</h2>
+            <p class="text-xs text-amber-700 mb-4">Solo se ve aquí. No aparece en el PDF del paciente.</p>
+
+            {% if revision.advertencias %}
+            <h3 class="text-sm font-medium text-red-700 mb-2">Advertencias</h3>
+            <ul class="space-y-1 text-sm text-red-700 list-disc pl-4 mb-4">
+                {% for a in revision.advertencias %}<li>{{ a }}</li>{% endfor %}
+            </ul>
+            {% endif %}
+
+            {% if revision.tablas and (revision.tablas.meta_cambio or revision.tablas.por_tabla) %}
+            <h3 class="text-sm font-medium text-gray-800 mb-2">Qué cambió respecto a la tabla anterior</h3>
+            {% if revision.tablas.meta_cambio %}
+            <p class="text-sm text-gray-700 mb-2">
+                Meta de proteína: <span class="line-through text-gray-400">{{ revision.tablas.meta_cambio.antes }}</span>
+                <span class="block">{{ revision.tablas.meta_cambio.ahora }}</span>
+            </p>
+            {% endif %}
+            {% if revision.tablas.por_tabla %}
+            <ul class="space-y-1 text-sm text-gray-700 mb-4">
+                {% for nombre, cambio in revision.tablas.por_tabla.items() %}
+                <li>
+                    <span class="font-medium">{{ nombre }}:</span>
+                    {% if cambio.agregados %}<span class="text-green-700">+ {{ cambio.agregados|join(", ") }}</span>{% endif %}
+                    {% if cambio.retirados %}<span class="text-red-600">&minus; {{ cambio.retirados|join(", ") }}</span>{% endif %}
+                </li>
+                {% endfor %}
+            </ul>
+            {% else %}
+            <div class="mb-4"></div>
+            {% endif %}
+            {% endif %}
+
+            {% if revision.cambios %}
+            <h3 class="text-sm font-medium text-gray-800 mb-2">Cambios respecto al plan anterior</h3>
+            <ul class="space-y-2 text-sm text-gray-700 mb-4">
+                {% for c in revision.cambios %}
+                <li class="border-l-2 border-amber-300 pl-3">
+                    {% if c is mapping %}
+                    {% if c.aspecto %}<span class="text-xs uppercase tracking-wide text-amber-700">{{ c.aspecto }}</span><br>{% endif %}
+                    {{ c.cambio }}
+                    {% if c.motivo %}<span class="block text-xs text-gray-500 mt-0.5">Motivo: {{ c.motivo }}</span>{% endif %}
+                    {% else %}
+                    {{ c }}
+                    {% endif %}
+                </li>
+                {% endfor %}
+            </ul>
+            {% endif %}
+
+            {% if revision.notas %}
+            <h3 class="text-sm font-medium text-gray-800 mb-2">Notas de la IA</h3>
+            <ul class="space-y-1 text-sm text-gray-700 list-disc pl-4">
+                {% for n in revision.notas %}<li>{{ n }}</li>{% endfor %}
+            </ul>
+            {% endif %}
+        </div>
+        {% endif %}
+
         {% if doc.meta_proteina or doc.instruccion_general or doc.objetivo_distribucion %}
         <div class="bg-white rounded-xl shadow-sm p-6 mb-6">
             <h2 class="text-lg font-medium text-green-700 border-b-2 border-blue-500 pb-2 mb-4">Meta de proteína</h2>
