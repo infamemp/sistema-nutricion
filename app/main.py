@@ -1382,6 +1382,27 @@ def _generar_dieta_y_redirigir(paciente_id: int, db: Session, analisis_laborator
         )
         incluir_ejemplos = ya_tuvo_porciones is None
 
+        # Continuidad: la ultima Tabla de Porciones aprobada, para que la IA
+        # ajuste en vez de partir de cero, y las decisiones de Marifer, que
+        # se comparten con el Menu (son del paciente, no del tipo de documento).
+        ultima_aprobada_porciones = (
+            db.query(models.DietaVersion)
+            .filter(models.DietaVersion.paciente_id == paciente_id)
+            .filter(models.DietaVersion.tipo_documento == "porciones")
+            .filter(models.DietaVersion.estado == "aprobada")
+            .order_by(models.DietaVersion.version.desc())
+            .first()
+        )
+        plan_anterior_version = ultima_aprobada_porciones.version if ultima_aprobada_porciones else None
+        tablas_anteriores = None
+        if ultima_aprobada_porciones:
+            try:
+                tablas_anteriores = _cargar_contenido(ultima_aprobada_porciones).get("documento", {}) or {}
+            except Exception:
+                tablas_anteriores = None
+
+        decisiones_nutriologa = _decisiones_de_marifer(db, paciente_id)
+
         resultado = plan_gen.generar_tabla_porciones(
             paciente_dict, historia_dict, medicion_dict, incluir_ejemplos,
             padecimientos=padecimientos,
@@ -1392,13 +1413,25 @@ def _generar_dieta_y_redirigir(paciente_id: int, db: Session, analisis_laborator
             notas_paciente=notas_paciente,
             analisis_laboratorio=analisis_laboratorio,
             evolucion=evolucion,
+            tablas_anteriores=tablas_anteriores,
+            decisiones_nutriologa=decisiones_nutriologa,
         )
         guardado = {
             "documento": resultado["documento"],
             "confiable": resultado["verificacion"]["confiable"],
             "problemas": resultado["verificacion"]["problemas"],
+            "revision": {
+                "cambios": resultado["documento"].get("cambios_vs_plan_anterior") or [],
+                "notas": resultado["documento"].get("notas_para_la_nutriologa") or [],
+                "advertencias": [],
+            },
+            "decisiones_usadas": len(decisiones_nutriologa),
+            "plan_anterior_version": plan_anterior_version,
         }
-        plan_anterior_version = None
+        if tablas_anteriores:
+            guardado["revision"]["tablas"] = plan_gen.comparar_tablas_porciones(
+                resultado["documento"], tablas_anteriores
+            )
     else:
         # Continuidad con el plan anterior: se le pasa a Gemini como
         # contexto, nunca como instruccion de repetir o evitar (ver
@@ -1699,6 +1732,7 @@ def ver_dieta(paciente_id: int, dieta_id: int, request: Request, db: Session = D
                 "confiable": guardado.get("confiable", False),
                 "problemas": guardado.get("problemas", []),
                 "mensaje": mensaje,
+                "revision": guardado.get("revision"),
                 "fecha_texto": _fecha_texto(dieta.fecha_creacion),
                 "contexto_texto": _contexto_texto(dieta, guardado),
             },
